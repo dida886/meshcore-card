@@ -15,6 +15,7 @@ import {
   batteryClass,
   formatUptime,
   rssiClass,
+  escapeHtml,
 } from "./helpers.js";
 import { STYLES } from "./styles.js";
 import { discoverHubs, discoverNodes } from "./discovery.js";
@@ -172,9 +173,9 @@ export class MeshcoreCard extends HTMLElement {
   ): string {
     if (!id || value === null) return "";
     const blank = value === "unknown" || value === "unavailable";
-    return `<span class="chip ${cls} clickable" data-entity="${id}">${
-      label ? `<span class="chip-label">${label}</span>` : ""
-    }${blank ? "—" : value}</span>`;
+    return `<span class="chip ${cls} clickable" data-entity="${escapeHtml(id)}">${
+      label ? `<span class="chip-label">${escapeHtml(label)}</span>` : ""
+    }${blank ? "—" : escapeHtml(value)}</span>`;
   }
 
   private _locLink(lat: unknown, lon: unknown, entityId: string | null, t: LocalizeFunc): string {
@@ -183,8 +184,8 @@ export class MeshcoreCard extends HTMLElement {
     const lonF = parseFloat(String(lon)).toFixed(5);
     const url = `https://analyzer.letsmesh.net/map?lat=${latF}&long=${lonF}&zoom=10`;
     return `<div class="loc-row">
-      <span class="chip clickable" data-entity="${entityId}">📍 ${latF}, ${lonF}</span>
-      <a class="map-link" href="${url}" target="_blank" rel="noopener">${t("card.map_link")}</a>
+      <span class="chip clickable" data-entity="${escapeHtml(entityId)}">📍 ${latF}, ${lonF}</span>
+      <a class="map-link" href="${url}" target="_blank" rel="noopener">${escapeHtml(t("card.map_link"))}</a>
     </div>`;
   }
 
@@ -235,20 +236,20 @@ export class MeshcoreCard extends HTMLElement {
         <div class="node-header">
           <div class="node-left">
             <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
-            <span class="node-name">${t("card.hub_name", { name: name.replace(/_/g, " ") })}</span>
-            <span class="node-key dim clickable" data-entity="${statusId ?? countId}">(${pubkey})</span>
+            <span class="node-name">${escapeHtml(t("card.hub_name", { name: name.replace(/_/g, " ") }))}</span>
+            <span class="node-key dim clickable" data-entity="${escapeHtml(statusId ?? countId)}">(${escapeHtml(pubkey)})</span>
           </div>
           <div class="node-right">
-            ${nodeCount !== null ? `<span class="count-badge clickable" data-entity="${countId}">${t("card.nodes_count", { n: nodeCount })}</span>` : ""}
+            ${nodeCount !== null ? `<span class="count-badge clickable" data-entity="${escapeHtml(countId)}">${escapeHtml(t("card.nodes_count", { n: nodeCount }))}</span>` : ""}
           </div>
         </div>
 
-        ${hwModel || firmware ? `<div class="hw-info">${[hwModel, firmware].filter(Boolean).join(" • ")}</div>` : ""}
+        ${hwModel || firmware ? `<div class="hw-info">${[hwModel, firmware].filter(Boolean).map((s) => escapeHtml(s)).join(" • ")}</div>` : ""}
 
         ${battPct !== null && Number(battPct) !== 0 ? `
           <div class="bar-row">
-            <span class="bar-label">${t("card.battery_label")}</span>
-            <span class="bar-val clickable" data-entity="${battPctId}" style="color:${battCol}">${battPct}%</span>
+            <span class="bar-label">${escapeHtml(t("card.battery_label"))}</span>
+            <span class="bar-val clickable" data-entity="${escapeHtml(battPctId)}" style="color:${battCol}">${escapeHtml(battPct)}%</span>
           </div>
           ${this._progressBar(battPct, battCol)}` : ""}
 
@@ -261,15 +262,15 @@ export class MeshcoreCard extends HTMLElement {
 
         ${showRf ? `
           <div class="rf-row">
-            ${freq ? `<span class="rf-chip clickable" data-entity="${freqId}">${parseFloat(freq).toFixed(3)} MHz</span>` : ""}
-            ${bw   ? `<span class="rf-chip clickable" data-entity="${bwId}">${bw} kHz</span>` : ""}
-            ${sf   ? `<span class="rf-chip clickable" data-entity="${sfId}">SF${sf}</span>` : ""}
-            ${txPow ? `<span class="rf-chip clickable" data-entity="${txPowId}">${txPow} dBm</span>` : ""}
+            ${freq ? `<span class="rf-chip clickable" data-entity="${escapeHtml(freqId)}">${parseFloat(freq).toFixed(3)} MHz</span>` : ""}
+            ${bw   ? `<span class="rf-chip clickable" data-entity="${escapeHtml(bwId)}">${escapeHtml(bw)} kHz</span>` : ""}
+            ${sf   ? `<span class="rf-chip clickable" data-entity="${escapeHtml(sfId)}">SF${escapeHtml(sf)}</span>` : ""}
+            ${txPow ? `<span class="rf-chip clickable" data-entity="${escapeHtml(txPowId)}">${escapeHtml(txPow)} dBm</span>` : ""}
           </div>` : ""}
 
         ${mqttIds.length ? `
           <div class="mqtt-row">
-            <span class="mqtt-label">${t("card.mqtt_label")}</span>
+            <span class="mqtt-label">${escapeHtml(t("card.mqtt_label"))}</span>
             ${mqttIds.map((id) => {
               const v   = this._val(id);
               const lbl = (this._attr(id, "server") as string | null) ||
@@ -277,7 +278,7 @@ export class MeshcoreCard extends HTMLElement {
                   .replace(/meshcore\s+\w+\s*/i, "")
                   .replace(/_/g, " ")
                   .trim();
-              return `<span class="mqtt-pill ${v ? "ok" : "err"} clickable" data-entity="${id}">${lbl}</span>`;
+              return `<span class="mqtt-pill ${v ? "ok" : "err"} clickable" data-entity="${escapeHtml(id)}">${escapeHtml(lbl)}</span>`;
             }).join("")}
           </div>` : ""}
       </div>
@@ -385,26 +386,26 @@ export class MeshcoreCard extends HTMLElement {
         <div class="node-header">
           <div class="node-left">
             <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
-            <span class="node-name">${name.replace(/_/g, " ")}</span>
-            ${isRepeater ? `<span class="type-badge">${t("card.type_repeater")}</span>` : isSensor ? `<span class="type-badge">${t("card.type_sensor")}</span>` : ""}
+            <span class="node-name">${escapeHtml(name.replace(/_/g, " "))}</span>
+            ${isRepeater ? `<span class="type-badge">${escapeHtml(t("card.type_repeater"))}</span>` : isSensor ? `<span class="type-badge">${escapeHtml(t("card.type_sensor"))}</span>` : ""}
           </div>
           <div class="node-right">
-            ${rssi !== null ? `<span class="badge ${rssiClass(rssi)} clickable" data-entity="${rssiId}">${t("card.rssi_badge", { value: rssi })}</span>` : ""}
-            ${snr  !== null ? `<span class="badge clickable" data-entity="${snrId}">${t("card.snr_badge", { value: snr })}</span>` : ""}
-            ${pathLen !== null ? `<span class="badge clickable" data-entity="${pathId}">${pathLen}↑</span>` : ""}
-            ${lastSeen ? `<span class="badge dim">${lastSeen}</span>` : ""}
+            ${rssi !== null ? `<span class="badge ${rssiClass(rssi)} clickable" data-entity="${escapeHtml(rssiId)}">${escapeHtml(t("card.rssi_badge", { value: rssi }))}</span>` : ""}
+            ${snr  !== null ? `<span class="badge clickable" data-entity="${escapeHtml(snrId)}">${escapeHtml(t("card.snr_badge", { value: snr }))}</span>` : ""}
+            ${pathLen !== null ? `<span class="badge clickable" data-entity="${escapeHtml(pathId)}">${escapeHtml(pathLen)}↑</span>` : ""}
+            ${lastSeen ? `<span class="badge dim">${escapeHtml(lastSeen)}</span>` : ""}
           </div>
         </div>
 
         ${route && !["unknown", "unavailable"].includes(route) ? `
-          <div class="node-route">↝ ${route}</div>` : ""}
+          <div class="node-route">↝ ${escapeHtml(route)}</div>` : ""}
 
         ${battPct !== null && Number(battPct) !== 0 ? `
           <div class="bar-row">
-            <span class="bar-label">${t("card.battery_label")}</span>
+            <span class="bar-label">${escapeHtml(t("card.battery_label"))}</span>
             <span class="bar-label-right">
-              ${battV !== null && parseFloat(String(battV)) >= 0.001 ? `<span class="clickable" data-entity="${battVId}">⚡ ${parseFloat(String(battV)).toFixed(3)}V</span>` : ""}
-              <span class="bar-val clickable" data-entity="${battPctId}" style="color:${batteryColor(battPct)}">${battPct}%</span>
+              ${battV !== null && parseFloat(String(battV)) >= 0.001 ? `<span class="clickable" data-entity="${escapeHtml(battVId)}">⚡ ${parseFloat(String(battV)).toFixed(3)}V</span>` : ""}
+              <span class="bar-val clickable" data-entity="${escapeHtml(battPctId)}" style="color:${batteryColor(battPct)}">${escapeHtml(battPct)}%</span>
             </span>
           </div>
           ${this._progressBar(battPct, batteryColor(battPct))}` : ""}
@@ -418,15 +419,15 @@ export class MeshcoreCard extends HTMLElement {
 
           ${airtime !== null ? `
             <div class="bar-row">
-              <span class="bar-label">${t("card.tx_airtime_label")}</span>
-              <span class="bar-val clickable" data-entity="${airtimeId}">${parseFloat(airtime).toFixed(1)}%</span>
+              <span class="bar-label">${escapeHtml(t("card.tx_airtime_label"))}</span>
+              <span class="bar-val clickable" data-entity="${escapeHtml(airtimeId)}">${parseFloat(airtime).toFixed(1)}%</span>
             </div>
             ${this._progressBar(airtime, "var(--primary-color)")}` : ""}
 
           ${rxAirtime !== null ? `
             <div class="bar-row">
-              <span class="bar-label">${t("card.rx_airtime_label")}</span>
-              <span class="bar-val clickable" data-entity="${rxAirtimeId}">${parseFloat(rxAirtime).toFixed(1)}%</span>
+              <span class="bar-label">${escapeHtml(t("card.rx_airtime_label"))}</span>
+              <span class="bar-val clickable" data-entity="${escapeHtml(rxAirtimeId)}">${parseFloat(rxAirtime).toFixed(1)}%</span>
             </div>
             ${this._progressBar(rxAirtime, "var(--accent-color)")}` : ""}
 
@@ -445,8 +446,8 @@ export class MeshcoreCard extends HTMLElement {
                 const v = this._val(c.id);
                 const blank = v === null || v === "unknown" || v === "unavailable";
                 const display = blank ? "—" : (isNaN(Number(v)) ? v : String(Math.round(Number(v))));
-                return `<div class="tc"><div class="tc-label">${c.label}</div>
-                  <div class="tc-val ${blank ? "dim" : c.cls} clickable" data-entity="${c.id}">${display}</div></div>`;
+                return `<div class="tc"><div class="tc-label">${escapeHtml(c.label)}</div>
+                  <div class="tc-val ${blank ? "dim" : c.cls} clickable" data-entity="${escapeHtml(c.id)}">${escapeHtml(display)}</div></div>`;
               }).join("")}
             </div>` : ""}
 
@@ -469,8 +470,8 @@ export class MeshcoreCard extends HTMLElement {
               const v = this._val(c.id);
               const blank = v === null || v === "unknown" || v === "unavailable";
               const display = blank ? "—" : (isNaN(Number(v)) ? v : String(Math.round(Number(v))));
-              return `<div class="tc"><div class="tc-label">${c.label}</div>
-                <div class="tc-val ${blank ? "dim" : c.cls} clickable" data-entity="${c.id}">${display}</div></div>`;
+              return `<div class="tc"><div class="tc-label">${escapeHtml(c.label)}</div>
+                <div class="tc-val ${blank ? "dim" : c.cls} clickable" data-entity="${escapeHtml(c.id)}">${escapeHtml(display)}</div></div>`;
             }).join("")}
           </div>` : ""}
 

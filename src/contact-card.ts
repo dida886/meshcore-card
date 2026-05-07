@@ -1,5 +1,5 @@
 import type { HomeAssistant, MeshcoreContactCardConfig, HaFormElement } from "./types.js";
-import { formatLastSeen } from "./helpers.js";
+import { formatLastSeen, escapeHtml } from "./helpers.js";
 import { STYLES } from "./styles.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
 
@@ -148,21 +148,29 @@ export class MeshcoreContactCard extends HTMLElement {
       ? `https://analyzer.letsmesh.net/map?lat=${c.lat.toFixed(5)}&long=${c.lon!.toFixed(5)}&zoom=10`
       : null;
 
+    // entity_picture URLs and icon names come from HA contact attributes,
+    // which the meshcore integration sources unsanitized from the mesh.
+    // Reject anything that isn't a same-origin / http(s) image URL or a
+    // simple mdi-style icon name to avoid javascript:/data: schemes and
+    // attribute breakout via quotes.
+    const safePicture = c.picture && /^(?:https?:\/\/|\/)/i.test(c.picture) ? c.picture : null;
+    const safeIcon = /^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(c.icon) ? c.icon : "mdi:account";
+
     return `
-      <div class="contact-row" data-entity="${c.entityId}">
+      <div class="contact-row" data-entity="${escapeHtml(c.entityId)}">
         <div class="contact-icon">
-          ${c.picture
-            ? `<img src="${c.picture}" alt="">`
-            : `<ha-icon icon="${c.icon}"></ha-icon>`}
+          ${safePicture
+            ? `<img src="${escapeHtml(safePicture)}" alt="">`
+            : `<ha-icon icon="${escapeHtml(safeIcon)}"></ha-icon>`}
         </div>
         <div class="contact-info">
           <div class="contact-header">
-            <span class="contact-name">${c.advName}</span>
-            ${c.nodeType ? `<span class="type-badge">${c.nodeType}</span>` : ""}
+            <span class="contact-name">${escapeHtml(c.advName)}</span>
+            ${c.nodeType ? `<span class="type-badge">${escapeHtml(c.nodeType)}</span>` : ""}
           </div>
           <div class="contact-meta">
-            ${c.timeSince ? `<span>${c.timeSince}</span>` : ""}
-            ${mapUrl ? `<a class="meta-loc" href="${mapUrl}" target="_blank" rel="noopener">📍 ${c.lat!.toFixed(5)}, ${c.lon!.toFixed(5)}</a>` : c.unknownLocation ? `<span class="dim">${t("card.unknown_location")}</span>` : ""}
+            ${c.timeSince ? `<span>${escapeHtml(c.timeSince)}</span>` : ""}
+            ${mapUrl ? `<a class="meta-loc" href="${mapUrl}" target="_blank" rel="noopener">📍 ${c.lat!.toFixed(5)}, ${c.lon!.toFixed(5)}</a>` : c.unknownLocation ? `<span class="dim">${escapeHtml(t("card.unknown_location"))}</span>` : ""}
           </div>
         </div>
         <div class="contact-right">
