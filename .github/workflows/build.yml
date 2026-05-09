@@ -32,11 +32,16 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Create release
+      - name: Upload bundle to release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.ref_name }}
-          body: |
-            Built from commit ${{ github.sha }}
           files: dist/meshcore-card.js
-          make_latest: true
+          # Tags containing a hyphen (e.g. v1.0.0-beta) are treated as
+          # prereleases per semver convention. Stable tags (v1.0.0) keep
+          # the action's default `make_latest: legacy`, which lets GitHub
+          # promote them to Latest by date+semver.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          # Deliberately not setting `name` or `body`: when the release
+          # was pre-created with `gh release create --title --notes ...`
+          # those values are preserved instead of being overwritten with
+          # generic auto-text.
