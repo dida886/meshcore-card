@@ -1,4 +1,5 @@
 import type { HomeAssistant, MeshcoreChannelCardConfig } from "./types.js";
+import { escapeHtml } from "./helpers.js";
 import { STYLES } from "./styles.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
 
@@ -149,10 +150,10 @@ export class MeshcoreChannelCard extends HTMLElement {
 
   private _renderRow(ch: ChannelEntry): string {
     return `
-      <div class="channel-row" data-entity="${ch.entityId}">
+      <div class="channel-row" data-entity="${escapeHtml(ch.entityId)}">
         <span class="channel-dot ${ch.active ? "active" : "inactive"}"></span>
-        <span class="channel-hub">${ch.hubName}</span>
-        <span class="channel-name">${ch.channelName}</span>
+        <span class="channel-hub">${escapeHtml(ch.hubName)}</span>
+        <span class="channel-name">${escapeHtml(ch.channelName)}</span>
       </div>`;
   }
 

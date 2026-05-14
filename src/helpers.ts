@@ -1,3 +1,19 @@
+// Escape any string that originates from outside the card (HA entity state,
+// HA attributes, mesh radio adv_name, raw event payloads, etc.) before it is
+// interpolated into an innerHTML template literal. Without this, a hostile
+// node operator can inject arbitrary HTML/JS via fields like adv_name —
+// the meshcore firmware does not validate or sanitize these strings, and
+// neither the meshcore_py SDK nor the HA integration escape them.
+export function escapeHtml(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  return String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function longestCommonPrefix(strs: string[]): string {
   if (!strs.length) return "";
   let i = 0;
@@ -11,7 +27,9 @@ export function longestCommonSuffix(strs: string[]): string {
 }
 
 export function isOnlineState(v: unknown): boolean {
-  return ["online", "connected", "1", "true"].includes(
+  // "on" covers binary_sensor connectivity entities (e.g. *_online_*),
+  // which the meshcore-ha integration uses for repeater status.
+  return ["online", "connected", "on", "1", "true"].includes(
     String(v).toLowerCase()
   );
 }
