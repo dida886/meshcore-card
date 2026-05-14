@@ -357,9 +357,11 @@ export class MeshcoreCard extends HTMLElement {
     const successes = this._val(successId);
     const lastSeen  = formatLastSeen(lastAdv, t);
 
-    // Repeaters are the only nodes that expose neighbor_*_seen entities.
-    // Detect by scanning the device's entities for that pattern.
-    const isRepeater = (() => {
+    // Repeater signals: airtime / rx_airtime / noise_floor entities
+    // (always present on repeaters), or _neighbor_*_seen entities
+    // (defense-in-depth — kept as a fallback in case the airtime/noise
+    // metrics haven't been populated yet on a freshly-paired repeater).
+    const isRepeater = !!(airtimeId || rxAirtimeId || noiseId) || (() => {
       if (!this._hass?.entities) return false;
       for (const [entityId, info] of Object.entries(this._hass.entities)) {
         if (info.device_id !== deviceId) continue;
