@@ -32,7 +32,27 @@
     "telemetry_temp": "Temp",
     "telemetry_humidity": "Vochtigheid",
     "telemetry_lux": "Lux",
-    "telemetry_pressure": "Druk"
+    "telemetry_pressure": "Druk",
+    "section_channels": "KANALEN",
+    "empty_channels": "Geen MeshCore-kanalen gevonden.<br>Controleer of de MeshCore-integratie is geïnstalleerd.",
+    "neighbors_label": "Buren",
+    "no_neighbors_info": "Geen informatie over buren",
+    "online": "Online",
+    "offline": "Offline",
+    "technical_section": "Technisch",
+    "location_section": "Locatie",
+    "mqtt_section": "MQTT",
+    "other_section": "Overig",
+    "traffic_section": "Netwerkverkeer",
+    "telemetry_section": "Telemetrie",
+    "rssi_label": "RSSI",
+    "snr_label": "SNR",
+    "snr_excellent": "zeer goed",
+    "snr_good": "goed",
+    "snr_fair": "matig",
+    "snr_poor": "slecht",
+    "neighbor_last_seen": "Laatst gezien",
+    "neighbor_contacts": "Verbindingen (48u)"
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -46,8 +66,13 @@
     "battery_entity": "Batterij % entiteit (leeg = auto-detectie)",
     "voltage_entity": "Spanningsentiteit (leeg = auto-detectie)",
     "location_entity": "Locatie-entiteit met breedtegraad/lengtegraad attributen (optioneel)",
+    "temperature_entity": "Temperatuur entiteit (optioneel)",
+    "humidity_entity": "Vochtigheid entiteit (optioneel)",
+    "illuminance_entity": "Verlichtingssterkte entiteit (optioneel)",
+    "pressure_entity": "Druk entiteit (optioneel)",
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximale contactleeftijd (dagen)",
-    "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren."
+    "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren.",
+    "node_order_label": "Weergavevolgorde nodes"
   }
 }

@@ -32,7 +32,27 @@
     "telemetry_temp": "Temp",
     "telemetry_humidity": "Feuchtigkeit",
     "telemetry_lux": "Lux",
-    "telemetry_pressure": "Druck"
+    "telemetry_pressure": "Druck",
+    "section_channels": "KANÄLE",
+    "empty_channels": "Keine MeshCore-Kanäle gefunden.<br>Prüfen Sie, ob die MeshCore-Integration installiert ist.",
+    "neighbors_label": "Nachbarn",
+    "no_neighbors_info": "Keine Informationen über Nachbarn",
+    "online": "Online",
+    "offline": "Offline",
+    "technical_section": "Technisch",
+    "location_section": "Standort",
+    "mqtt_section": "MQTT",
+    "other_section": "Andere",
+    "traffic_section": "Netzwerkverkehr",
+    "telemetry_section": "Telemetrie",
+    "rssi_label": "RSSI",
+    "snr_label": "SNR",
+    "snr_excellent": "sehr gut",
+    "snr_good": "gut",
+    "snr_fair": "mäßig",
+    "snr_poor": "schlecht",
+    "neighbor_last_seen": "Zuletzt gesehen",
+    "neighbor_contacts": "Verbindungen (48h)"
   },
   "time": {
     "s_ago": "vor {n}s",
@@ -46,8 +66,13 @@
     "battery_entity": "Batterie % Entität (leer = Auto-Erkennung)",
     "voltage_entity": "Spannungs-Entität (leer = Auto-Erkennung)",
     "location_entity": "Standort-Entität mit Breitengrad/Längengrad-Attributen (optional)",
+    "temperature_entity": "Temperatur-Entität (optional)",
+    "humidity_entity": "Feuchtigkeits-Entität (optional)",
+    "illuminance_entity": "Beleuchtungsstärke-Entität (optional)",
+    "pressure_entity": "Druck-Entität (optional)",
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximales Kontakt-Alter (Tage)",
-    "no_hubs_detected": "Noch keine MeshCore-Hubs erkannt. Fügen Sie die Karte hinzu und bearbeiten Sie sie anschließend zur Konfiguration."
+    "no_hubs_detected": "Noch keine MeshCore-Hubs erkannt. Fügen Sie die Karte hinzu und bearbeiten Sie sie anschließend zur Konfiguration.",
+    "node_order_label": "Reihenfolge der Knoten"
   }
 }
