@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Translate src/translations/en.json into fr, nl, de using Claude API (default)
+ * Translate src/translations/en.json into fr, nl, de, pl using Claude API (default)
  * or DeepL (TRANSLATE_BACKEND=deepl).
  *
  * Usage:
@@ -23,6 +23,7 @@ const TARGETS = [
   { code: "fr", name: "French" },
   { code: "nl", name: "Dutch" },
   { code: "de", name: "German" },
+  { code: "pl", name: "Polish" },
 ];
 
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -125,7 +126,7 @@ ${inputJson}`;
 
 // ── DeepL backend ────────────────────────────────────────────────────────────
 
-const DEEPL_LANG = { fr: "FR", nl: "NL", de: "DE" };
+const DEEPL_LANG = { fr: "FR", nl: "NL", de: "DE", pl: "PL" };
 
 async function translateViaDeepL(toTranslate, langCode) {
   const { default: deepl } = await import("deepl-node");

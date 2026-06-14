@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Checks that fr.json, nl.json, de.json contain all keys present in en.json.
+ * Checks that fr.json, nl.json, de.json, pl.json contain all keys present in en.json.
  * Exits with code 1 if any keys are missing — suitable for CI.
  *
  * Usage:
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const SRC   = resolve(__dir, "..", "src/translations");
-const LANGS = ["fr", "nl", "de"];
+const LANGS = ["fr", "nl", "de", "pl"];
 
 function collectLeaves(obj, prefix = "") {
   const out = new Set();
