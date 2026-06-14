@@ -32,7 +32,9 @@
     "telemetry_temp": "Temp",
     "telemetry_humidity": "Humidité",
     "telemetry_lux": "Lux",
-    "telemetry_pressure": "Pression"
+    "telemetry_pressure": "Pression",
+    "section_channels": "CANAUX",
+    "empty_channels": "Aucun canal MeshCore trouvé.<br>Vérifiez que l'intégration MeshCore est installée."
   },
   "time": {
     "s_ago": "il y a {n}s",
@@ -46,8 +48,13 @@
     "battery_entity": "Entité % batterie (vide = auto-détection)",
     "voltage_entity": "Entité de tension (vide = auto-détection)",
     "location_entity": "Entité de localisation avec attributs latitude/longitude (optionnel)",
+    "temperature_entity": "Entité de température (optionnel)",
+    "humidity_entity": "Entité d'humidité (optionnel)",
+    "illuminance_entity": "Entité de luminosité (optionnel)",
+    "pressure_entity": "Entité de pression (optionnel)",
     "hub_section_title": "Hub : {name} ({key})",
     "max_contact_age": "Âge maximum du contact (jours)",
-    "no_hubs_detected": "Aucun hub MeshCore détecté pour l'instant. Ajoutez la carte, puis éditez-la pour la configurer."
+    "no_hubs_detected": "Aucun hub MeshCore détecté pour l'instant. Ajoutez la carte, puis éditez-la pour la configurer.",
+    "node_order_label": "Ordre d'affichage des nœuds"
   }
 }

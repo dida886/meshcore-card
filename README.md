@@ -163,9 +163,9 @@ grid_options:
 
 ## Localization
 
-The cards are localized into **English**, **French**, **Dutch**, and **German**. The active Home Assistant language is used automatically.
+The cards are localized into **English**, **French**, **Dutch**, **German**, and **Polish**. The active Home Assistant language is used automatically.
 
-> **Note:** French, Dutch, and German translations are machine-generated. If you spot an error or awkward phrasing, pull requests with corrections are very welcome!
+> **Note:** French, Dutch, German, and Polish translations are community- or machine-generated. If you spot an error or awkward phrasing, pull requests with corrections are very welcome!
 
 To add a new language or correct an existing one, see [`src/translations/`](src/translations/) and [`scripts/translate.mjs`](scripts/translate.mjs).
 
