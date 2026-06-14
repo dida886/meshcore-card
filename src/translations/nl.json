@@ -32,7 +32,9 @@
     "telemetry_temp": "Temp",
     "telemetry_humidity": "Vochtigheid",
     "telemetry_lux": "Lux",
-    "telemetry_pressure": "Druk"
+    "telemetry_pressure": "Druk",
+    "section_channels": "KANALEN",
+    "empty_channels": "Geen MeshCore-kanalen gevonden.<br>Controleer of de MeshCore-integratie is geïnstalleerd."
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -46,8 +48,13 @@
     "battery_entity": "Batterij % entiteit (leeg = auto-detectie)",
     "voltage_entity": "Spanningsentiteit (leeg = auto-detectie)",
     "location_entity": "Locatie-entiteit met breedtegraad/lengtegraad attributen (optioneel)",
+    "temperature_entity": "Temperatuurentiteit (optioneel)",
+    "humidity_entity": "Vochtigheidsentiteit (optioneel)",
+    "illuminance_entity": "Lichtsterkte-entiteit (optioneel)",
+    "pressure_entity": "Drukentiteit (optioneel)",
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximale contactleeftijd (dagen)",
-    "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren."
+    "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren.",
+    "node_order_label": "Weergavevolgorde nodes"
   }
 }
