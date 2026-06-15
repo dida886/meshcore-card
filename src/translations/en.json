@@ -35,7 +35,7 @@
     "telemetry_pressure": "Pressure",
     "section_channels": "CHANNELS",
     "empty_channels": "No MeshCore channels found.<br>Check the meshcore integration is installed.",
-    "neighbors_label": "Neighbors",
+    "neighbors_label": "NEIGHBORS",
     "no_neighbors_info": "No information about neighbors",
     "online": "Online",
     "offline": "Offline",
