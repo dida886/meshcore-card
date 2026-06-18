@@ -1,110 +1,242 @@
-# MeshCore Card
+![MeshCore Logo](images/logo.png)
+
+# MeshCore Card Enhanced v1.1.1 !
+
+Advanced Home Assistant Lovelace cards for the MeshCore mesh radio network, including full messaging support.
+
+This project is based on the original MeshCore Card by John Pettitt and extends it with advanced messaging capabilities, improved user interaction, and enhanced Home Assistant integration.
 
 Custom [Home Assistant](https://www.home-assistant.io/) Lovelace cards that display hub, node, contact, and channel statistics from the [MeshCore](https://meshcore.co.uk) mesh radio network integration.
 
-[![GitHub Release](https://img.shields.io/github/release/jpettitt/meshcore-card.svg?style=for-the-badge)](https://github.com/jpettitt/meshcore-card/releases)
-[![License](https://img.shields.io/github/license/jpettitt/meshcore-card.svg?style=for-the-badge)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/dida886/meshcore-card.svg?style=for-the-badge)](https://github.com/dida886/meshcore-card/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz)
-[![Maintenance](https://img.shields.io/maintenance/yes/2026?style=for-the-badge)](https://github.com/jpettitt/meshcore-card)
+![GitHub Downloads](https://img.shields.io/github/downloads/dida886/meshcore-card/total?label=downloads&style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/dida886/meshcore-card?style=for-the-badge&logo=github)
+[![Maintenance](https://img.shields.io/maintenance/yes/2026?style=for-the-badge)](https://github.com/dida886/meshcore-card)
 
-[![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jpettitt&repository=meshcore-card&category=plugin)
 
-![MeshCore Hub Card screenshot](screenshot.png)
-![MeshCore Node Card screenshot](screenshot2.png)
-![MeshCore Contact Card screenshot](contact-card-screenshot.png)
-![MeshCore Chanel Card screenshot](chanel-card-screenshot.png)
+
+[![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=dida886&repository=meshcore-card&category=plugin)
+
+---
+
+## ☕ Support Development
+
+If you find this project useful and would like to support future development:
+
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dida886)
+
+Your support helps fund development, testing, bug fixes, and new features.
+
+---
+
+## 🌟 Enhanced Edition
+
+While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, contacts, and channels, this Enhanced Edition transforms Home Assistant into a complete MeshCore communication dashboard.
+
+### Key Enhancements
+
+* Full MeshCore messaging support
+* Message history viewer
+* URL detection and copy-to-clipboard
+* Long-press message copying
+* Mobile-friendly interaction model
+* Improved user experience
+* Additional translations
+* Continuous community-driven development
+
+---
+
+## 📸 Screenshots
+
+### Hub & Remote Nodes Card
+![MeshCore Hub Card](images/meshcore-hub-card-logo.png)
+![MeshCore Remote Nodes](images/meshcore-remote-nodes-card-logo.png)
+
+### Message Card
+![MeshCore Messages](images/message-card-screenshot.png)
+
+### Contacts Card
+![MeshCore Contacts](images/contact-card-screenshot.png)
+
+
+### Channel Card
+![MeshCore Channel](images/chanel-card-screenshot.png)
+
+
+## 🚀 What's New in Version 1.1.0
+
+### 💬 MeshCore Message Card
+
+A complete messaging interface for MeshCore networks directly inside Home Assistant.
+
+Features include:
+
+* Send messages to channels
+* Send messages to contacts
+* View recent message history
+* Automatic refresh after sending messages
+* Dynamic channel discovery
+* Dynamic contact discovery
+* Human-readable timestamps
+* Status indicators and notifications
+
+### 🔗 Smart Link Detection
+
+Messages are automatically scanned for URLs.
+
+* Automatic HTTP/HTTPS detection
+* Click links to copy URLs
+* Secure rendering
+* Visual copy confirmation
+
+### 📋 Advanced Copy Actions
+
+Designed for both mobile and desktop users.
+
+* Long press messages to copy content
+* Touch support
+* Mouse support
+* Clipboard fallback support
+* Instant visual feedback
+
+### 🎨 Improved User Experience
+
+* Color-coded sent and received messages
+* Responsive layout
+* Mobile-friendly interface
+* Manual refresh controls
+* Clean Home Assistant styling
 
 ---
 
 ## Requirements
 
-- **Home Assistant** 2023.x or later
-- **[MeshCore Integration](https://github.com/meshcore-dev/meshcore-ha)** — must be installed and configured. The cards read hub, node, and contact data directly from the devices and entities registered by this integration.
+* Home Assistant 2023.x or later
+* MeshCore Integration installed and configured
+
+The cards read hub, node, contact, and channel information directly from entities created by the MeshCore integration.
 
 ---
 
 ## Installation
 
-### HACS (recommended)
+### HACS (Recommended)
 
-1. Open **HACS** → **Frontend**
-2. Click the ⋮ menu → **Custom repositories**
-3. Add `https://github.com/jpettitt/meshcore-card` with category **Dashboard**
-4. Search for **MeshCore Card** and install it
-5. Reload your browser
+1. Open **HACS → Frontend**
 
-### Manual
+2. Select **Custom Repositories**
 
-1. Download `meshcore-card.js` from the latest [GitHub Release](https://github.com/jpettitt/meshcore-card/releases)
-2. Copy it to `config/www/meshcore-card.js`
-3. In Home Assistant go to **Settings → Dashboards → Resources** and add `/local/meshcore-card.js` as a JavaScript module
-4. Reload your browser
+3. Add:
+
+   https://github.com/dida886/meshcore-card
+
+4. Category:
+
+   Dashboard
+
+5. Install **MeshCore Card Enhanced**
+
+6. Reload your browser
 
 ---
 
-## Cards
+### Manual Installation
 
-This package provides three card types.
+1. Download the latest release:
 
-### `custom:meshcore-card` — Hub & Node Card
+   https://github.com/dida886/meshcore-card/releases
 
-Displays all MeshCore hubs and their remote nodes, automatically discovered from the HA device and entity registry.
+2. Copy:
+
+   meshcore-card.js
+
+   to:
+
+   config/www/
+
+3. Open:
+
+   Settings → Dashboards → Resources
+
+4. Add:
+
+   /local/meshcore-card.js
+
+   as a JavaScript Module.
+
+5. Reload your browser.
+
+---
+
+# Cards
+
+This package provides four card types.
+
+---
+
+## custom:meshcore-card
+
+### Hub & Node Card
+
+Displays all MeshCore hubs and their remote nodes automatically discovered from Home Assistant.
+
+### Features
+
+* Hub online/offline status
+* Hardware model
+* Firmware version
+* Node count
+* RF parameters
+* MQTT broker status
+* Hub location links
+* Remote node discovery
+* RSSI and SNR indicators
+* Battery and voltage display
+* Last seen timestamps
+* Repeater statistics
+* Optional sensor values
+* Drag-and-drop node ordering
+* Throttled rendering
+
+### Configuration
 
 ```yaml
 type: custom:meshcore-card
-```
 
-#### Features
-
-- **Hub status** — online/offline indicator, node count, hardware model, firmware version
-- **RF parameters** — frequency, bandwidth, spreading factor, TX power
-- **MQTT broker status** — per-broker connection pills (green = connected, red = disconnected)
-- **Hub location** — coordinates chip with a direct link to the [MeshCore Analyzer map](https://analyzer.letsmesh.net)
-- **Remote nodes** — automatically discovered:
-  - Online/offline status, RSSI and SNR badges, routing path, last seen time
-  - Battery percentage bar with voltage
-  - Location map link (resolved from the node's contact advertisement)
-  - **Repeater nodes**: TX/RX airtime bars, noise floor, uptime, TX/RX rate, relayed/canceled/duplicate traffic counts, sent/received totals
-  - Optional sensor readings: temperature, humidity, illuminance, pressure (configured per node)
-- **Drag-to-reorder** — drag nodes in the visual editor to set display order
-- **Throttled rendering** — updates at most once every 10 seconds
-
-#### Configuration
-
-All options are available through the visual editor or in YAML.
-
-```yaml
-type: custom:meshcore-card
 hubs:
-  55733c:                         # hub identified by public key prefix
-    enabled: true                 # show/hide this hub (default: true)
-    battery_entity: sensor.x      # override auto-detected battery % entity
-    voltage_entity: sensor.x      # override auto-detected voltage entity
+  55733c:
+    enabled: true
+    battery_entity: sensor.x
+    voltage_entity: sensor.x
+
 nodes:
-  MyNode:                         # node identified by name
-    enabled: true                 # show/hide this node (default: true)
-    battery_entity: sensor.x      # override auto-detected battery % entity
-    voltage_entity: sensor.x      # override auto-detected voltage entity
-    location_entity: sensor.x     # override location source (entity with latitude/longitude
-                                  # attributes, scoped to all meshcore entities)
-    temperature_entity: sensor.x  # temperature sensor to display (optional)
-    humidity_entity: sensor.x     # humidity sensor to display (optional)
-    illuminance_entity: sensor.x  # illuminance sensor to display (optional)
-    pressure_entity: sensor.x     # pressure sensor to display (optional)
-nodes_order:                      # display order for nodes (set via drag-and-drop in editor)
+  MyNode:
+    enabled: true
+    battery_entity: sensor.x
+    voltage_entity: sensor.x
+    location_entity: sensor.x
+    temperature_entity: sensor.x
+    humidity_entity: sensor.x
+    illuminance_entity: sensor.x
+    pressure_entity: sensor.x
+
+nodes_order:
   - MyNode
   - OtherNode
+
 grid_options:
-  rows: 4                         # fix card height to N dashboard grid rows;
-                                  # content that doesn't fit is hidden cleanly
+  rows: 4
 ```
 
-**Shorthand:** `true` / `false` can be used instead of a full object to simply show or hide:
+### Shorthand
 
 ```yaml
 hubs:
   55733c: true
   aabbcc: false
+
 nodes:
   JPP: true
   YubaMonitor: false
@@ -112,67 +244,164 @@ nodes:
 
 ---
 
-### `custom:meshcore-contact-card` — Contact Card
+## custom:meshcore-message-card
 
-Lists all `binary_sensor.meshcore_*_contact` entities sorted by most recently heard advertisement.
+### Message Card
+
+Send and receive MeshCore messages directly from Home Assistant.
+
+### Features
+
+* Send messages to channels
+* Send messages to contacts
+* View message history
+* Automatic refresh after sending
+* URL detection
+* URL copy support
+* Long-press message copy
+* Mobile and desktop support
+* Multi-language support
+* Status notifications
+* Manual refresh button
+* NEW: Default channel selection
+
+### Configuration
+The Message Card automatically discovers all available channels and contacts. You can optionally set a default channel to load automatically when the card starts.
 
 ```yaml
-type: custom:meshcore-contact-card
+type: custom:meshcore-message-card
+```
+Default Channel Configuration
+Specify a default channel using the default_channel parameter. This can be either:
+
+Numeric channel index (e.g., 0, 1, 2, ...)
+
+Channel name (e.g., "public", "private", ...)
+
+Examples:
+
+```yaml
+# Load channel 0 (public channel) by default
+type: custom:meshcore-message-card
+default_channel: 0
 ```
 
-#### Contact card features
-
-- **Contact list** — sorted by `last_advert` descending (most recently heard first)
-- **Per contact**: icon or entity picture, advertised name, node type badge, time since last heard, online/offline dot
-- **Location** — coordinates link to [MeshCore Analyzer map](https://analyzer.letsmesh.net) when lat/lon are present; shows "Unknown Location" when coordinates are 0,0
-- **Age filter** — contacts older than `max_contact_age_days` are hidden
-- **Grid-aware clipping** — when placed in a fixed-height grid cell, partially visible rows are hidden cleanly
-
-#### Contact card configuration
-
 ```yaml
-type: custom:meshcore-contact-card
-max_contact_age_days: 7           # hide contacts not heard within this many days (default: 7)
-grid_options:
-  rows: 4                         # fix card height to N dashboard grid rows
+# Load channel by name
+type: custom:meshcore-message-card
+default_channel: "public"
+```
+```yaml
+# Load channel 2 by index
+type: custom:meshcore-message-card
+default_channel: 2
+```
+Note: If the specified channel does not exist in the system, the card will show the default "Select channel" prompt. The user can always manually change the channel selection from the dropdown list.
+
+Example Dashboard Configuration
+```yaml
+views:
+  - title: MeshCore
+    cards:
+      - type: custom:meshcore-message-card
+        default_channel: 0
 ```
 
 ---
 
-### `custom:meshcore-channel-card` — Channel Card
+## custom:meshcore-contact-card
 
-Lists all active MeshCore message channels (`binary_sensor.meshcore_*_messages` entities) sorted by channel index.
+### Contact Card
+
+Displays discovered MeshCore contacts.
+
+### Features
+
+* Sort by most recent advertisement
+* Online/offline indicators
+* Contact icons and pictures
+* Location links
+* Age filtering
+* Grid-aware clipping
+
+### Configuration
 
 ```yaml
-type: custom:meshcore-channel-card
+type: custom:meshcore-contact-card
+
+max_contact_age_days: 7
+
+grid_options:
+  rows: 4
 ```
 
-#### Channel card features
+---
 
-- **Channel list** — sorted by channel index
-- **Per channel**: green dot when active, hub name, channel name
-- **Grid-aware clipping** — when placed in a fixed-height grid cell, partially visible rows are hidden cleanly
+## custom:meshcore-channel-card
 
-#### Channel card configuration
+### Channel Card
+
+Displays active MeshCore message channels.
+
+### Features
+
+* Channel list
+* Active status indicator
+* Hub association
+* Channel names
+* Grid-aware clipping
+
+### Configuration
 
 ```yaml
 type: custom:meshcore-channel-card
+
 grid_options:
-  rows: 4                         # fix card height to N dashboard grid rows
+  rows: 4
 ```
 
 ---
 
 ## Localization
 
-The cards are localized into **English**, **French**, **Dutch**, **German**, and **Polish**. The active Home Assistant language is used automatically.
+Supported languages:
 
-> **Note:** French, Dutch, German, and Polish translations are community- or machine-generated. If you spot an error or awkward phrasing, pull requests with corrections are very welcome!
+* English
+* French
+* Dutch
+* German
+* Polish
 
-To add a new language or correct an existing one, see [`src/translations/`](src/translations/) and [`scripts/translate.mjs`](scripts/translate.mjs).
+The active Home Assistant language is detected automatically.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+If you discover a bug, have a feature request, or would like to improve translations, please open an issue or submit a pull request.
 
 ---
 
 ## License
 
 MIT
+
+Copyright (c) 2026 John Pettitt
+
+Additional enhancements and Message Card functionality:
+
+Copyright (c) 2026 Damian Mainka
+
+---
+
+## Authors
+
+Original Project
+
+John Pettitt
+
+Enhanced Edition
+
+Damian Mainka

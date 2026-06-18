@@ -151,6 +151,13 @@ export interface CustomCardEntry {
   documentationURL?: string;
 }
 
+// ── Message card config types ─────────────────────────────────────────────────
+
+export interface MeshcoreMessageCardConfig {
+  type?: string;
+  default_channel?: string | number;
+}
+
 declare global {
   interface Window {
     customCards: CustomCardEntry[];
