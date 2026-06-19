@@ -2,7 +2,7 @@
   "card": {
     "section_hubs": "HUBS",
     "section_nodes": "AFSTANDS-NODES",
-    "section_contacts": "CONTACTEN",
+    "section_contacts": "GEVONDEN CONTACTEN",
     "hub_name": "Hub: {name}",
     "nodes_count": "◈ {n} Nodes",
     "empty_hubs": "Geen MeshCore-hubs gevonden.<br>Controleer of de MeshCore-integratie is geïnstalleerd.",
@@ -52,7 +52,22 @@
     "snr_fair": "matig",
     "snr_poor": "slecht",
     "neighbor_last_seen": "Laatst gezien",
-    "neighbor_contacts": "Verbindingen (48u)"
+    "neighbor_contacts": "Verbindingen (48u)",
+    "filter_state_label": "Status:",
+    "filter_type_label": "Type:",
+    "filter_all": "Alles",
+    "filter_discovered": "Ontdekt",
+    "filter_fresh": "Vers",
+    "filter_stale": "Oudbakken",
+    "filter_type_all": "Alles",
+    "filter_type_repeater": "Herhaler",
+    "filter_type_room": "Kamerbedieningspaneel",
+    "filter_type_sensor": "Sensor",
+    "filter_type_client": "Klant",
+    "add_contact": "Contactpersoon toevoegen",
+    "remove_contact": "Contact verwijderen",
+    "manual_placeholder": "Voer het prefix van de publieke sleutel in...",
+    "manual_add": "Contactpersoon toevoegen"
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -73,11 +88,14 @@
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximale contactleeftijd (dagen)",
     "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren.",
-    "node_order_label": "Weergavevolgorde nodes"
+    "node_order_label": "Weergavevolgorde nodes",
+    "contact_filter_label": "Standaardcontactfilter",
+    "node_type_filter_label": "Standaardfilter voor knooppunttypen"
   },
   "message-card": {
     "send_message": "MESHCORE-BERICHT VERSTUREN",
     "channel": "Kanaal",
+    "channel_option": "{name} (kanaal {idx})",
     "contact": "Contact",
     "select_channel": "Selecteer kanaal",
     "select_contact": "Selecteer contact",
