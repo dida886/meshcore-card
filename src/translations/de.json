@@ -2,7 +2,7 @@
   "card": {
     "section_hubs": "HUBS",
     "section_nodes": "ENTFERNTE KNOTEN",
-    "section_contacts": "KONTAKTE",
+    "section_contacts": "ENTDECKTE KONTAKTE",
     "hub_name": "Hub: {name}",
     "nodes_count": "◈ {n} Knoten",
     "empty_hubs": "Keine MeshCore-Hubs gefunden.<br>Prüfen Sie, ob die MeshCore-Integration installiert ist.",
@@ -52,7 +52,22 @@
     "snr_fair": "mäßig",
     "snr_poor": "schlecht",
     "neighbor_last_seen": "Zuletzt gesehen",
-    "neighbor_contacts": "Verbindungen (48h)"
+    "neighbor_contacts": "Verbindungen (48h)",
+    "filter_state_label": "Bundesstaat:",
+    "filter_type_label": "Typ:",
+    "filter_all": "Alle",
+    "filter_discovered": "Entdeckt",
+    "filter_fresh": "Frisch",
+    "filter_stale": "Abgelaufen",
+    "filter_type_all": "Alle",
+    "filter_type_repeater": "Repeater",
+    "filter_type_room": "Raumserver",
+    "filter_type_sensor": "Sensor",
+    "filter_type_client": "Kunde",
+    "add_contact": "Kontakt hinzufügen",
+    "remove_contact": "Kontakt entfernen",
+    "manual_placeholder": "Geben Sie das Präfix des öffentlichen Schlüssels ein...",
+    "manual_add": "Kontakt hinzufügen"
   },
   "time": {
     "s_ago": "vor {n}s",
@@ -73,11 +88,14 @@
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximales Kontakt-Alter (Tage)",
     "no_hubs_detected": "Noch keine MeshCore-Hubs erkannt. Fügen Sie die Karte hinzu und bearbeiten Sie sie anschließend zur Konfiguration.",
-    "node_order_label": "Anzeigereihenfolge der Knoten"
+    "node_order_label": "Anzeigereihenfolge der Knoten",
+    "contact_filter_label": "Standard-Kontaktfilter",
+    "node_type_filter_label": "Standardfilter für Knotentypen"
   },
   "message-card": {
     "send_message": "MESHCORE-NACHRICHT SENDEN",
     "channel": "Kanal",
+    "channel_option": "{name} (Kanal {idx})",
     "contact": "Kontakt",
     "select_channel": "Kanal wählen",
     "select_contact": "Kontakt wählen",

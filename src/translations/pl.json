@@ -2,7 +2,7 @@
   "card": {
     "section_hubs": "HUBY",
     "section_nodes": "WĘZŁY ZDALNE",
-    "section_contacts": "KONTAKTY",
+    "section_contacts": "ODKRYTE KONTAKTY",
     "hub_name": "Hub: {name}",
     "nodes_count": "◈ {n} Węzłów",
     "empty_hubs": "Nie znaleziono hubów MeshCore.<br>Sprawdź, czy integracja MeshCore jest zainstalowana.",
@@ -52,7 +52,22 @@
     "snr_fair": "średni",
     "snr_poor": "słaby",
     "neighbor_last_seen": "Ostatnio widziany",
-    "neighbor_contacts": "Połączenia (48h)"
+    "neighbor_contacts": "Połączenia (48h)",
+    "filter_state_label": "Stan:",
+    "filter_type_label": "Typ:",
+    "filter_all": "Wszystkie",
+    "filter_discovered": "Odkryto",
+    "filter_fresh": "Świeże",
+    "filter_stale": "Nieaktualne",
+    "filter_type_all": "Wszystkie",
+    "filter_type_repeater": "Przekaźnik",
+    "filter_type_room": "Serwer pokojowy",
+    "filter_type_sensor": "Czujnik",
+    "filter_type_client": "Klient",
+    "add_contact": "Dodaj kontakt",
+    "remove_contact": "Usuń kontakt",
+    "manual_placeholder": "Wprowadź prefiks klucza publicznego...",
+    "manual_add": "Dodaj kontakt"
   },
   "time": {
     "s_ago": "{n} s temu",
@@ -73,11 +88,14 @@
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maksymalny wiek kontaktu (dni)",
     "no_hubs_detected": "Nie wykryto jeszcze żadnych hubów MeshCore. Dodaj kartę, a następnie edytuj, aby skonfigurować.",
-    "node_order_label": "Kolejność wyświetlania węzłów"
+    "node_order_label": "Kolejność wyświetlania węzłów",
+    "contact_filter_label": "Domyślny filtr kontaktów",
+    "node_type_filter_label": "Domyślny filtr typu węzła"
   },
   "message-card": {
     "send_message": "WYŚLIJ WIADOMOŚĆ MESHCORE",
     "channel": "Kanał",
+    "channel_option": "{name} (channel {idx})",
     "contact": "Kontakt",
     "select_channel": "Wybierz kanał",
     "select_contact": "Wybierz kontakt",

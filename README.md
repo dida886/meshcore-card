@@ -313,27 +313,60 @@ views:
 
 ### Contact Card
 
-Displays discovered MeshCore contacts.
+Displays discovered MeshCore contacts with advanced filtering and contact management capabilities.
+
+### ✨ New in v1.1.1
+
+* **State filtering** – filter contacts by their current state:
+  - `all` – show all contacts
+  - `discovered` – show only discovered devices (not added to your node)
+  - `fresh` – show only active contacts (seen within last 12 hours)
+  - `stale` – show only inactive contacts (not seen for over 12 hours)
+
+* **Type filtering** – filter contacts by device type:
+  - `all` – show all types
+  - `repeater` – show only repeaters
+  - `room` – show only room servers
+  - `sensor` – show only sensors
+  - `client` – show only client devices
+
+* **Quick contact management** – add or remove contacts directly from the card:
+  - Green `+` button appears next to discovered contacts – click to add to your node
+  - Red `-` button appears next to fresh/stale contacts – click to remove from your node
+  - Instant visual feedback – button toggles immediately after clicking
+  - Auto-refresh – list updates automatically after successful operation
 
 ### Features
 
 * Sort by most recent advertisement
-* Online/offline indicators
+* Online/offline indicators with glow animation
 * Contact icons and pictures
-* Location links
-* Age filtering
-* Grid-aware clipping
+* Location links to map view
+* Age filtering (max_contact_age_days)
+* Grid-aware clipping for dashboard layouts
+* Instant add/remove contacts with visual feedback
+* State and type filtering with dropdown selectors
+* Human-readable timestamps (seconds, minutes, hours, days ago)
 
 ### Configuration
 
 ```yaml
 type: custom:meshcore-contact-card
 
+# Maximum age of contacts to display (default: 7 days)
 max_contact_age_days: 7
 
+# Filter by contact state (default: all)
+contact_filter: all
+
+# Filter by device type (default: all)
+node_type_filter: all
+
+# Grid layout options
 grid_options:
   rows: 4
 ```
+
 
 ---
 

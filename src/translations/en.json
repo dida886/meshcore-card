@@ -2,7 +2,7 @@
   "card": {
     "section_hubs": "HUBS",
     "section_nodes": "REMOTE NODES",
-    "section_contacts": "CONTACTS",
+    "section_contacts": "DISCOVERED CONTACTS",
     "hub_name": "Hub: {name}",
     "nodes_count": "◈ {n} Nodes",
     "empty_hubs": "No MeshCore hubs found.<br>Check the MeshCore integration is installed.",
@@ -52,7 +52,23 @@
     "snr_fair": "fair",
     "snr_poor": "poor",
     "neighbor_last_seen": "Last seen",
-    "neighbor_contacts": "Connections (48h)"
+    "neighbor_contacts": "Connections (48h)",
+    "filter_state_label": "State:",
+    "filter_type_label": "Type:",
+    "filter_all": "All",
+    "filter_discovered": "Discovered",
+    "filter_fresh": "Fresh",
+    "filter_stale": "Stale",
+    "filter_type_all": "All",
+    "filter_type_repeater": "Repeater",
+    "filter_type_room": "Room Server",
+    "filter_type_sensor": "Sensor",
+    "filter_type_client": "Client",
+    "add_contact": "Add contact",
+    "remove_contact": "Remove contact",
+    "manual_placeholder": "Enter pubkey prefix...",
+    "manual_add": "Add Contact"
+                        
   },
   "time": {
     "s_ago": "{n}s ago",
@@ -73,11 +89,14 @@
     "hub_section_title": "Hub: {name} ({key})",
     "max_contact_age": "Maximum contact age (days)",
     "no_hubs_detected": "No MeshCore hubs detected yet. Add the card, then edit to configure.",
-    "node_order_label": "Node Display Order"
+    "node_order_label": "Node Display Order",
+    "contact_filter_label": "Default contact filter",
+    "node_type_filter_label": "Default node type filter"     
   },
   "message-card": {
     "send_message": "SEND MESHCORE MESSAGE",
     "channel": "Channel",
+    "channel_option": "{name} (channel {idx})",
     "contact": "Contact",
     "select_channel": "Select channel",
     "select_contact": "Select contact",

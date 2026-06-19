@@ -26,7 +26,7 @@ if (!window.customCards.find((c) => c.type === "meshcore-card")) {
     name: "MeshCore Card",
     description: "Displays node statistics from the MeshCore integration",
     preview: true,
-    documentationURL: "https://github.com/jpettitt/meshcore-card",
+    documentationURL: "https://github.com/dida886/meshcore-card",
   });
 }
 if (!window.customCards.find((c) => c.type === "meshcore-contact-card")) {
@@ -35,7 +35,7 @@ if (!window.customCards.find((c) => c.type === "meshcore-contact-card")) {
     name: "MeshCore Contact Card",
     description: "Lists all MeshCore contact nodes sorted by most recently heard",
     preview: true,
-    documentationURL: "https://github.com/jpettitt/meshcore-card",
+    documentationURL: "https://github.com/dida886/meshcore-card",
   });
 }
 
@@ -51,7 +51,7 @@ if (!window.customCards.find((c) => c.type === "meshcore-channel-card")) {
     name: "MeshCore Channel Card",
     description: "Shows active MeshCore channels by hub",
     preview: true,
-    documentationURL: "https://github.com/jpettitt/meshcore-card",
+    documentationURL: "https://github.com/dida886/meshcore-card",
   });
 }
 
@@ -67,6 +67,6 @@ if (!window.customCards.find((c) => c.type === "meshcore-message-card")) {
     name: "MeshCore Message Card",
     description: "Send and receive MeshCore messages (channel/direct)",
     preview: true,
-    documentationURL: "https://github.com/jpettitt/meshcore-card",
+    documentationURL: "https://github.com/dida886/meshcore-card",
   });
 }

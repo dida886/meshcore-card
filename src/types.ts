@@ -66,6 +66,8 @@ export interface MeshcoreCardConfig {
 
 export interface MeshcoreContactCardConfig {
   type?: string;
+  contact_filter?: "all" | "discovered" | "fresh" | "stale";
+  node_type_filter?: "all" | "repeater" | "room" | "sensor" | "client";
   max_contact_age_days?: number;
   grid_options?: GridOptions;
 }
