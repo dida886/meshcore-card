@@ -1,6 +1,6 @@
 ![MeshCore Logo](images/logo.png)
 
-# MeshCore Card Enhanced v1.1.1 !
+# MeshCore Card Enhanced!
 
 Advanced Home Assistant Lovelace cards for the MeshCore mesh radio network, including full messaging support.
 
@@ -315,7 +315,7 @@ views:
 
 Displays discovered MeshCore contacts with advanced filtering and contact management capabilities.
 
-### ✨ New in v1.1.1
+### ✨ New in v1.1.2
 
 * **State filtering** – filter contacts by their current state:
   - `all` – show all contacts

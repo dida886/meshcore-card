@@ -430,11 +430,22 @@ export class MeshcoreMessageCard extends HTMLElement {
   // ---------- Linkify ----------
   private _linkify(text: string): string {
     if (!text) return "";
-    const escaped = escapeHtml(text);
+    let escaped = escapeHtml(text);
+    
+    // URL detection - convert to clickable links
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return escaped.replace(urlRegex, (url) => {
+    escaped = escaped.replace(urlRegex, (url) => {
       return `<a class="message-link" data-url="${escapeHtml(url)}" href="#">${escapeHtml(url)}</a>`;
     });
+    
+    // Mention detection - highlight @[name] without the @ symbol
+    const mentionRegex = /@\[([^\]]+)\]/g;
+    escaped = escaped.replace(mentionRegex, (match, name) => {
+      const cleanName = name.trim();
+      return `<span class="mention">${escapeHtml(cleanName)}</span>`;
+    });
+    
+    return escaped;
   }
 
   private _setupLinkListeners(): void {

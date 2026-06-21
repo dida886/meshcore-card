@@ -174,6 +174,7 @@ export const MESSAGE_STYLES: string = `
     background: rgba(128, 128, 128, 0.15);
     transform: rotate(15deg);
   }
+
   .message-link {
     color: var(--primary-color, #03a9f4);
     cursor: pointer;
@@ -187,6 +188,17 @@ export const MESSAGE_STYLES: string = `
   .message-link:active {
     opacity: 0.7;
   }
+
+  /* ---------- Mention highlight ---------- */
+  .mention {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    padding: 1px 6px;
+    border-radius: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
   .messages-list {
     max-height: 300px;
     overflow-y: auto;

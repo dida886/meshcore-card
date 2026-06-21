@@ -365,8 +365,21 @@ export const STYLES: string = `
   /* Signal row */
   .signal-row {
     display: flex;
-    gap: 20px;
+    justify-content: space-between;
+    align-items: center;
     margin: 12px 0 8px;
+    gap: 20px;
+  }
+  .signal-left {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .signal-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
   }
   .signal-item {
     display: flex;

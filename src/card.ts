@@ -44,7 +44,7 @@ export class MeshcoreCard extends HTMLElement {
 
   setConfig(config: MeshcoreCardConfig): void {
     this._config = config;
-    this._fp = null; // force re-render on config change
+    this._fp = null;
     this._render();
   }
 
@@ -250,7 +250,6 @@ export class MeshcoreCard extends HTMLElement {
         if (lastSeenTimestamp && (!existingLastSeen || lastSeenTimestamp < existingLastSeen)) {
           existing.lastSeen = lastSeenTimestamp;
         }
-        
         if (val !== null && val !== 'unknown' && val !== 'unavailable') {
           const numVal = parseFloat(val);
           if (!isNaN(numVal)) {
@@ -275,7 +274,6 @@ export class MeshcoreCard extends HTMLElement {
           contactEntityId = entityId;
           break;
         }
-        
         if (entityId.includes(neighborId)) {
           neighborName = state.attributes["adv_name"] || neighborName;
           contactEntityId = entityId;
@@ -326,22 +324,11 @@ export class MeshcoreCard extends HTMLElement {
     if (!timestamp) return '?';
     const now = Math.floor(Date.now() / 1000);
     const diff = now - timestamp;
-    
     if (diff < 0) return '?';
-    if (diff < 60) {
-      const seconds = Math.floor(diff);
-      return `${seconds}s`;
-    }
-    if (diff < 3600) {
-      const minutes = Math.floor(diff / 60);
-      return `${minutes}m`;
-    }
-    if (diff < 86400) {
-      const hours = Math.ceil(diff / 3600);
-      return `${hours}h`;
-    }
-    const days = Math.floor(diff / 86400);
-    return `${days}d`;
+    if (diff < 60) return `${Math.floor(diff)}s`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    if (diff < 86400) return `${Math.ceil(diff / 3600)}h`;
+    return `${Math.floor(diff / 86400)}d`;
   }
 
   // ── Hub rendering ──────────────────────────────────────────────────────────
@@ -512,6 +499,10 @@ export class MeshcoreCard extends HTMLElement {
     const txRateId    = [p("tx_per_minute"), p("tx_rate"), p("messages_per_minute")].find((id) => this._exists(id)) ?? null;
     const rxRateId    = [p("rx_per_minute"), p("rx_rate")].find((id) => this._exists(id)) ?? null;
 
+    // Temperature for repeaters (ch1_temperature or temperature)
+    const tempId = p("ch1_temperature") ?? p("temperature");
+    const tempVal = tempId ? this._val(tempId) : null;
+
     const status  = this._val(statusId);
     const rssi    = this._val(rssiId);
     const snr     = this._val(snrId);
@@ -590,11 +581,20 @@ export class MeshcoreCard extends HTMLElement {
 
     // Clean display name: remove leading "MeshCore " or "MeshCore"
     let displayName = name.replace(/_/g, " ");
+
+    // Remove "MeshCore " or "MeshCore" prefix
     if (displayName.toLowerCase().startsWith("meshcore ")) {
       displayName = displayName.substring(9);
     } else if (displayName.toLowerCase().startsWith("meshcore")) {
       displayName = displayName.substring(8);
     }
+
+    // Remove prefix before colon (e.g., "Repeater: ", "Sensor: ", "Client: ")
+    const colonIndex = displayName.indexOf(": ");
+    if (colonIndex !== -1 && colonIndex < 20) {
+      displayName = displayName.substring(colonIndex + 2);
+    }
+
     return `
       <div class="node-block ${online ? "" : "node-offline"}">
         <div class="node-header">
@@ -618,15 +618,23 @@ export class MeshcoreCard extends HTMLElement {
 
         ${route && !["unknown", "unavailable"].includes(route) ? `<div class="node-route">↝ ${escapeHtml(route)}</div>` : ""}
 
-        <!-- RSSI / SNR row -->
-        ${(rssi !== null || snr !== null) ? `
+        <!-- RSSI / SNR / Temperature row -->
+        ${(rssi !== null || snr !== null || tempVal !== null) ? `
           <div class="signal-row">
-            ${rssi !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.rssi_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(rssiId)}">${escapeHtml(rssi)} dBm</span></div>` : ""}
-            ${snr !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.snr_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(snrId)}">${escapeHtml(snr)} dB</span></div>` : ""}
+            <div class="signal-left">
+              ${rssi !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.rssi_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(rssiId)}">${escapeHtml(rssi)} dBm</span></div>` : ""}
+              ${snr !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.snr_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(snrId)}">${escapeHtml(snr)} dB</span></div>` : ""}
+            </div>
+            ${tempVal !== null ? `
+              <div class="signal-right">
+                <div class="signal-item">
+                  <span class="signal-label">🌡️</span>
+                  <span class="signal-value clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>
+                </div>
+              </div>` : ""}
           </div>` : ""}
 
         <!-- Battery -->
-        
         ${battPct !== null && Number(battPct) !== 0 ? `
           <div class="bar-row">
             <span class="bar-label">${escapeHtml(t("card.battery_label"))}</span>
@@ -684,12 +692,12 @@ export class MeshcoreCard extends HTMLElement {
 
         <!-- Telemetry (sensors) -->
         ${(() => {
-          const tempId  = nodeCfg.temperature_entity ?? null;
+          const tempIdTele = nodeCfg.temperature_entity ?? null;
           const humidId = nodeCfg.humidity_entity    ?? null;
           const illumId = nodeCfg.illuminance_entity ?? null;
           const pressId = nodeCfg.pressure_entity    ?? null;
           const teleCells = [
-            { label: t("card.telemetry_temp"),     id: tempId,  unit: "°C" },
+            { label: t("card.telemetry_temp"),     id: tempIdTele,  unit: "°C" },
             { label: t("card.telemetry_humidity"), id: humidId, unit: "%" },
             { label: t("card.telemetry_lux"),      id: illumId, unit: " lx" },
             { label: t("card.telemetry_pressure"), id: pressId, unit: " hPa" },

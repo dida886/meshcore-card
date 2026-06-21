@@ -141,6 +141,24 @@ const CONTACT_STYLES: string = `
     opacity: 0.5;
   }
 
+  /* ---------- Section label (with counter) ---------- */
+  .section-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--secondary-text-color);
+    padding: 8px 0 4px 0;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    margin-bottom: 8px;
+  }
+  .contact-count {
+    font-weight: 400;
+    color: var(--secondary-text-color);
+    opacity: 0.7;
+  }
+
   /* ---------- Filter (select) ---------- */
   .filter-bar {
     display: flex;
@@ -173,6 +191,38 @@ const CONTACT_STYLES: string = `
   .filter-bar select:hover,
   .filter-bar select:focus {
     border-color: var(--primary-color);
+  }
+
+  /* ---------- Filter buttons (Added / Not Added) ---------- */
+  .filter-btn-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .filter-btn {
+    padding: 4px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    background: transparent;
+    color: var(--secondary-text-color);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .filter-btn:hover {
+    background: rgba(128, 128, 128, 0.1);
+  }
+  .filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  .filter-divider {
+    color: var(--secondary-text-color);
+    opacity: 0.3;
+    font-size: 12px;
+    padding: 0 2px;
   }
 
   .action-btn {
@@ -236,6 +286,7 @@ export class MeshcoreContactCard extends HTMLElement {
   private _trimTimer: ReturnType<typeof requestAnimationFrame> | null = null;
   private _currentStateFilter: "all" | "discovered" | "fresh" | "stale" = "all";
   private _currentTypeFilter: "all" | "repeater" | "room" | "sensor" | "client" = "all";
+  private _currentAddedFilter: "all" | "added" | "not_added" = "all";
 
   // Dictionary for preserving online state during operations
   private _pendingStateUpdates: Record<string, { online: boolean; timestamp: number }> = {};
@@ -246,6 +297,7 @@ export class MeshcoreContactCard extends HTMLElement {
     this.shadowRoot!.addEventListener("click", (e: Event) => {
       const target = e.target as HTMLElement;
       if (target.closest(".action-btn")) return;
+      if (target.closest(".filter-btn")) return;
 
       const el = target.closest("[data-entity]") as HTMLElement | null;
       if (el?.dataset["entity"]) {
@@ -262,6 +314,7 @@ export class MeshcoreContactCard extends HTMLElement {
     this._config = config;
     this._currentStateFilter = config.contact_filter || "all";
     this._currentTypeFilter = config.node_type_filter || "all";
+    this._currentAddedFilter = "all";
     this._fp = null;
     this._render();
   }
@@ -314,6 +367,7 @@ export class MeshcoreContactCard extends HTMLElement {
     const cutoff = Date.now() / 1000 - maxAgeDays * 86400;
     const stateFilter = this._currentStateFilter;
     const typeFilter = this._currentTypeFilter;
+    const addedFilter = this._currentAddedFilter;
 
     return Object.entries(this._hass.states)
       .filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id))
@@ -379,6 +433,11 @@ export class MeshcoreContactCard extends HTMLElement {
         if ((!c.advName || c.advName === c.entityId) && c.contactState !== "discovered") {
           return false;
         }
+
+        // Added filter: "added" = fresh + stale, "not_added" = discovered
+        if (addedFilter === "added" && c.contactState === "discovered") return false;
+        if (addedFilter === "not_added" && c.contactState !== "discovered") return false;
+
         if (stateFilter !== "all" && c.contactState !== stateFilter) return false;
         if (typeFilter !== "all" && c.nodeType !== typeFilter) return false;
         return true;
@@ -498,6 +557,13 @@ export class MeshcoreContactCard extends HTMLElement {
             `).join("")}
           </select>
         </label>
+        <div class="filter-btn-group">
+          <button class="filter-btn ${this._currentAddedFilter === "all" ? "active" : ""}" data-filter="all">${t("card.filter_added_all")}</button>
+          <span class="filter-divider">|</span>
+          <button class="filter-btn ${this._currentAddedFilter === "added" ? "active" : ""}" data-filter="added">${t("card.filter_added_added")}</button>
+          <span class="filter-divider">|</span>
+          <button class="filter-btn ${this._currentAddedFilter === "not_added" ? "active" : ""}" data-filter="not_added">${t("card.filter_added_not_added")}</button>
+        </div>
       </div>
     `;
 
@@ -506,7 +572,10 @@ export class MeshcoreContactCard extends HTMLElement {
       body += `<div class="empty">${t("card.empty_contacts")}</div>`;
     } else {
       body +=
-        `<div class="section-label">${t("card.section_contacts")}</div>` +
+        `<div class="section-label">` +
+          `<span>${t("card.section_contacts")}</span>` +
+          `<span class="contact-count">(${contacts.length})</span>` +
+        `</div>` +
         `<div class="contact-list">${contacts.map((c) => this._renderRow(c, t)).join("")}</div>`;
     }
 
@@ -533,6 +602,21 @@ export class MeshcoreContactCard extends HTMLElement {
           this._currentTypeFilter = newFilter;
           this._render();
         }
+      });
+    }
+
+    // Event listener for added filter buttons
+    const filterButtons = this.shadowRoot?.querySelectorAll(".filter-btn");
+    if (filterButtons) {
+      filterButtons.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const target = e.target as HTMLButtonElement;
+          const filter = target.dataset["filter"] as "all" | "added" | "not_added";
+          if (filter && filter !== this._currentAddedFilter) {
+            this._currentAddedFilter = filter;
+            this._render();
+          }
+        });
       });
     }
 
