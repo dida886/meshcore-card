@@ -97,28 +97,7 @@ const CONTACT_STYLES: string = `
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-  }
-
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    transition: box-shadow 0.3s ease;
-  }
-  .dot-online {
-    background: var(--mesh-green);
-    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-    animation: contact-pulse-glow 2s ease-in-out infinite;
-  }
-  .dot-offline {
-    background: var(--secondary-text-color);
-    opacity: 0.4;
-  }
-
-  @keyframes contact-pulse-glow {
-    0%, 100% { box-shadow: 0 0 4px rgba(74, 222, 128, 0.4); }
-    50% { box-shadow: 0 0 12px rgba(74, 222, 128, 0.8); }
+    margin-left: auto; /* przycisk zawsze po prawej */
   }
 
   .type-badge {
@@ -222,6 +201,78 @@ const CONTACT_STYLES: string = `
     padding: 30px 0;
     color: var(--secondary-text-color);
     font-size: 14px;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 500px) {
+    .contact-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+
+    .contact-icon {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+    }
+    .contact-icon ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .contact-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .contact-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .contact-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+      font-size: 10px;
+    }
+    .contact-meta span,
+    .contact-meta a {
+      font-size: 10px;
+    }
+
+    .type-badge {
+      font-size: 9px;
+      padding: 1px 10px;
+      display: inline-block;
+      text-align: center;
+      margin: 0;
+    }
+
+    .action-btn {
+      padding: 2px;
+    }
+    .action-btn ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    .contact-right {
+      margin-left: 0;
+    }
   }
 `;
 
@@ -400,7 +451,16 @@ export class MeshcoreContactCard extends HTMLElement {
         }
 
         if (stateFilter !== "all" && c.contactState !== stateFilter) return false;
-        if (typeFilter !== "all" && c.nodeType !== typeFilter) return false;
+        if (typeFilter !== "all") {
+        let matches = false;
+        if (typeFilter === "room") {
+          // "room" filter should also match "room server"
+          matches = c.nodeType === "room" || c.nodeType === "room server";
+        } else {
+          matches = c.nodeType === typeFilter;
+        }
+        if (!matches) return false;
+      }
         return true;
       })
       .sort((a, b) => b.lastAdvert - a.lastAdvert);
@@ -412,11 +472,6 @@ export class MeshcoreContactCard extends HTMLElement {
       ? `https://analyzer.letsmesh.net/map?lat=${c.lat.toFixed(5)}&long=${c.lon!.toFixed(5)}&zoom=10`
       : null;
 
-    // entity_picture URLs and icon names come from HA contact attributes,
-    // which the meshcore integration sources unsanitized from the mesh.
-    // Reject anything that isn't a same-origin / http(s) image URL or a
-    // simple mdi-style icon name to avoid javascript:/data: schemes and
-    // attribute breakout via quotes.
     const safePicture = c.picture && /^(?:https?:\/\/|\/)/i.test(c.picture) ? c.picture : null;
     const safeIcon = /^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(c.icon) ? c.icon : "mdi:account";
 
@@ -451,7 +506,6 @@ export class MeshcoreContactCard extends HTMLElement {
         <div class="contact-info">
           <div class="contact-header">
             <span class="contact-name">${escapeHtml(c.advName)}</span>
-            ${typeBadge}
           </div>
           <div class="contact-meta">
             ${c.timeSince ? `<span>${escapeHtml(c.timeSince)}</span>` : ""}
@@ -459,7 +513,7 @@ export class MeshcoreContactCard extends HTMLElement {
           </div>
         </div>
         <div class="contact-right">
-          <span class="status-dot ${c.online ? "dot-online" : "dot-offline"}"></span>
+          ${typeBadge}
           ${actionButton}
         </div>
       </div>
