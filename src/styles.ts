@@ -31,10 +31,12 @@ export const STYLES: string = `
     margin: 4px 0 6px; 
     letter-spacing: -0.01em;
   }
+
+  /* ===== ZMIANA: Hub name – teraz taki sam jak node-name ===== */
   .hub-name {
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: -0.01em;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   
   .count-badge {
@@ -242,7 +244,7 @@ export const STYLES: string = `
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--secondary-text-color);
-    margin: 14px 0 8px 0;
+    margin: 8px 0 8px 0;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--glass-border);
     opacity: 0.7;
@@ -367,19 +369,42 @@ export const STYLES: string = `
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 12px 0 8px;
+    margin: 8px 0 6px;
+    padding: 8px 12px;
+    background: rgba(128, 128, 128, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(128, 128, 128, 0.06);
     gap: 20px;
+    flex-wrap: wrap;
   }
+
   .signal-left {
     display: flex;
     gap: 20px;
     align-items: center;
     flex-wrap: wrap;
   }
+
   .signal-right {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+  }
+
+  /* ===== RESPONSYWNOŚĆ DLA TELEFONÓW ===== */
+  @media (max-width: 500px) {
+    .signal-row {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .signal-left {
+      justify-content: center;
+      gap: 16px;
+    }
+    .signal-right {
+      flex-shrink: 1;
+    }
   }
   .signal-item {
     display: flex;
@@ -398,7 +423,7 @@ export const STYLES: string = `
     font-size: 14px;
   }
 
-  /* Traffic grid */
+  /* Traffic grid - kolory dla wartości */
   .traffic-grid {
     display: flex;
     justify-content: center;
@@ -431,6 +456,10 @@ export const STYLES: string = `
   .traffic-value {
     font-weight: 800;
     font-size: 14px;
+    color: var(--mesh-blue);
+  }
+  .traffic-item:first-child .traffic-value {
+    color: var(--mesh-green);
   }
 
   /* Advanced chips */
@@ -444,13 +473,14 @@ export const STYLES: string = `
   .advanced-chip {
     font-size: 10px;
     padding: 4px 12px;
-    background: transparent;
+    background: rgba(128, 128, 128, 0.03);
     border-radius: 20px;
     color: var(--secondary-text-color);
     border: 1px solid var(--glass-border);
     transition: all 0.2s ease;
   }
   .advanced-chip:hover {
+    background: rgba(128, 128, 128, 0.08);
     transform: translateY(-1px);
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
@@ -507,7 +537,6 @@ export const STYLES: string = `
   .neighbors-section {
     margin-top: 8px;
     padding-top: 4px;
-  
   }
 
   .neighbors-header {
@@ -629,15 +658,20 @@ export const STYLES: string = `
     gap: 8px;
     margin-top: 6px;
     margin-bottom: 6px;
-    justify-content: flex-start;
     text-align: left;
   }
-
   .node-title-row .hub-name,
-  .node-title-row .node-name {
-    font-size: 0.95rem;
-    font-weight: 600;
+  .node-title-row .node-key {
+    display: inline-flex;
+    align-items: center;
   }
+  .node-title-row .prefix {
+    margin-left: auto;
+    font-size: var(--paper-font-caption_-_font-size, 11px);
+    opacity: 0.6;
+    font-family: var(--paper-font-code1_-_font-family, monospace);
+  }
+
   /* Szare, neutralne tło – bez niebieskiego odcienia */
   .node-block {
     background: rgba(128, 128, 128, 0.05);
@@ -645,7 +679,6 @@ export const STYLES: string = `
     border: 1px solid rgba(128, 128, 128, 0.12);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   }
-
   .node-block:hover {
     background: rgba(128, 128, 128, 0.08);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
@@ -671,18 +704,16 @@ export const STYLES: string = `
     background: rgba(128, 128, 128, 0.07);
   }
 
-  /* Dla paska baterii – delikatnie szary */
   .bar-track {
     background: rgba(128, 128, 128, 0.15);
   }
 
-  /* Dla sekcji nagłówków – bez zmian */
   .section-header,
   .neighbors-header {
     border-bottom-color: rgba(128, 128, 128, 0.2);
   }
 
-  /* Dark theme - tylko delikatne dostosowanie kolorów */
+  /* Dark theme */
   @media (prefers-color-scheme: dark) {
     :host {
       --glass-border: rgba(255, 255, 255, 0.1);

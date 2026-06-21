@@ -67,7 +67,8 @@
     "add_contact": "Kontakt hinzufügen",
     "remove_contact": "Kontakt entfernen",
     "manual_placeholder": "Geben Sie das Präfix des öffentlichen Schlüssels ein...",
-    "manual_add": "Kontakt hinzufügen"
+    "manual_add": "Kontakt hinzufügen",
+    "last_message_delivery": "Letzte Lieferung"
   },
   "time": {
     "s_ago": "vor {n}s",
@@ -90,7 +91,13 @@
     "no_hubs_detected": "Noch keine MeshCore-Hubs erkannt. Fügen Sie die Karte hinzu und bearbeiten Sie sie anschließend zur Konfiguration.",
     "node_order_label": "Anzeigereihenfolge der Knoten",
     "contact_filter_label": "Standard-Kontaktfilter",
-    "node_type_filter_label": "Standardfilter für Knotentypen"
+    "node_type_filter_label": "Standardfilter für Knotentypen",
+    "show_hub_technical": "Technischen Abschnitt anzeigen",
+    "show_hub_signal": "Abschnitt „Signal“ anzeigen",
+    "show_hub_traffic": "Abschnitt „Verkehr“ anzeigen",
+    "show_hub_advanced": "Erweiterte Statistiken anzeigen",
+    "show_hub_location": "Abschnitt „Standort anzeigen“",
+    "show_hub_mqtt": "MQTT-Abschnitt anzeigen"
   },
   "message-card": {
     "send_message": "MESHCORE-NACHRICHT SENDEN",

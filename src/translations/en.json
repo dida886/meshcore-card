@@ -67,7 +67,8 @@
     "add_contact": "Add contact",
     "remove_contact": "Remove contact",
     "manual_placeholder": "Enter pubkey prefix...",
-    "manual_add": "Add Contact"
+    "manual_add": "Add Contact",
+    "last_message_delivery": "Last delivery"
                         
   },
   "time": {
@@ -78,6 +79,12 @@
   },
   "editor": {
     "show_this_hub": "Show this hub",
+    "show_hub_technical": "Show Technical section",
+    "show_hub_signal": "Show Signal section",
+    "show_hub_traffic": "Show Traffic section",
+    "show_hub_advanced": "Show Advanced stats",
+    "show_hub_location": "Show Location section",
+    "show_hub_mqtt": "Show MQTT section",
     "show_this_node": "Show this node",
     "battery_entity": "Battery % entity (blank = auto-detect)",
     "voltage_entity": "Voltage entity (blank = auto-detect)",

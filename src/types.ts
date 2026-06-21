@@ -62,6 +62,12 @@ export interface MeshcoreCardConfig {
   nodes?: Record<string, NodeConfig | boolean>;
   nodes_order?: string[];
   grid_options?: GridOptions;
+  show_hub_technical?: boolean;
+  show_hub_signal?: boolean;    
+  show_hub_traffic?: boolean;     
+  show_hub_advanced?: boolean;    
+  show_hub_location?: boolean;    
+  show_hub_mqtt?: boolean;     
 }
 
 export interface MeshcoreContactCardConfig {

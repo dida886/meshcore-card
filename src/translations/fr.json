@@ -67,7 +67,8 @@
     "add_contact": "Ajouter un contact",
     "remove_contact": "Supprimer le contact",
     "manual_placeholder": "Entrez le préfixe de la clé publique...",
-    "manual_add": "Ajouter un contact"    
+    "manual_add": "Ajouter un contact",
+    "last_message_delivery": "Dernière livraison"
   },
   "time": {
     "s_ago": "il y a {n}s",
@@ -90,7 +91,13 @@
     "no_hubs_detected": "Aucun hub MeshCore détecté pour l'instant. Ajoutez la carte, puis éditez-la pour la configurer.",
     "node_order_label": "Ordre d'affichage des nœuds",
     "contact_filter_label": "Filtre de contacts par défaut",
-    "node_type_filter_label": "Filtre de type de nœud par défaut"
+    "node_type_filter_label": "Filtre de type de nœud par défaut",
+    "show_hub_technical": "Afficher la section « Technique »",
+    "show_hub_signal": "Afficher la section « Signal »",
+    "show_hub_traffic": "Afficher la rubrique « Circulation »",
+    "show_hub_advanced": "Afficher les statistiques avancées",
+    "show_hub_location": "Afficher la section « Emplacement »",
+    "show_hub_mqtt": "Afficher la section MQTT"
   },
   "message-card": {
     "send_message": "ENVOYER UN MESSAGE MESHCORE",

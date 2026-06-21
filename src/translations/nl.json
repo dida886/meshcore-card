@@ -67,7 +67,8 @@
     "add_contact": "Contactpersoon toevoegen",
     "remove_contact": "Contact verwijderen",
     "manual_placeholder": "Voer het prefix van de publieke sleutel in...",
-    "manual_add": "Contactpersoon toevoegen"
+    "manual_add": "Contactpersoon toevoegen",
+    "last_message_delivery": "Laatste levering"
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -90,7 +91,13 @@
     "no_hubs_detected": "Nog geen MeshCore-hubs gedetecteerd. Voeg de kaart toe en bewerk deze om te configureren.",
     "node_order_label": "Weergavevolgorde nodes",
     "contact_filter_label": "Standaardcontactfilter",
-    "node_type_filter_label": "Standaardfilter voor knooppunttypen"
+    "node_type_filter_label": "Standaardfilter voor knooppunttypen",
+    "show_hub_technical": "Technisch gedeelte weergeven",
+    "show_hub_signal": "Sectie ‘Signaal’ weergeven",
+    "show_hub_traffic": "Het gedeelte ‘Verkeer’ weergeven",
+    "show_hub_advanced": "Geavanceerde statistieken weergeven",
+    "show_hub_location": "Het gedeelte ‘Locatie’ weergeven",
+    "show_hub_mqtt": "MQTT-sectie weergeven"
   },
   "message-card": {
     "send_message": "MESHCORE-BERICHT VERSTUREN",

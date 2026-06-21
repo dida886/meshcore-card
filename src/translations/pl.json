@@ -67,7 +67,8 @@
     "add_contact": "Dodaj kontakt",
     "remove_contact": "Usuń kontakt",
     "manual_placeholder": "Wprowadź prefiks klucza publicznego...",
-    "manual_add": "Dodaj kontakt"
+    "manual_add": "Dodaj kontakt",
+    "last_message_delivery": "Ostatnia dostawa"
   },
   "time": {
     "s_ago": "{n} s temu",
@@ -90,7 +91,13 @@
     "no_hubs_detected": "Nie wykryto jeszcze żadnych hubów MeshCore. Dodaj kartę, a następnie edytuj, aby skonfigurować.",
     "node_order_label": "Kolejność wyświetlania węzłów",
     "contact_filter_label": "Domyślny filtr kontaktów",
-    "node_type_filter_label": "Domyślny filtr typu węzła"
+    "node_type_filter_label": "Domyślny filtr typu węzła",
+    "show_hub_technical": "Pokaż sekcję techniczną",
+    "show_hub_signal": "Pokaż sekcję „Sygnał”",
+    "show_hub_traffic": "Sekcja „Ruch drogowy”",
+    "show_hub_advanced": "Pokaż statystyki zaawansowane",
+    "show_hub_location": "Sekcja „Pokaż lokalizację”",
+    "show_hub_mqtt": "Pokaż sekcję MQTT"
   },
   "message-card": {
     "send_message": "WYŚLIJ WIADOMOŚĆ MESHCORE",
