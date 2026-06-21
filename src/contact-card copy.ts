@@ -132,6 +132,7 @@ const CONTACT_STYLES: string = `
     transition: all 0.2s ease;
     text-transform: capitalize;
   }
+  }
   .type-badge:hover {
     transform: translateY(-1px);
   }
@@ -141,25 +142,7 @@ const CONTACT_STYLES: string = `
     opacity: 0.5;
   }
 
-  /* ---------- Section label (with counter) ---------- */
-  .section-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--secondary-text-color);
-    padding: 8px 0 4px 0;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-    margin-bottom: 8px;
-  }
-  .contact-count {
-    font-weight: 400;
-    color: var(--secondary-text-color);
-    opacity: 0.7;
-  }
-
-  /* ---------- Filter (select) ---------- */
+  /* ---------- Filtr (select) ---------- */
   .filter-bar {
     display: flex;
     align-items: center;
@@ -239,12 +222,11 @@ interface ContactEntry {
   unknownLocation: boolean;
   online: boolean;
   contactState: string; // "discovered", "fresh", "stale"
-  pubkeyPrefix: string | null;
 }
 
 const DEFAULT_MAX_AGE_DAYS = 7;
 
-// ===================== MAIN CLASS =====================
+// ===================== GŁÓWNA KLASA =====================
 export class MeshcoreContactCard extends HTMLElement {
   private _hass?: HomeAssistant;
   private _config?: MeshcoreContactCardConfig;
@@ -255,18 +237,11 @@ export class MeshcoreContactCard extends HTMLElement {
   private _currentStateFilter: "all" | "discovered" | "fresh" | "stale" = "all";
   private _currentTypeFilter: "all" | "repeater" | "room" | "sensor" | "client" = "all";
 
-  // Dictionary for preserving online state during operations
-  private _pendingStateUpdates: Record<string, { online: boolean; timestamp: number }> = {};
-
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
     this.shadowRoot!.addEventListener("click", (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.closest(".action-btn")) return;
-      if (target.closest(".filter-btn")) return;
-
-      const el = target.closest("[data-entity]") as HTMLElement | null;
+      const el = (e.target as Element).closest("[data-entity]") as HTMLElement | null;
       if (el?.dataset["entity"]) {
         const event = new Event("hass-more-info", { bubbles: true, composed: true });
         (event as Event & { detail: { entityId: string } }).detail = {
@@ -279,6 +254,7 @@ export class MeshcoreContactCard extends HTMLElement {
 
   setConfig(config: MeshcoreContactCardConfig): void {
     this._config = config;
+    // Ustaw domyślne filtry z konfiguracji
     this._currentStateFilter = config.contact_filter || "all";
     this._currentTypeFilter = config.node_type_filter || "all";
     this._fp = null;
@@ -307,26 +283,7 @@ export class MeshcoreContactCard extends HTMLElement {
     }
   }
 
-  // ---------- Helper: get online status for a prefix ----------
-  private _getContactOnline(prefix: string): boolean {
-    if (!this._hass) return false;
-    for (const [entityId, state] of Object.entries(this._hass.states)) {
-      if (/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) {
-        const a = state.attributes as Record<string, unknown>;
-        let p = a["adv_id"] ? String(a["adv_id"]) : null;
-        if (!p) {
-          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact$/);
-          if (match) p = match[1];
-        }
-        if (p === prefix) {
-          return !["stale", "off", "unavailable", "unknown"].includes(state.state);
-        }
-      }
-    }
-    return false;
-  }
-
-  // ---------- Discover contacts with filters ----------
+  // ---------- Odkrywanie kontaktów z filtrami ----------
   private _discoverContacts(t: LocalizeFunc): ContactEntry[] {
     if (!this._hass) return [];
     const maxAgeDays = this._config?.max_contact_age_days ?? DEFAULT_MAX_AGE_DAYS;
@@ -347,96 +304,62 @@ export class MeshcoreContactCard extends HTMLElement {
         const rawLon = a["adv_lon"] ?? a["longitude"];
         const lat = rawLat != null && rawLat !== "" ? parseFloat(String(rawLat)) : null;
         const lon = rawLon != null && rawLon !== "" ? parseFloat(String(rawLon)) : null;
-        let contactState = state.state;
+        const contactState = state.state; // "discovered", "fresh", "stale"
         const nodeType = String(a["node_type_str"] || "").toLowerCase();
-        const advName = String(a["adv_name"] || "");
-
-        let pubkeyPrefix: string | null = null;
-        const advId = a["adv_id"] ? String(a["adv_id"]) : null;
-        if (advId) {
-          pubkeyPrefix = advId;
-        } else {
-          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact$/);
-          if (match) pubkeyPrefix = match[1];
-        }
-
-        // If adv_name is empty and state is fresh/stale, contact was removed - change to discovered
-        if (!advName && (contactState === "fresh" || contactState === "stale")) {
-          contactState = "discovered";
-        }
-
-        // Calculate online status, checking pending updates
-        let online = !["stale", "off", "unavailable", "unknown"].includes(state.state);
-        if (pubkeyPrefix && this._pendingStateUpdates[pubkeyPrefix]) {
-          const pending = this._pendingStateUpdates[pubkeyPrefix];
-          if (Date.now() - pending.timestamp < 3000) {
-            online = pending.online;
-          } else {
-            delete this._pendingStateUpdates[pubkeyPrefix];
-          }
-        }
 
         return {
           entityId,
-          advName: advName || entityId,
-          nodeType,
+          advName: String(a["adv_name"] || entityId),
+          nodeType: nodeType,
           lastAdvert,
           timeSince: formatLastSeen(lastAdvert || null, t),
           icon: String(a["icon"] || "mdi:account"),
           picture: a["entity_picture"] ? String(a["entity_picture"]) : null,
-          lat,
-          lon,
+          lat: lat !== null && !isNaN(lat) && lat !== 0 ? lat : null,
+          lon: lon !== null && !isNaN(lon) && lon !== 0 ? lon : null,
           unknownLocation: rawLat != null && rawLon != null && (parseFloat(String(rawLat)) === 0 || parseFloat(String(rawLon)) === 0),
-          online,
+          online: !["stale", "off", "unavailable", "unknown"].includes(state.state),
           contactState,
-          pubkeyPrefix,
         };
       })
       .filter((c) => {
+        // Filtr wieku
         if (c.lastAdvert < cutoff) return false;
-        // If no real name and not discovered - skip
-        if ((!c.advName || c.advName === c.entityId) && c.contactState !== "discovered") {
-          return false;
-        }
-
+        // Filtr stanu (discovered, fresh, stale)
         if (stateFilter !== "all" && c.contactState !== stateFilter) return false;
+        // Filtr typu węzła
         if (typeFilter !== "all" && c.nodeType !== typeFilter) return false;
         return true;
       })
       .sort((a, b) => b.lastAdvert - a.lastAdvert);
   }
 
-  // ---------- Render row ----------
+  // ---------- RENDEROWANIE WIERSZA ----------
   private _renderRow(c: ContactEntry, t: LocalizeFunc): string {
     const mapUrl = c.lat !== null && c.lon !== null
       ? `https://analyzer.letsmesh.net/map?lat=${c.lat.toFixed(5)}&long=${c.lon!.toFixed(5)}&zoom=10`
       : null;
 
-    // entity_picture URLs and icon names come from HA contact attributes,
-    // which the meshcore integration sources unsanitized from the mesh.
-    // Reject anything that isn't a same-origin / http(s) image URL or a
-    // simple mdi-style icon name to avoid javascript:/data: schemes and
-    // attribute breakout via quotes.
     const safePicture = c.picture && /^(?:https?:\/\/|\/)/i.test(c.picture) ? c.picture : null;
     const safeIcon = /^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(c.icon) ? c.icon : "mdi:account";
 
+    // Przycisk akcji (dodaj/usuń)
     let actionButton = "";
-    if (c.pubkeyPrefix) {
-      if (c.contactState === "discovered") {
-        actionButton = `
-          <button class="action-btn add-btn" data-prefix="${escapeHtml(c.pubkeyPrefix)}" data-action="add" title="${t("card.add_contact")}">
-            <ha-icon icon="mdi:plus-circle"></ha-icon>
-          </button>
-        `;
-      } else if (c.contactState === "fresh" || c.contactState === "stale") {
-        actionButton = `
-          <button class="action-btn remove-btn" data-prefix="${escapeHtml(c.pubkeyPrefix)}" data-action="remove" title="${t("card.remove_contact")}">
-            <ha-icon icon="mdi:minus-circle"></ha-icon>
-          </button>
-        `;
-      }
+    if (c.contactState === "discovered") {
+      actionButton = `
+        <button class="action-btn add-btn" data-entity="${escapeHtml(c.entityId)}" data-action="add" title="${t("card.add_contact")}">
+          <ha-icon icon="mdi:plus-circle"></ha-icon>
+        </button>
+      `;
+    } else if (c.contactState === "fresh" || c.contactState === "stale") {
+      actionButton = `
+        <button class="action-btn remove-btn" data-entity="${escapeHtml(c.entityId)}" data-action="remove" title="${t("card.remove_contact")}">
+          <ha-icon icon="mdi:minus-circle"></ha-icon>
+        </button>
+      `;
     }
 
+    // Badge z typem węzła (jeśli istnieje)
     const typeBadge = c.nodeType && c.nodeType !== "unknown" && c.nodeType !== ""
       ? `<span class="type-badge">${escapeHtml(c.nodeType)}</span>`
       : "";
@@ -466,34 +389,17 @@ export class MeshcoreContactCard extends HTMLElement {
     `;
   }
 
-  // ---------- Instant button toggle ----------
-  private _toggleButton(btn: HTMLElement): void {
-    const action = btn.dataset["action"];
-    const prefix = btn.dataset["prefix"];
-    if (!prefix) return;
-
-    if (action === "add") {
-      btn.dataset["action"] = "remove";
-      btn.className = "action-btn remove-btn";
-      btn.title = "Remove contact";
-      btn.innerHTML = `<ha-icon icon="mdi:minus-circle"></ha-icon>`;
-    } else if (action === "remove") {
-      btn.dataset["action"] = "add";
-      btn.className = "action-btn add-btn";
-      btn.title = "Add contact";
-      btn.innerHTML = `<ha-icon icon="mdi:plus-circle"></ha-icon>`;
-    }
-  }
-
-  // ---------- Main render ----------
+  // ---------- RENDER GŁÓWNY ----------
   private _render(): void {
     if (!this._hass || !this._config) return;
     const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
     const contacts = this._discoverContacts(t);
 
-    const stateFilterOptions = ["all", ...["discovered", "fresh", "stale"].sort((a, b) => a.localeCompare(b))];
-    const typeFilterOptions = ["all", ...["repeater", "room", "sensor", "client"].sort((a, b) => a.localeCompare(b))];
+    // Opcje dla filtrów
+    const stateFilterOptions = ["all", "discovered", "fresh", "stale"].sort((a, b) => a.localeCompare(b));
+    const typeFilterOptions = ["all", "client", "repeater", "room", "sensor"].sort((a, b) => a.localeCompare(b));
 
+    // Generuj pasek filtrów
     const filterBar = `
       <div class="filter-bar">
         <label>
@@ -526,16 +432,13 @@ export class MeshcoreContactCard extends HTMLElement {
       body += `<div class="empty">${t("card.empty_contacts")}</div>`;
     } else {
       body +=
-        `<div class="section-label">` +
-          `<span>${t("card.section_contacts")}</span>` +
-          `<span class="contact-count">(${contacts.length})</span>` +
-        `</div>` +
+        `<div class="section-label">${t("card.section_contacts")}</div>` +
         `<div class="contact-list">${contacts.map((c) => this._renderRow(c, t)).join("")}</div>`;
     }
 
     this._setBody(body);
 
-    // Event listener for state filter select
+    // Event listener dla selecta stanu
     const stateSelect = this.shadowRoot?.querySelector("#contact-state-filter-select") as HTMLSelectElement | null;
     if (stateSelect) {
       stateSelect.addEventListener("change", (e) => {
@@ -547,7 +450,7 @@ export class MeshcoreContactCard extends HTMLElement {
       });
     }
 
-    // Event listener for type filter select
+    // Event listener dla selecta typu
     const typeSelect = this.shadowRoot?.querySelector("#contact-type-filter-select") as HTMLSelectElement | null;
     if (typeSelect) {
       typeSelect.addEventListener("change", (e) => {
@@ -559,28 +462,22 @@ export class MeshcoreContactCard extends HTMLElement {
       });
     }
 
+    // Obsługa przycisków dodaj/usuń
     this._setupActionListeners();
-
-    // Clean up expired pending entries
-    for (const key of Object.keys(this._pendingStateUpdates)) {
-      if (Date.now() - this._pendingStateUpdates[key].timestamp > 3000) {
-        delete this._pendingStateUpdates[key];
-      }
-    }
 
     if (!!this._config?.grid_options?.rows) {
       this._scheduleTrim(".contact-row");
     }
   }
 
-  // ---------- Set body content ----------
+  // ---------- USTAWIENIE ZAWARTOŚCI ----------
   private _setBody(body: string): void {
     const constrained = !!this._config?.grid_options?.rows;
     const cls = constrained ? " class=\"grid-rows\"" : "";
     this.shadowRoot!.innerHTML = `<style>${STYLES}${CONTACT_STYLES}</style><ha-card${cls}>${body}</ha-card>`;
   }
 
-  // ---------- Trim for grid ----------
+  // ---------- PRZYCINANIE (grid) ----------
   private _scheduleTrim(rowSelector: string): void {
     if (this._trimTimer !== null) cancelAnimationFrame(this._trimTimer);
     this.style.opacity = "0";
@@ -597,11 +494,12 @@ export class MeshcoreContactCard extends HTMLElement {
     });
   }
 
-  // ---------- Handle add/remove buttons ----------
+  // ---------- OBSŁUGA AKCJI (DODAJ/USUŃ) ----------
   private _setupActionListeners(): void {
     const card = this.shadowRoot?.querySelector("ha-card");
     if (!card) return;
 
+    // Usuń stare listenery, żeby nie duplikować
     if ((card as any)._actionListener) {
       card.removeEventListener("click", (card as any)._actionListener);
     }
@@ -611,35 +509,26 @@ export class MeshcoreContactCard extends HTMLElement {
       const btn = target.closest(".action-btn") as HTMLElement;
       if (!btn) return;
 
-      e.stopPropagation();
-
-      const prefix = btn.dataset["prefix"];
+      const entityId = btn.dataset["entity"];
       const action = btn.dataset["action"];
-      if (!prefix || !action) {
-        return;
-      }
+      if (!entityId || !action) return;
 
-      // Instant visual button toggle
-      this._toggleButton(btn);
+      const state = this._hass?.states[entityId];
+      if (!state) return;
+
+      const advName = (state.attributes as any)["adv_name"] || entityId;
 
       try {
         if (action === "add") {
-          await this._addContact(prefix);
+          await this._addContact(advName);
         } else if (action === "remove") {
-          await this._removeContact(prefix);
+          await this._removeContact(advName);
         }
-        // Refresh list after operation
+        // Po udanej operacji odśwież listę
         this._fp = null;
         this._render();
       } catch (error) {
-        // Restore button state on error
-        this._toggleButton(btn);
-        if (this._hass) {
-          (this._hass as any).callService("persistent_notification", "create", {
-            title: "MeshCore Contact Error",
-            message: `Failed to ${action === "add" ? "add" : "remove"} contact (prefix: ${prefix}). Check console.`,
-          });
-        }
+        console.error("[MeshCore Contact Card] Error:", error);
       }
     };
 
@@ -647,44 +536,21 @@ export class MeshcoreContactCard extends HTMLElement {
     (card as any)._actionListener = actionListener;
   }
 
-  // ---------- Execute MeshCore commands ----------
-  private async _addContact(prefix: string): Promise<void> {
-    const currentOnline = this._getContactOnline(prefix);
-    this._pendingStateUpdates[prefix] = { online: currentOnline, timestamp: Date.now() };
-
+  private async _addContact(name: string): Promise<void> {
     const hass = this._hass as any;
-    const command = `add_contact ${prefix}`;
-    try {
-      await hass.callService("meshcore", "execute_command", {
-        command: command,
-      });
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    } catch (e) {
-      throw e;
-    } finally {
-      delete this._pendingStateUpdates[prefix];
-    }
+    await hass.callService("meshcore", "add_contact", {
+      node_name: name,
+    });
   }
 
-  private async _removeContact(prefix: string): Promise<void> {
-    const currentOnline = this._getContactOnline(prefix);
-    this._pendingStateUpdates[prefix] = { online: currentOnline, timestamp: Date.now() };
-
+  private async _removeContact(name: string): Promise<void> {
     const hass = this._hass as any;
-    const command = `remove_contact ${prefix}`;
-    try {
-      await hass.callService("meshcore", "execute_command", {
-        command: command,
-      });
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    } catch (e) {
-      throw e;
-    } finally {
-      delete this._pendingStateUpdates[prefix];
-    }
+    await hass.callService("meshcore", "remove_contact", {
+      node_name: name,
+    });
   }
 
-  // ---------- Static methods ----------
+  // ---------- METODY STATYCZNE ----------
   getCardSize(): number {
     return 4;
   }

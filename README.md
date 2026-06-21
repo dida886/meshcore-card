@@ -65,51 +65,36 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 ![MeshCore Channel](images/chanel-card-screenshot.png)
 
 
-## 🚀 What's New in Version 1.1.0
+## 🚀 What's New in Version 1.2.0
 
-### 💬 MeshCore Message Card
+### 🏗️ Enhanced Hub & Node Card
 
-A complete messaging interface for MeshCore networks directly inside Home Assistant.
+**New Hub Parameters:**
+- Signal section: RSSI, SNR, Noise Floor
+- Traffic section: Messages Sent, Messages Received
+- Advanced statistics: Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
 
-Features include:
+**Configurable Sections for Hub:**
+Users can now hide/show individual sections via configuration:
+- `show_hub_technical` – show/hide Technical section (Frequency, Bandwidth, SF, TX Power)
+- `show_hub_signal` – show/hide Signal section (RSSI, SNR, Noise)
+- `show_hub_traffic` – show/hide Traffic section (Sent/Received)
+- `show_hub_advanced` – show/hide Advanced statistics
+- `show_hub_location` – show/hide Location section
+- `show_hub_mqtt` – show/hide MQTT section
 
-* Send messages to channels
-* Send messages to contacts
-* View recent message history
-* Automatic refresh after sending messages
-* Dynamic channel discovery
-* Dynamic contact discovery
-* Human-readable timestamps
-* Status indicators and notifications
+**Node Card Improvements:**
+- Temperature moved to header row (next to Repeater badge)
+- Noise Floor moved to signal row (alongside RSSI/SNR)
+- Responsive signal row – wraps on mobile devices (RSSI+SNR on one line, Noise below)
 
-### 🔗 Smart Link Detection
+### 📇 Enhanced Contact Card
 
-Messages are automatically scanned for URLs.
+- Contact counter next to "CONTACTS" label – updates with filters
 
-* Automatic HTTP/HTTPS detection
-* Click links to copy URLs
-* Secure rendering
-* Visual copy confirmation
+### 💬 Message Card Improvements
 
-### 📋 Advanced Copy Actions
-
-Designed for both mobile and desktop users.
-
-* Long press messages to copy content
-* Touch support
-* Mouse support
-* Clipboard fallback support
-* Instant visual feedback
-
-### 🎨 Improved User Experience
-
-* Color-coded sent and received messages
-* Responsive layout
-* Mobile-friendly interface
-* Manual refresh controls
-* Clean Home Assistant styling
-
----
+- Mention highlighting – `@[username]` appears with gold highlight
 
 ## Requirements
 
@@ -200,6 +185,14 @@ Displays all MeshCore hubs and their remote nodes automatically discovered from 
 * Drag-and-drop node ordering
 * Throttled rendering
 
+### ✨ New in v1.2.0
+
+* **Hub Sections** – Show/hide individual sections (Technical, Signal, Traffic, Advanced, Location, MQTT)
+* **Hub Signal Metrics** – RSSI, SNR, Noise Floor
+* **Hub Traffic Metrics** – Messages Sent, Messages Received
+* **Hub Advanced Metrics** – Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
+* **Mobile-friendly signal row** – RSSI/SNR on one line, Noise below on small screens
+
 ### Configuration
 
 ```yaml
@@ -228,6 +221,14 @@ nodes_order:
 
 grid_options:
   rows: 4
+
+# Hub section visibility (new in v1.2.0)
+show_hub_technical: true
+show_hub_signal: true
+show_hub_traffic: true
+show_hub_advanced: true
+show_hub_location: true
+show_hub_mqtt: true
 ```
 
 ### Shorthand
@@ -314,8 +315,6 @@ views:
 ### Contact Card
 
 Displays discovered MeshCore contacts with advanced filtering and contact management capabilities.
-
-### ✨ New in v1.1.2
 
 * **State filtering** – filter contacts by their current state:
   - `all` – show all contacts
