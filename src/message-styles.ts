@@ -222,7 +222,12 @@ export const MESSAGE_STYLES: string = `
   }
   .message-icon {
     flex-shrink: 0;
-    font-size: 18px;
+    /* font-size: 18px; */
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
   }
   .message-content {
     flex: 1;
@@ -265,7 +270,7 @@ export const MESSAGE_STYLES: string = `
   .message-item.sent .message-text {
     background: rgba(74, 222, 128, 0.1);
     border-radius: 16px;
-    padding: 8px 12px;
+    padding: 5px 10px;
     display: inline-block;
     text-align: left;
   }
@@ -306,4 +311,89 @@ export const MESSAGE_STYLES: string = `
   .loading-spinner ha-icon {
     animation: spin 1s linear infinite;
   }
+/* ---------- Message metrics ---------- */
+.message-metrics {
+  display: block;
+  margin-top: 4px;
+  padding: 4px 0;
+  width: 100%;
+  text-align: center;
+  font-size: 9px;
+  color: var(--secondary-text-color);
+  opacity: 0.6;
+  cursor: pointer;
+  border-radius: 6px;
+  background: rgba(128, 128, 128, 0.02);
+  transition: background 0.2s ease, opacity 0.2s ease;
+  user-select: none;
+}
+.message-metrics:hover {
+  background: rgba(128, 128, 128, 0.05);
+  opacity: 0.85;
+}
+.message-metrics .metric {
+  display: inline-block;
+  background: rgba(128, 128, 128, 0.05);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  font-size: 9px;
+  transition: background 0.15s ease;
+  margin: 0 2px;
+}
+.message-metrics .metric:hover {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+/* Duża, czytelna strzałka */
+.message-metrics .metric-toggle {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.7;
+  padding: 0 4px;
+  margin-left: 4px;
+  transition: transform 0.3s ease;
+  line-height: 1;
+  color: var(--secondary-text-color);
+  vertical-align: middle;
+}
+.message-metrics .metric-toggle:hover {
+  opacity: 1;
+}
+.message-metrics.expanded .metric-toggle {
+  transform: rotate(90deg);
+}
+
+/* ---------- Path details ---------- */
+.message-path {
+  display: none;
+  margin-top: 3px;
+  padding: 4px 10px;
+  font-size: 9px;
+  color: var(--secondary-text-color);
+  opacity: 0.5;
+  background: rgba(128, 128, 128, 0.04);
+  border-radius: 6px;
+  border-left: 2px solid rgba(128, 128, 128, 0.12);
+  word-break: break-all;
+  transition: opacity 0.25s ease;
+  text-align: center;
+  width: 100%;
+}
+.message-path.expanded {
+  display: block;
+  opacity: 0.7;
+}
+.message-path .path-label {
+  font-weight: 500;
+  opacity: 0.6;
+  margin-right: 4px;
+}
+.message-path .path-value {
+  font-family: var(--paper-font-code1_-_font-family, monospace);
+  font-size: 8.5px;
+  letter-spacing: -0.01em;
+}
 `;

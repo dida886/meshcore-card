@@ -16,6 +16,19 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _isUpdating = false;
   private _initialized = false;
   private _defaultChannel: string | number | null = null;
+  private _listenerAdded: boolean = false;
+  private _refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Store rx_log_data mapped by timestamp + normalized text
+  private _rxLogData: Map<string, any> = new Map();
+
+  // Store expanded state for each message
+  private _expandedMessages: Set<string> = new Set();
+
+  // localStorage keys and limits
+  private static readonly STORAGE_KEY = 'meshcore_rx_log_data';
+  private static readonly MAX_STORED_ENTRIES = 500;
+  private static readonly MAX_AGE_SECONDS = 86400; // 24 godziny
 
   private static _globalContactsCache: any[] | null = null;
   private static _globalChannelsCache: any[] | null = null;
@@ -23,9 +36,94 @@ export class MeshcoreMessageCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this._loadRxLogDataFromStorage();
   }
 
-  disconnectedCallback() {}
+  disconnectedCallback() {
+    if (this._refreshTimeout) {
+      clearTimeout(this._refreshTimeout);
+      this._refreshTimeout = null;
+    }
+  }
+
+  // ---------- localStorage helpers ----------
+  private _loadRxLogDataFromStorage(): void {
+    try {
+      const stored = localStorage.getItem(MeshcoreMessageCard.STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          this._rxLogData = new Map(parsed);
+          this._pruneRxLogData();
+          this._saveRxLogDataToStorage();
+        }
+      }
+    } catch (_) {
+      // Silently ignore storage errors
+    }
+  }
+
+  private _saveRxLogDataToStorage(): void {
+    try {
+      const array = Array.from(this._rxLogData.entries());
+      localStorage.setItem(MeshcoreMessageCard.STORAGE_KEY, JSON.stringify(array));
+    } catch (_) {
+      // Silently ignore storage errors
+    }
+  }
+
+  private _pruneRxLogData(): void {
+    const now = Date.now() / 1000;
+    for (const [key] of this._rxLogData) {
+      const ts = parseInt(key.split('_')[0]);
+      if (now - ts > MeshcoreMessageCard.MAX_AGE_SECONDS) {
+        this._rxLogData.delete(key);
+      }
+    }
+    if (this._rxLogData.size > MeshcoreMessageCard.MAX_STORED_ENTRIES) {
+      const keys = Array.from(this._rxLogData.keys()).sort();
+      const toDelete = keys.slice(0, this._rxLogData.size - MeshcoreMessageCard.MAX_STORED_ENTRIES);
+      for (const key of toDelete) {
+        this._rxLogData.delete(key);
+      }
+    }
+  }
+
+  // ---------- Helper: normalize text for key matching ----------
+  private _normalizeText(text: string): string {
+    if (!text) return '';
+    
+    // Remove channel prefix e.g. "<Public> ", "<#test> ", etc.
+    let normalized = text.replace(/^<[^>]+>\s*/, '');
+    
+    // Remove emojis (simplified version)
+    normalized = normalized.replace(/[\u{1F000}-\u{1FFFF}]/gu, '');
+    
+    // Normalize whitespace and trim
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+    
+    return normalized;
+  }
+
+  // ---------- Helper: format path for display ----------
+  private _formatPath(path: string): string {
+    if (!path) return '';
+    
+    let nodes = path.split(/[, ]+/).filter(p => p.trim() !== '');
+    
+    if (nodes.length === 1 && nodes[0].length > 2) {
+      const hex = nodes[0];
+      nodes = [];
+      for (let i = 0; i < hex.length; i += 2) {
+        if (i + 2 <= hex.length) {
+          nodes.push(hex.substring(i, i + 2));
+        }
+      }
+    }
+    
+    if (nodes.length === 0) return path;
+    return nodes.join(' → ');
+  }
 
   setConfig(config: MeshcoreMessageCardConfig): void {
     this._config = config;
@@ -51,6 +149,57 @@ export class MeshcoreMessageCard extends HTMLElement {
       if (meshcoreEntities.some(id => oldHass.states[id]?.state !== hass.states[id]?.state)) {
         MeshcoreMessageCard._globalContactsCache = null;
         MeshcoreMessageCard._globalChannelsCache = null;
+      }
+    }
+
+    // Subscribe to meshcore_message events for rx_log_data
+    if (!this._listenerAdded) {
+      const hassAny = hass as any;
+      if (hassAny.connection) {
+        hassAny.connection.subscribeEvents(
+          (event: any) => {
+            if (event.data?.rx_log_data && event.data.rx_log_data.length > 0 && event.event_type === 'meshcore_message') {
+              const logData = event.data.rx_log_data[0];
+              const senderName = event.data.sender_name || "Unknown";
+              const eventTimestamp = event.data.timestamp || Date.now() / 1000;
+              
+              const rawText = logData.text || '';
+              const normalizedText = this._normalizeText(rawText);
+              const key = `${Math.floor(logData.timestamp)}_${normalizedText}`;
+
+              if (!this._rxLogData.has(key)) {
+                this._rxLogData.set(key, {
+                  senderName: senderName,
+                  rssi: logData.rssi,
+                  snr: logData.snr,
+                  path: logData.path,
+                  path_len: logData.path_len,
+                  route_type: logData.route_typename,
+                  channel_name: logData.channel_name,
+                  channel_idx: logData.channel_idx,
+                  timestamp: logData.timestamp,
+                  event_timestamp: eventTimestamp
+                });
+
+                this._pruneRxLogData();
+                this._saveRxLogDataToStorage();
+              }
+              
+              // Auto-refresh messages after 2 seconds if a target is selected
+              const targetSelect = this.shadowRoot?.querySelector("#target-select") as HTMLSelectElement | null;
+              if (targetSelect && targetSelect.value) {
+                if (this._refreshTimeout) {
+                  clearTimeout(this._refreshTimeout);
+                }
+                this._refreshTimeout = setTimeout(() => {
+                  this._loadMessages();
+                }, 3000);
+              }
+            }
+          },
+          'meshcore_message'
+        );
+        this._listenerAdded = true;
       }
     }
 
@@ -145,8 +294,6 @@ export class MeshcoreMessageCard extends HTMLElement {
 
     for (const option of options) {
       let advId: string | null = null;
-      let contactState: string | null = null;
-      let foundSensor = false;
       let cleanName = option;
 
       const pubkeyMatch = option.match(/\(([a-fA-F0-9]+)\)$/);
@@ -159,8 +306,6 @@ export class MeshcoreMessageCard extends HTMLElement {
         const attrs = state.attributes as any;
         const sensorName = attrs.adv_name || '';
         if (sensorName === cleanName) {
-          contactState = state.state;
-          foundSensor = true;
           if (!advId) {
             const match = entityId.match(/meshcore_.*?_([a-f0-9]+)_contact$/);
             if (match) advId = match[1];
@@ -229,7 +374,6 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _parseLogbookEntry(item: any, myHubName: string): any | null {
     const fullText = item.message || "";
     
-    // Próbuj wyodrębnić nadawcę i treść
     let sender = "";
     let content = fullText;
 
@@ -244,7 +388,6 @@ export class MeshcoreMessageCard extends HTMLElement {
         sender = before.trim();
       }
     } else {
-      // Spróbuj z formatem ">Nazwa wiadomość" (bez dwukropka)
       const gtIndex = fullText.indexOf(">");
       if (gtIndex !== -1) {
         const afterGt = fullText.substring(gtIndex + 1).trim();
@@ -259,7 +402,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       }
     }
 
-    // Jeśli nie udało się wyodrębnić nadawcy – pomiń wpis
     if (!sender || sender === "?") {
       return null;
     }
@@ -267,6 +409,7 @@ export class MeshcoreMessageCard extends HTMLElement {
     const isSent = sender.toLowerCase() === myHubName.toLowerCase();
     return {
       text: content || fullText,
+      fullText: fullText,
       sender: sender,
       time: new Date(item.when).getTime() / 1000,
       direction: isSent ? "sent" : "received",
@@ -330,7 +473,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     this._isLoading = true;
     this._refreshCount++;
     const callId = this._refreshCount;
-    this._renderMessages(true);
     try {
       let messages: any[] = [];
       if (this._messageType === "channel") {
@@ -432,13 +574,11 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!text) return "";
     let escaped = escapeHtml(text);
     
-    // URL detection - convert to clickable links
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     escaped = escaped.replace(urlRegex, (url) => {
       return `<a class="message-link" data-url="${escapeHtml(url)}" href="#">${escapeHtml(url)}</a>`;
     });
     
-    // Mention detection - highlight @[name] without the @ symbol
     const mentionRegex = /@\[([^\]]+)\]/g;
     escaped = escaped.replace(mentionRegex, (match, name) => {
       const cleanName = name.trim();
@@ -684,6 +824,12 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private _fullUpdate(): void {
+    // Clear pending refresh timeout
+    if (this._refreshTimeout) {
+      clearTimeout(this._refreshTimeout);
+      this._refreshTimeout = null;
+    }
+
     const targetSelect = this.shadowRoot?.querySelector("#target-select") as HTMLSelectElement | null;
     const newValue = targetSelect?.value || null;
     if (newValue !== this._lastSelectedValue) {
@@ -739,16 +885,16 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!container) return;
     const t = this._getTranslations();
 
+    if (loading) {
+      container.innerHTML = `<div class="empty-messages loading-spinner">
+        <ha-icon icon="mdi:loading" style="--mdc-icon-size: 28px;"></ha-icon><br>${t("message-card.loading")}</div>`;
+      return;
+    }
+
     if (this._lastMessages.length === 1 && this._lastMessages[0].direction === "error") {
       const err = this._lastMessages[0];
       container.innerHTML = `<div class="empty-messages" style="color: var(--error-color);">
         <ha-icon icon="mdi:alert-circle"></ha-icon><br>${escapeHtml(err.text)}</div>`;
-      return;
-    }
-
-    if (loading) {
-      container.innerHTML = `<div class="empty-messages loading-spinner">
-        <ha-icon icon="mdi:loading" style="--mdc-icon-size: 28px;"></ha-icon><br>${t("message-card.loading")}</div>`;
       return;
     }
 
@@ -758,6 +904,14 @@ export class MeshcoreMessageCard extends HTMLElement {
       return;
     }
 
+    // Remove old expanded states for messages no longer in list
+    const currentKeys = new Set(this._lastMessages.map(msg => `${Math.floor(msg.time)}_${this._normalizeText(msg.fullText || msg.text || '')}`));
+    for (const key of this._expandedMessages) {
+      if (!currentKeys.has(key)) {
+        this._expandedMessages.delete(key);
+      }
+    }
+
     const messagesHtml = this._lastMessages
       .map((msg) => {
         const isSent = msg.direction === "sent";
@@ -765,6 +919,46 @@ export class MeshcoreMessageCard extends HTMLElement {
         const timeStr = this._formatTime(msg.time);
         const messageClass = isSent ? "sent" : "";
         const messageHtml = this._linkify(msg.text);
+        
+        const rawText = msg.fullText || msg.text || '';
+        const normalizedText = this._normalizeText(rawText);
+        let rxData = null;
+        let matchedKey = null;
+        const msgTimestamp = Math.floor(msg.time);
+        
+        for (let offset = 0; offset <= 5; offset++) {
+          const ts = msgTimestamp - offset;
+          const key = `${ts}_${normalizedText}`;
+          if (this._rxLogData.has(key)) {
+            rxData = this._rxLogData.get(key);
+            matchedKey = key;
+            break;
+          }
+        }
+        
+        let metricsHtml = "";
+        let pathHtml = "";
+        const isExpanded = matchedKey ? this._expandedMessages.has(matchedKey) : false;
+        
+        if (rxData) {
+          metricsHtml = `
+            <div class="message-metrics" data-key="${matchedKey}">
+              <span class="metric" data-key="${matchedKey}">RSSI ${rxData.rssi} dBm</span>
+              <span class="metric" data-key="${matchedKey}">SNR ${rxData.snr} dB</span>
+              ${rxData.path ? `<span class="metric" data-key="${matchedKey}">Hops ${rxData.path_len || 1}</span>` : ""}
+              <span class="metric-toggle" data-key="${matchedKey}">${isExpanded ? '▾' : '▸'}</span>
+            </div>
+          `;
+          
+          const formattedPath = rxData.path ? this._formatPath(rxData.path) : 'No path data';
+          pathHtml = `
+            <div class="message-path ${isExpanded ? 'expanded' : ''}" data-key="${matchedKey}">
+              <span class="path-label">🛣️ Path:</span>
+              <span class="path-value">${escapeHtml(formattedPath)}</span>
+            </div>
+          `;
+        }
+        
         return `
           <div class="message-item ${messageClass}" style="position: relative;">
             <div class="message-icon">
@@ -777,6 +971,8 @@ export class MeshcoreMessageCard extends HTMLElement {
                 ${timeStr ? `<span class="message-time">${timeStr}</span>` : ""}
               </div>
               <div class="message-text">${messageHtml}</div>
+              ${metricsHtml}
+              ${pathHtml}
             </div>
           </div>
         `;
@@ -787,6 +983,55 @@ export class MeshcoreMessageCard extends HTMLElement {
 
     this._setupLinkListeners();
     this._setupCopyListeners();
+    this._setupExpandListeners();
+  }
+
+  // ---------- Expand listeners ----------
+  private _setupExpandListeners(): void {
+    const container = this.shadowRoot?.querySelector("#messages-container");
+    if (!container) return;
+
+    if ((container as any)._expandListener) {
+      container.removeEventListener("click", (container as any)._expandListener);
+    }
+
+    const expandListener = (e: Event) => {
+      const target = e.target as HTMLElement;
+      
+      if (target.closest(".message-link")) return;
+      
+      const metricsContainer = target.closest(".message-metrics") as HTMLElement;
+      if (!metricsContainer) return;
+      
+      const key = metricsContainer.dataset["key"];
+      if (!key) return;
+      
+      if (this._expandedMessages.has(key)) {
+        this._expandedMessages.delete(key);
+      } else {
+        this._expandedMessages.add(key);
+      }
+      
+      const pathDiv = container.querySelector(`.message-path[data-key="${key}"]`) as HTMLElement;
+      const toggleIcon = metricsContainer.querySelector(`.metric-toggle[data-key="${key}"]`) as HTMLElement;
+      
+      if (pathDiv) {
+        if (this._expandedMessages.has(key)) {
+          pathDiv.classList.add('expanded');
+          pathDiv.style.display = 'block';
+        } else {
+          pathDiv.classList.remove('expanded');
+          pathDiv.style.display = 'none';
+        }
+      }
+      
+      if (toggleIcon) {
+        toggleIcon.textContent = this._expandedMessages.has(key) ? '▾' : '▸';
+      }
+    };
+
+    container.addEventListener("click", expandListener);
+    (container as any)._expandListener = expandListener;
   }
 
   // ---------- Translations ----------
