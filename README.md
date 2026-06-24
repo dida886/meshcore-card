@@ -105,6 +105,14 @@ To enable the route visualization feature, you need to set up a file-based notif
 
 Please configure **Set up a notification service**  and the file path set to  **/config/www/meshcore_rx.json**
 
+```yaml
+default_config:
+  whitelist_external_dirs:
+    - '/config/www'
+```
+
+**Note: If you are using default_config:, add allowlist_external_dirs under a separate homeassistant: key in your configuration.yaml. This allows the card to access /local/meshcore_rx.json.**
+
 #### Step 2: Create the Automation
 
 Create a new automation that writes every meshcore_message event to the file:
