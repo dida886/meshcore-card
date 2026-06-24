@@ -103,7 +103,7 @@ To enable the route visualization feature, you need to set up a file-based notif
 
 [![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=file)
 
-Please configure **Set up a notification service**  and the file path set to  **/local/meshcore_rx.json**
+Please configure **Set up a notification service**  and the file path set to  **/config/www/meshcore_rx.json**
 
 #### Step 2: Create the Automation
 
