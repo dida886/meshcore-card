@@ -39,6 +39,8 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 
 * Full MeshCore messaging support
 * Message history viewer
+* **NEW in 1.3.0: Transmission route visualization (RSSI, SNR, hop path)**
+* **NEW in 1.3.0: Bubble-style message layout**
 * URL detection and copy-to-clipboard
 * Long-press message copying
 * Mobile-friendly interaction model
@@ -65,27 +67,108 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 ![MeshCore Channel](images/chanel-card-screenshot.png)
 
 
-## 🚀 What's New in Version 1.2.0
+## 🚀 What's New in Version 1.3.0
+
+### 🗺️ Transmission Route Visualization
+
+The Message Card now displays full transmission metrics for received messages:
+
+* **RSSI, SNR, and hop count** shown as a compact metrics bar below each message
+* **Expandable path section** – click the metrics bar to reveal the complete transmission route (e.g., `a1b2 → c3d4 → e5f6 → ...`)
+* **Smart path formatting** – automatically splits hex paths into readable node hops, with special handling for FLOOD and FOLD route types
+* **SVG icons** for signal strength, activity, and waypoints – visually clean and theme-friendly
+
+### 💬 Bubble-Style Message Layout
+
+Messages now display in a modern chat-like bubble interface:
+
+* **Sent messages** – right-aligned with green accent
+* **Received messages** – left-aligned with blue accent
+* Clear header with **time and sender name**
+* Direction arrow icons integrated into the sender line
+
+### 📡 Real-Time rx_log Data
+
+The card now subscribes to `meshcore_message` events and reads transmission data from a local NDJSON file:
+
+* Automatic refresh when new messages arrive
+* Local file caching with automatic pruning (24h max age, 500 entries limit)
+* Seamless integration – metrics appear automatically for messages with available route data
+
+### 🔧 Configuration Required for Route Visualization
+
+To enable the route visualization feature, you need to set up a file-based notification service that captures MeshCore events:
+
+#### Step 1: Configure the File Notification Service
+
+[![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=file)
+
+Please configure **Set up a notification service**  and the file path set to  **/local/meshcore_rx.json**
+
+#### Step 2: Create the Automation
+
+Create a new automation that writes every meshcore_message event to the file:
+
+```yaml
+alias: MeshCore - Log RX to file
+description: ""
+triggers:
+  - event_type: meshcore_message 
+    trigger: event
+actions:
+  - data:
+      entity_id: notify.file   #<-- Insert the correct entity ID from the file integration
+      message: |
+        {{ trigger.event.data | tojson }}
+    action: notify.send_message
+mode: queued
+```
+
+* Note: The entity_id must match the notification entity created in Step 1. If you used a different name, adjust accordingly (e.g., notify.file).
+
+### Step 3: Verify
+
+Restart Home Assistant
+
+Send or receive a message via MeshCore
+
+Check that /config/www/meshcore_rx.json exists and contains JSON lines
+
+The Message Card will automatically load and display route metrics for matching messages
+
+## 🚀 Previous Updates (Version 1.2.0)
 
 ### 🏗️ Enhanced Hub & Node Card
 
-**New Hub Parameters:**
+New Hub Parameters:
+
 - Signal section: RSSI, SNR, Noise Floor
+
 - Traffic section: Messages Sent, Messages Received
+
 - Advanced statistics: Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
 
-**Configurable Sections for Hub:**
-Users can now hide/show individual sections via configuration:
-- `show_hub_technical` – show/hide Technical section (Frequency, Bandwidth, SF, TX Power)
-- `show_hub_signal` – show/hide Signal section (RSSI, SNR, Noise)
-- `show_hub_traffic` – show/hide Traffic section (Sent/Received)
-- `show_hub_advanced` – show/hide Advanced statistics
-- `show_hub_location` – show/hide Location section
-- `show_hub_mqtt` – show/hide MQTT section
+Configurable Sections for Hub:
+- Users can now hide/show individual sections via configuration:
 
-**Node Card Improvements:**
+- show_hub_technical – show/hide Technical section (Frequency, Bandwidth, SF, TX Power)
+
+- show_hub_signal – show/hide Signal section (RSSI, SNR, Noise)
+
+- show_hub_traffic – show/hide Traffic section (Sent/Received)
+
+- show_hub_advanced – show/hide Advanced statistics
+
+- show_hub_location – show/hide Location section
+
+- show_hub_mqtt – show/hide MQTT section
+
+Node Card Improvements:
+
 - Temperature moved to header row (next to Repeater badge)
+
 - Noise Floor moved to signal row (alongside RSSI/SNR)
+
 - Responsive signal row – wraps on mobile devices (RSSI+SNR on one line, Noise below)
 
 ### 📇 Enhanced Contact Card
@@ -184,9 +267,6 @@ Displays all MeshCore hubs and their remote nodes automatically discovered from 
 * Optional sensor values
 * Drag-and-drop node ordering
 * Throttled rendering
-
-### ✨ New in v1.2.0
-
 * **Hub Sections** – Show/hide individual sections (Technical, Signal, Traffic, Advanced, Location, MQTT)
 * **Hub Signal Metrics** – RSSI, SNR, Noise Floor
 * **Hub Traffic Metrics** – Messages Sent, Messages Received
