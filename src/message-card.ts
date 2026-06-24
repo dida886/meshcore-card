@@ -5,6 +5,10 @@ import { MESSAGE_STYLES } from "./message-styles.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
 import { discoverHubs } from "./discovery.js";
 
+import signalHighIcon from "./icons/signal-high.svg";
+import activityIcon from "./icons/activity.svg";
+import waypointsIcon from "./icons/waypoints.svg";
+
 export class MeshcoreMessageCard extends HTMLElement {
   private _hass?: HomeAssistant;
   private _config?: MeshcoreMessageCardConfig;
@@ -19,16 +23,9 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _listenerAdded: boolean = false;
   private _refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // Store rx_log_data mapped by timestamp + normalized text
   private _rxLogData: Map<string, any> = new Map();
-
-  // Store expanded state for each message
   private _expandedMessages: Set<string> = new Set();
-
-  // localStorage keys and limits
-  private static readonly STORAGE_KEY = 'meshcore_rx_log_data';
-  private static readonly MAX_STORED_ENTRIES = 500;
-  private static readonly MAX_AGE_SECONDS = 86400; // 24 godziny
+  private _initialFileLoadDone = false;
 
   private static _globalContactsCache: any[] | null = null;
   private static _globalChannelsCache: any[] | null = null;
@@ -36,7 +33,6 @@ export class MeshcoreMessageCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this._loadRxLogDataFromStorage();
   }
 
   disconnectedCallback() {
@@ -46,95 +42,151 @@ export class MeshcoreMessageCard extends HTMLElement {
     }
   }
 
-  // ---------- localStorage helpers ----------
-  private _loadRxLogDataFromStorage(): void {
+  // ---------- Pobieranie danych rx_log z pliku NDJSON ----------
+  private async _fetchRxLogFromFile(): Promise<void> {
     try {
-      const stored = localStorage.getItem(MeshcoreMessageCard.STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          this._rxLogData = new Map(parsed);
-          this._pruneRxLogData();
-          this._saveRxLogDataToStorage();
+      const response = await fetch('/local/meshcore_rx.json');
+      if (!response.ok) {
+        throw new Error(`'/local/meshcore_rx.json' not found`);
+      }
+      const text = await response.text();
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+
+      for (const line of lines) {
+        try {
+          const notification = JSON.parse(line);
+          const senderName = notification.sender_name || 'Unknown';
+          const rxDataArray = notification.rx_log_data;
+          if (Array.isArray(rxDataArray)) {
+            for (const rx of rxDataArray) {
+              const normalizedText = this._normalizeText(rx.text || '');
+              const key = `${Math.floor(rx.timestamp)}_${normalizedText}`;
+              const eventTimestamp = notification.timestamp
+                ? new Date(notification.timestamp).getTime() / 1000
+                : rx.timestamp;
+              const existing = this._rxLogData.get(key);
+              if (!existing || eventTimestamp > (existing.event_timestamp || 0)) {
+                this._rxLogData.set(key, {
+                  senderName,
+                  rssi: rx.rssi,
+                  snr: rx.snr,
+                  path: rx.path,
+                  path_len: rx.path_len,
+                  route_type: rx.route_typename,
+                  channel_name: rx.channel_name,
+                  channel_idx: rx.channel_idx,
+                  timestamp: rx.timestamp,
+                  event_timestamp: eventTimestamp,
+                });
+              }
+            }
+          }
+        } catch (e) {
+          // ignoruj nieprawidłowe linie
         }
       }
-    } catch (_) {
-      // Silently ignore storage errors
+      this._pruneRxLogDataInMemory();
+    } catch (error) {
+      console.warn('📁 Brak pliku meshcore_rx.json lub błąd odczytu:', error);
     }
   }
 
-  private _saveRxLogDataToStorage(): void {
-    try {
-      const array = Array.from(this._rxLogData.entries());
-      localStorage.setItem(MeshcoreMessageCard.STORAGE_KEY, JSON.stringify(array));
-    } catch (_) {
-      // Silently ignore storage errors
-    }
-  }
-
-  private _pruneRxLogData(): void {
+  private _pruneRxLogDataInMemory(): void {
     const now = Date.now() / 1000;
+    const MAX_AGE_SECONDS = 86400;
+    const MAX_ENTRIES = 500;
+
     for (const [key] of this._rxLogData) {
       const ts = parseInt(key.split('_')[0]);
-      if (now - ts > MeshcoreMessageCard.MAX_AGE_SECONDS) {
+      if (now - ts > MAX_AGE_SECONDS) {
         this._rxLogData.delete(key);
       }
     }
-    if (this._rxLogData.size > MeshcoreMessageCard.MAX_STORED_ENTRIES) {
+    if (this._rxLogData.size > MAX_ENTRIES) {
       const keys = Array.from(this._rxLogData.keys()).sort();
-      const toDelete = keys.slice(0, this._rxLogData.size - MeshcoreMessageCard.MAX_STORED_ENTRIES);
+      const toDelete = keys.slice(0, this._rxLogData.size - MAX_ENTRIES);
       for (const key of toDelete) {
         this._rxLogData.delete(key);
       }
     }
   }
 
-  // ---------- Helper: normalize text for key matching ----------
   private _normalizeText(text: string): string {
     if (!text) return '';
-    
-    // Remove channel prefix e.g. "<Public> ", "<#test> ", etc.
     let normalized = text.replace(/^<[^>]+>\s*/, '');
-    
-    // Remove emojis (simplified version)
     normalized = normalized.replace(/[\u{1F000}-\u{1FFFF}]/gu, '');
-    
-    // Normalize whitespace and trim
     normalized = normalized.replace(/\s+/g, ' ').trim();
-    
     return normalized;
   }
 
-  // ---------- Helper: format path for display ----------
-  private _formatPath(path: string): string {
+  // ---------- Formatowanie ścieżki ----------
+  private _formatPath(path: string, pathLen?: number, routeType?: string): string {
     if (!path) return '';
-    
+
+    // 1. Jeśli podano pathLen i ścieżka to czysty hex, podziel na równe części
+    if (pathLen && pathLen > 0 && /^[0-9a-fA-F]+$/.test(path.replace(/[, ]+/g, ''))) {
+      const hex = path.replace(/[, ]+/g, '');
+      if (hex.length % pathLen === 0) {
+        const chunkSize = hex.length / pathLen;
+        const parts: string[] = [];
+        for (let i = 0; i < hex.length; i += chunkSize) {
+          parts.push(hex.substring(i, i + chunkSize));
+        }
+        return parts.join(' → ');
+      }
+    }
+
+    // 2. Fallback dla FLOOD/FOLD – domyślnie dziel co 4 znaki
+    if (routeType && (routeType.toUpperCase() === "FLOOD" || routeType.toUpperCase() === "FOLD")) {
+      const nodes = path.split(/[, ]+/).filter(p => p.trim() !== '');
+      if (nodes.length === 1 && nodes[0].length > 4) {
+        const hex = nodes[0];
+        const parts = [];
+        for (let i = 0; i < hex.length; i += 4) {
+          parts.push(hex.substring(i, i + 4));
+        }
+        return parts.join(' → ');
+      }
+      return path;
+    }
+
+    // 3. Domyślne dla innych typów
     let nodes = path.split(/[, ]+/).filter(p => p.trim() !== '');
-    
     if (nodes.length === 1 && nodes[0].length > 2) {
       const hex = nodes[0];
-      nodes = [];
-      for (let i = 0; i < hex.length; i += 2) {
-        if (i + 2 <= hex.length) {
+      if (pathLen && pathLen > 0) {
+        const chunkSize = hex.length / (pathLen + 1);
+        if (Number.isInteger(chunkSize) && chunkSize > 0) {
+          nodes = [];
+          for (let i = 0; i < hex.length; i += chunkSize) {
+            nodes.push(hex.substring(i, i + chunkSize));
+          }
+        } else {
+          // dziel co 2 jako ostateczność
+          nodes = [];
+          for (let i = 0; i < hex.length; i += 2) {
+            nodes.push(hex.substring(i, i + 2));
+          }
+        }
+      } else {
+        // bez pathLen, dziel co 2
+        nodes = [];
+        for (let i = 0; i < hex.length; i += 2) {
           nodes.push(hex.substring(i, i + 2));
         }
       }
     }
-    
-    if (nodes.length === 0) return path;
     return nodes.join(' → ');
   }
 
   setConfig(config: MeshcoreMessageCardConfig): void {
     this._config = config;
-
     if (config.default_channel !== undefined && config.default_channel !== null) {
       this._defaultChannel = config.default_channel;
       this._messageType = "channel";
     } else {
       this._defaultChannel = null;
     }
-
     this._render();
   }
 
@@ -145,14 +197,12 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (oldHass && oldHass.states !== hass.states) {
       const meshcoreEntities = Object.keys(hass.states).filter(id => id.includes('meshcore'));
       const oldMeshcoreEntities = Object.keys(oldHass.states).filter(id => id.includes('meshcore'));
-      
       if (meshcoreEntities.some(id => oldHass.states[id]?.state !== hass.states[id]?.state)) {
         MeshcoreMessageCard._globalContactsCache = null;
         MeshcoreMessageCard._globalChannelsCache = null;
       }
     }
 
-    // Subscribe to meshcore_message events for rx_log_data
     if (!this._listenerAdded) {
       const hassAny = hass as any;
       if (hassAny.connection) {
@@ -180,21 +230,14 @@ export class MeshcoreMessageCard extends HTMLElement {
                   timestamp: logData.timestamp,
                   event_timestamp: eventTimestamp
                 });
-
-                this._pruneRxLogData();
-                this._saveRxLogDataToStorage();
+                this._pruneRxLogDataInMemory();
               }
               
-              // Auto-refresh messages after 2 seconds if a target is selected
-              const targetSelect = this.shadowRoot?.querySelector("#target-select") as HTMLSelectElement | null;
-              if (targetSelect && targetSelect.value) {
-                if (this._refreshTimeout) {
-                  clearTimeout(this._refreshTimeout);
-                }
-                this._refreshTimeout = setTimeout(() => {
-                  this._loadMessages();
-                }, 3000);
-              }
+              this._fetchRxLogFromFile();
+
+              this._refreshTimeout = setTimeout(() => {
+                this._loadMessages();
+              }, 3000);
             }
           },
           'meshcore_message'
@@ -721,7 +764,7 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private async _handleCopyFullMessage(messageItem: HTMLElement): Promise<void> {
-    const textElement = messageItem.querySelector(".message-text") as HTMLElement;
+    const textElement = messageItem.querySelector(".message-bubble") as HTMLElement;
     if (!textElement) return;
 
     const fullText = textElement.textContent?.trim() || "";
@@ -824,7 +867,6 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private _fullUpdate(): void {
-    // Clear pending refresh timeout
     if (this._refreshTimeout) {
       clearTimeout(this._refreshTimeout);
       this._refreshTimeout = null;
@@ -904,7 +946,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       return;
     }
 
-    // Remove old expanded states for messages no longer in list
     const currentKeys = new Set(this._lastMessages.map(msg => `${Math.floor(msg.time)}_${this._normalizeText(msg.fullText || msg.text || '')}`));
     for (const key of this._expandedMessages) {
       if (!currentKeys.has(key)) {
@@ -917,7 +958,7 @@ export class MeshcoreMessageCard extends HTMLElement {
         const isSent = msg.direction === "sent";
         const senderName = msg.sender;
         const timeStr = this._formatTime(msg.time);
-        const messageClass = isSent ? "sent" : "";
+        const messageClass = isSent ? "sent" : "received";
         const messageHtml = this._linkify(msg.text);
         
         const rawText = msg.fullText || msg.text || '';
@@ -941,36 +982,63 @@ export class MeshcoreMessageCard extends HTMLElement {
         const isExpanded = matchedKey ? this._expandedMessages.has(matchedKey) : false;
         
         if (rxData) {
+          const rssiIcon = signalHighIcon;
+          const snrIcon = activityIcon;
+          const hopsIcon = waypointsIcon;
+          
+          const rssiEscaped = escapeHtml(rxData.rssi);
+          const snrEscaped = escapeHtml(rxData.snr);
+          const pathLenEscaped = rxData.path ? escapeHtml(rxData.path_len || 1) : '';
+          
           metricsHtml = `
             <div class="message-metrics" data-key="${matchedKey}">
-              <span class="metric" data-key="${matchedKey}">RSSI ${rxData.rssi} dBm</span>
-              <span class="metric" data-key="${matchedKey}">SNR ${rxData.snr} dB</span>
-              ${rxData.path ? `<span class="metric" data-key="${matchedKey}">Hops ${rxData.path_len || 1}</span>` : ""}
-              <span class="metric-toggle" data-key="${matchedKey}">${isExpanded ? '▾' : '▸'}</span>
+              <div class="metrics-group">
+                <div class="metric-item">
+                  <span class="metric-icon">${rssiIcon}</span>
+                  <span class="metric-value">${rssiEscaped} dBm</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-icon">${snrIcon}</span>
+                  <span class="metric-value">${snrEscaped} dB</span>
+                </div>
+                ${rxData.path ? `
+                  <div class="metric-item">
+                    <span class="metric-icon">${hopsIcon}</span>
+                    <span class="metric-value">${pathLenEscaped}</span>
+                  </div>` : ""}
+              </div>
+              <span class="metric-toggle" data-key="${matchedKey}">
+                <ha-icon icon="${isExpanded ? 'mdi:chevron-down' : 'mdi:chevron-right'}"></ha-icon>
+              </span>
             </div>
           `;
-          
-          const formattedPath = rxData.path ? this._formatPath(rxData.path) : 'No path data';
+          const formattedPath = rxData.path ? this._formatPath(rxData.path, rxData.path_len, rxData.route_type) : t("message-card.no_path_data");
           pathHtml = `
             <div class="message-path ${isExpanded ? 'expanded' : ''}" data-key="${matchedKey}">
-              <span class="path-label">🛣️ Path:</span>
               <span class="path-value">${escapeHtml(formattedPath)}</span>
             </div>
           `;
         }
         
         return `
-          <div class="message-item ${messageClass}" style="position: relative;">
-            <div class="message-icon">
-              <ha-icon icon="${isSent ? "mdi:arrow-up-bold" : "mdi:arrow-down-bold"}" 
-                       style="color: ${isSent ? "var(--mesh-green)" : "var(--mesh-blue)"}"></ha-icon>
-            </div>
-            <div class="message-content">
+          <div class="message-item">
+            <div class="message-card ${messageClass}">
               <div class="message-header">
-                <span class="message-sender ${isSent ? "sent" : "received"}">${escapeHtml(senderName)}</span>
-                ${timeStr ? `<span class="message-time">${timeStr}</span>` : ""}
+                <div class="message-time">
+                  <ha-icon icon="mdi:clock-outline"></ha-icon>
+                  ${escapeHtml(timeStr || 'Just now')}
+                </div>
+                <div class="message-sender ${messageClass}">
+                  ${escapeHtml(senderName)}
+                  <ha-icon icon="${isSent ? 'mdi:arrow-up-bold' : 'mdi:arrow-down-bold'}" 
+                           style="color: ${isSent ? 'var(--mesh-green)' : 'var(--mesh-blue)'}"></ha-icon>
+                </div>
               </div>
-              <div class="message-text">${messageHtml}</div>
+              <div class="message-body">
+                <div class="message-bubble">
+                  ${messageHtml}
+                </div>
+              </div>
               ${metricsHtml}
               ${pathHtml}
             </div>
@@ -1026,7 +1094,7 @@ export class MeshcoreMessageCard extends HTMLElement {
       }
       
       if (toggleIcon) {
-        toggleIcon.textContent = this._expandedMessages.has(key) ? '▾' : '▸';
+        toggleIcon.innerHTML = `<ha-icon icon="${this._expandedMessages.has(key) ? 'mdi:chevron-down' : 'mdi:chevron-right'}"></ha-icon>`;
       }
     };
 
@@ -1037,6 +1105,13 @@ export class MeshcoreMessageCard extends HTMLElement {
   // ---------- Translations ----------
   private _getTranslations(): LocalizeFunc {
     return makeLocalize(this._hass?.language ?? this._hass?.locale?.language ?? "en");
+  }
+
+  // ---------- Inicjalizacja pliku (tylko start) ----------
+  private _initFileRefresh(): void {
+    if (this._initialFileLoadDone) return;
+    this._initialFileLoadDone = true;
+    this._fetchRxLogFromFile();
   }
 
   // ---------- Main render ----------
@@ -1167,6 +1242,7 @@ export class MeshcoreMessageCard extends HTMLElement {
         }
       }
     }
+    this._initFileRefresh();
 
     this._fullUpdate();
     this._initialized = true;

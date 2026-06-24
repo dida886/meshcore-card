@@ -126,6 +126,7 @@
     "days_ago": "il y a {n}j",
     "select_prompt": "-- Sélectionnez --",
     "contact_unavailable": "Contact ou entité actuellement indisponible.",
-    "copied": "Copié !"
+    "copied": "Copié !",
+    "no_path_data": "Aucune donnée relative au chemin d'accès"
   }
 }

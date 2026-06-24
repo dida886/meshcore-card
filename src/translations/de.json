@@ -126,6 +126,7 @@
     "days_ago": "vor {n}d",
     "select_prompt": "-- Wählen --",
     "contact_unavailable": "Kontakt oder Entität ist derzeit nicht verfügbar.",
-    "copied": "Gespeichert!"
+    "copied": "Gespeichert!",
+    "no_path_data": "Keine Pfaddaten"
   }
 }

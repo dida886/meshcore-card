@@ -127,6 +127,7 @@
     "select_prompt": "-- Selecteer --",
     "author": "Auteur: Damian Mainka",
     "contact_unavailable": "Contact of entiteit is momenteel niet beschikbaar.",
-    "copied": "Gekopieerd!"
+    "copied": "Gekopieerd!",
+    "no_path_data": "Geen padgegevens"
   }
 }

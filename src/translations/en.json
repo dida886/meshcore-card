@@ -127,6 +127,7 @@
     "days_ago": "{n}d ago",
     "select_prompt": "-- Select --",
     "contact_unavailable": "Contact or entity is currently unavailable.",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "no_path_data": "No path data"
   }
 }

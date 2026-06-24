@@ -126,6 +126,7 @@
     "days_ago": "{n}d temu",
     "select_prompt": "-- Wybierz --",
     "contact_unavailable": "Kontakt lub encja jest obecnie niedostępna.",
-    "copied": "Skopiowano!"
+    "copied": "Skopiowano!",
+    "no_path_data": "Brak danych dotyczących ścieżki"
   }
 }
