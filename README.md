@@ -27,6 +27,8 @@ If you find this project useful and would like to support future development:
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/dida886)
 
+[![BuyCoffee](https://img.shields.io/badge/☕_BuyCoffee.to-white?style=for-the-badge&labelColor=white&color=white)](https://buycoffee.to/dida886)
+
 Your support helps fund development, testing, bug fixes, and new features.
 
 ---
