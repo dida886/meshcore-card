@@ -121,13 +121,26 @@ Create a new automation that writes every meshcore_message event to the file:
 alias: MeshCore - Log RX to file
 description: ""
 triggers:
-  - event_type: meshcore_message 
+  - event_type: meshcore_message
     trigger: event
 actions:
   - data:
-      entity_id: notify.file   #<-- Insert the correct entity ID from the file integration
+      entity_id: notify.file  #<-- Insert the correct entity ID from the file integration
       message: |
-        {{ trigger.event.data | tojson }}
+        {% set d = trigger.event.data %}
+        {% set rx = d.rx_log_data[0] %}
+        {
+          "entity_id":"{{ d.entity_id }}",
+          "sender_name":"{{ d.sender_name | default('unknown') }}",
+          "rx_timestamp":{{ rx.timestamp }},
+          "rssi":{{ rx.rssi }},
+          "snr":{{ rx.snr }},
+          "path":"{{ rx.path | default('') }}",
+          "path_len":{{ rx.path_len | default(0) }},
+          "route_typename":"{{ rx.route_typename | default('') }}",
+          "channel_name":"{{ rx.channel_name | default('') }}",
+          "channel_idx":{{ rx.channel_idx | default(0) }}
+        }
     action: notify.send_message
 mode: queued
 ```
@@ -143,6 +156,43 @@ Send or receive a message via MeshCore
 Check that /config/www/meshcore_rx.json exists and contains JSON lines
 
 The Message Card will automatically load and display route metrics for matching messages
+
+### Optional: Automatic Log Rotation
+The meshcore_rx.json file grows with every incoming message. To prevent it from becoming too large, you can set up automatic rotation that keeps only the most recent entries.
+
+#### Step 1: Add a shell command
+Add this to your configuration.yaml:
+
+```yaml
+shell_command:
+  clean_rx_log: >
+    lines=$(wc -l < /config/www/meshcore_rx.json) &&
+    if [ "$lines" -gt 500 ]; then
+      sed "1,$((lines-500))d" /config/www/meshcore_rx.json > /tmp/meshcore_rx_clean.json &&
+      cp /tmp/meshcore_rx_clean.json /config/www/meshcore_rx.json;
+    fi
+```
+This script:
+- Counts the number of lines in the file
+- Only runs when there are more than 500 entries
+- Removes the oldest entries, keeping the 500 most recent
+- Uses an atomic copy so the file is never inaccessible
+
+#### Step 2: Create an automation
+
+```yaml
+alias: MeshCore - Clean old RX logs
+description: ""
+triggers:
+  - trigger: time
+    at: "03:00:00"
+actions:
+  - action: shell_command.clean_rx_log
+    data: {}
+```
+This runs daily at 3:00 AM, keeping your log file lean and fast to load.
+
+> **Note:** Adjust the **500** value to your needs. Each entry is roughly 100-125 bytes. Keep in mind that the Message Card loads this entire file into memory when displaying route metrics – a larger file means slower initial rendering and higher memory usage on the dashboard.
 
 ## 🚀 Previous Updates (Version 1.2.0)
 

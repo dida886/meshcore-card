@@ -23,7 +23,7 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _listenerAdded: boolean = false;
   private _refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  private _rxLogData: Map<string, any> = new Map();
+  private _rxLogData: Map<string, Map<number, any>> = new Map();
   private _expandedMessages: Set<string> = new Set();
   private _initialFileLoadDone = false;
 
@@ -42,10 +42,29 @@ export class MeshcoreMessageCard extends HTMLElement {
     }
   }
 
+  // ---------- Indeksowanie rx_log ----------
+  private _indexRxLogEntry(entityId: string, timestamp: number, data: any): void {
+    if (!this._rxLogData.has(entityId)) {
+      this._rxLogData.set(entityId, new Map());
+    }
+    const entityMap = this._rxLogData.get(entityId)!;
+    const ts = Math.floor(timestamp);
+    
+    // Zachowaj tylko najnowszy wpis dla danego timestampu
+    const existing = entityMap.get(ts);
+    if (!existing || (data.event_timestamp || 0) > (existing.event_timestamp || 0)) {
+      entityMap.set(ts, data);
+    }
+  }
+
   // ---------- Pobieranie danych rx_log z pliku NDJSON ----------
   private async _fetchRxLogFromFile(): Promise<void> {
     try {
-      const response = await fetch('/local/meshcore_rx.json');
+      const cacheBuster = `?t=${Date.now()}&r=${Math.random().toString(36).substring(7)}`;
+      const response = await fetch(`/local/meshcore_rx.json${cacheBuster}`, {
+        cache: 'no-store',
+      });
+      
       if (!response.ok) {
         throw new Error(`'/local/meshcore_rx.json' not found`);
       }
@@ -54,59 +73,113 @@ export class MeshcoreMessageCard extends HTMLElement {
 
       for (const line of lines) {
         try {
-          const notification = JSON.parse(line);
-          const senderName = notification.sender_name || 'Unknown';
-          const rxDataArray = notification.rx_log_data;
-          if (Array.isArray(rxDataArray)) {
-            for (const rx of rxDataArray) {
-              const normalizedText = this._normalizeText(rx.text || '');
-              const key = `${Math.floor(rx.timestamp)}_${normalizedText}`;
-              const eventTimestamp = notification.timestamp
-                ? new Date(notification.timestamp).getTime() / 1000
+          const entry = JSON.parse(line);
+          const entityId = entry.entity_id || '';
+          
+          if (!entityId) continue;
+
+          // NOWY FORMAT: płaskie pole rx_timestamp
+          if (entry.rx_timestamp !== undefined) {
+            this._indexRxLogEntry(entityId, entry.rx_timestamp, {
+              senderName: entry.sender_name || 'Unknown',
+              rssi: entry.rssi,
+              snr: entry.snr,
+              path: entry.path,
+              path_len: entry.path_len,
+              route_type: entry.route_typename,
+              channel_name: entry.channel_name,
+              channel_idx: entry.channel_idx,
+              timestamp: entry.rx_timestamp,
+              event_timestamp: entry.rx_timestamp,
+            });
+          }
+          // STARY FORMAT: rx_log_data jako tablica
+          else if (Array.isArray(entry.rx_log_data)) {
+            const senderName = entry.sender_name || 'Unknown';
+            for (const rx of entry.rx_log_data) {
+              const eventTimestamp = entry.timestamp
+                ? new Date(entry.timestamp).getTime() / 1000
                 : rx.timestamp;
-              const existing = this._rxLogData.get(key);
-              if (!existing || eventTimestamp > (existing.event_timestamp || 0)) {
-                this._rxLogData.set(key, {
-                  senderName,
-                  rssi: rx.rssi,
-                  snr: rx.snr,
-                  path: rx.path,
-                  path_len: rx.path_len,
-                  route_type: rx.route_typename,
-                  channel_name: rx.channel_name,
-                  channel_idx: rx.channel_idx,
-                  timestamp: rx.timestamp,
-                  event_timestamp: eventTimestamp,
-                });
-              }
+              
+              this._indexRxLogEntry(entityId, rx.timestamp, {
+                senderName,
+                rssi: rx.rssi,
+                snr: rx.snr,
+                path: rx.path,
+                path_len: rx.path_len,
+                route_type: rx.route_typename,
+                channel_name: rx.channel_name,
+                channel_idx: rx.channel_idx,
+                timestamp: rx.timestamp,
+                event_timestamp: eventTimestamp,
+              });
             }
           }
         } catch (e) {
-          // ignoruj nieprawidłowe linie
+          // ignore
         }
       }
       this._pruneRxLogDataInMemory();
     } catch (error) {
-      console.warn('📁 Brak pliku meshcore_rx.json lub błąd odczytu:', error);
+      // ignore
     }
+  }
+
+  // ---------- Wyszukiwanie rx_log dla wiadomości ----------
+  private _findRxData(msgTime: number, entityId?: string): { data: any; key: string } | null {
+    if (!entityId) return null;
+    
+    const entityMap = this._rxLogData.get(entityId);
+    if (!entityMap || entityMap.size === 0) return null;
+    
+    const msgTimestamp = Math.floor(msgTime);
+    
+    // Szukaj w zakresie ±15 sekund dla lepszego pokrycia
+    for (let offset = 0; offset <= 15; offset++) {
+      const ts = msgTimestamp - offset;
+      if (entityMap.has(ts)) {
+        return {
+          data: entityMap.get(ts)!,
+          key: `${entityId}_${ts}`
+        };
+      }
+      if (offset > 0) {
+        const tsPlus = msgTimestamp + offset;
+        if (entityMap.has(tsPlus)) {
+          return {
+            data: entityMap.get(tsPlus)!,
+            key: `${entityId}_${tsPlus}`
+          };
+        }
+      }
+    }
+    
+    return null;
   }
 
   private _pruneRxLogDataInMemory(): void {
     const now = Date.now() / 1000;
     const MAX_AGE_SECONDS = 86400;
-    const MAX_ENTRIES = 500;
+    const MAX_ENTRIES_PER_ENTITY = 500;
 
-    for (const [key] of this._rxLogData) {
-      const ts = parseInt(key.split('_')[0]);
-      if (now - ts > MAX_AGE_SECONDS) {
-        this._rxLogData.delete(key);
+    for (const [entityId, entityMap] of this._rxLogData) {
+      for (const [timestamp] of entityMap) {
+        if (now - timestamp > MAX_AGE_SECONDS) {
+          entityMap.delete(timestamp);
+        }
       }
-    }
-    if (this._rxLogData.size > MAX_ENTRIES) {
-      const keys = Array.from(this._rxLogData.keys()).sort();
-      const toDelete = keys.slice(0, this._rxLogData.size - MAX_ENTRIES);
-      for (const key of toDelete) {
-        this._rxLogData.delete(key);
+      
+      if (entityMap.size > MAX_ENTRIES_PER_ENTITY) {
+        const keys = Array.from(entityMap.keys()).sort();
+        const toDelete = keys.slice(0, entityMap.size - MAX_ENTRIES_PER_ENTITY);
+        for (const key of toDelete) {
+          entityMap.delete(key);
+        }
+      }
+      
+      // Usuń puste mapy
+      if (entityMap.size === 0) {
+        this._rxLogData.delete(entityId);
       }
     }
   }
@@ -115,6 +188,7 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!text) return '';
     let normalized = text.replace(/^<[^>]+>\s*/, '');
     normalized = normalized.replace(/[\u{1F000}-\u{1FFFF}]/gu, '');
+    normalized = normalized.replace(/^[^:]+:\s*/, '');
     normalized = normalized.replace(/\s+/g, ' ').trim();
     return normalized;
   }
@@ -123,7 +197,6 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _formatPath(path: string, pathLen?: number, routeType?: string): string {
     if (!path) return '';
 
-    // 1. Jeśli podano pathLen i ścieżka to czysty hex, podziel na równe części
     if (pathLen && pathLen > 0 && /^[0-9a-fA-F]+$/.test(path.replace(/[, ]+/g, ''))) {
       const hex = path.replace(/[, ]+/g, '');
       if (hex.length % pathLen === 0) {
@@ -136,7 +209,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       }
     }
 
-    // 2. Fallback dla FLOOD/FOLD – domyślnie dziel co 4 znaki
     if (routeType && (routeType.toUpperCase() === "FLOOD" || routeType.toUpperCase() === "FOLD")) {
       const nodes = path.split(/[, ]+/).filter(p => p.trim() !== '');
       if (nodes.length === 1 && nodes[0].length > 4) {
@@ -150,7 +222,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       return path;
     }
 
-    // 3. Domyślne dla innych typów
     let nodes = path.split(/[, ]+/).filter(p => p.trim() !== '');
     if (nodes.length === 1 && nodes[0].length > 2) {
       const hex = nodes[0];
@@ -162,14 +233,12 @@ export class MeshcoreMessageCard extends HTMLElement {
             nodes.push(hex.substring(i, i + chunkSize));
           }
         } else {
-          // dziel co 2 jako ostateczność
           nodes = [];
           for (let i = 0; i < hex.length; i += 2) {
             nodes.push(hex.substring(i, i + 2));
           }
         }
       } else {
-        // bez pathLen, dziel co 2
         nodes = [];
         for (let i = 0; i < hex.length; i += 2) {
           nodes.push(hex.substring(i, i + 2));
@@ -211,14 +280,11 @@ export class MeshcoreMessageCard extends HTMLElement {
             if (event.data?.rx_log_data && event.data.rx_log_data.length > 0 && event.event_type === 'meshcore_message') {
               const logData = event.data.rx_log_data[0];
               const senderName = event.data.sender_name || "Unknown";
+              const entityId = event.data.entity_id || "";
               const eventTimestamp = event.data.timestamp || Date.now() / 1000;
               
-              const rawText = logData.text || '';
-              const normalizedText = this._normalizeText(rawText);
-              const key = `${Math.floor(logData.timestamp)}_${normalizedText}`;
-
-              if (!this._rxLogData.has(key)) {
-                this._rxLogData.set(key, {
+              if (entityId) {
+                this._indexRxLogEntry(entityId, logData.timestamp, {
                   senderName: senderName,
                   rssi: logData.rssi,
                   snr: logData.snr,
@@ -946,7 +1012,22 @@ export class MeshcoreMessageCard extends HTMLElement {
       return;
     }
 
-    const currentKeys = new Set(this._lastMessages.map(msg => `${Math.floor(msg.time)}_${this._normalizeText(msg.fullText || msg.text || '')}`));
+    // Pobierz entity_id dla aktualnie wybranego kanału/kontaktu
+    const currentEntityId = this._lastSelectedValue 
+      ? this._findMessagesEntity(
+          this._messageType === "channel" ? parseInt(this._lastSelectedValue) : this._lastSelectedValue,
+          this._messageType
+        )
+      : null;
+
+    // Wyczyść expanded messages dla nieistniejących już wiadomości
+    const currentKeys = new Set<string>();
+    for (const msg of this._lastMessages) {
+      const rxResult = currentEntityId ? this._findRxData(msg.time, currentEntityId) : null;
+      if (rxResult) {
+        currentKeys.add(rxResult.key);
+      }
+    }
     for (const key of this._expandedMessages) {
       if (!currentKeys.has(key)) {
         this._expandedMessages.delete(key);
@@ -961,21 +1042,10 @@ export class MeshcoreMessageCard extends HTMLElement {
         const messageClass = isSent ? "sent" : "received";
         const messageHtml = this._linkify(msg.text);
         
-        const rawText = msg.fullText || msg.text || '';
-        const normalizedText = this._normalizeText(rawText);
-        let rxData = null;
-        let matchedKey = null;
-        const msgTimestamp = Math.floor(msg.time);
-        
-        for (let offset = 0; offset <= 5; offset++) {
-          const ts = msgTimestamp - offset;
-          const key = `${ts}_${normalizedText}`;
-          if (this._rxLogData.has(key)) {
-            rxData = this._rxLogData.get(key);
-            matchedKey = key;
-            break;
-          }
-        }
+        // Szukaj danych rx_log dla tej wiadomości po entity_id + timestamp
+        const rxResult = currentEntityId ? this._findRxData(msg.time, currentEntityId) : null;
+        const rxData = rxResult?.data || null;
+        const matchedKey = rxResult?.key || null;
         
         let metricsHtml = "";
         let pathHtml = "";
@@ -989,7 +1059,6 @@ export class MeshcoreMessageCard extends HTMLElement {
           const rssiEscaped = escapeHtml(rxData.rssi);
           const snrEscaped = escapeHtml(rxData.snr);
           const pathLenEscaped = rxData.path ? escapeHtml(rxData.path_len || 1) : '';
-          
           metricsHtml = `
             <div class="message-metrics" data-key="${matchedKey}">
               <div class="metrics-group">
@@ -1207,7 +1276,10 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (sendBtn) sendBtn.addEventListener("click", () => this._sendMessage());
 
     const refreshBtn = this.shadowRoot!.querySelector("#refresh-history");
-    if (refreshBtn) refreshBtn.addEventListener("click", () => this._loadMessages());
+    if (refreshBtn) refreshBtn.addEventListener("click", async () => {
+      await this._fetchRxLogFromFile();
+      this._loadMessages();
+    });
 
     const targetSelect = this.shadowRoot!.querySelector("#target-select");
     if (targetSelect) targetSelect.addEventListener("change", () => this._fullUpdate());

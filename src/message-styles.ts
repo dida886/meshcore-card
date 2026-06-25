@@ -227,7 +227,7 @@ export const MESSAGE_STYLES: string = `
   .message-header {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(128, 128, 128, 0.08);
   }
@@ -332,11 +332,11 @@ export const MESSAGE_STYLES: string = `
   /* ---------- Metryki ---------- */
   .message-metrics {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 5px;
     padding-top: 10px;
     border-top: 1px solid rgba(128, 128, 128, 0.08);
     cursor: pointer;
@@ -344,6 +344,7 @@ export const MESSAGE_STYLES: string = `
     border-radius: 0;
     background: transparent;
     transition: opacity 0.2s ease;
+    min-width: 0;
   }
   .message-metrics:hover {
     opacity: 1;
@@ -351,38 +352,48 @@ export const MESSAGE_STYLES: string = `
 
   .metrics-group {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 16px;
-    flex: 1;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .metric-item {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     background: rgba(128, 128, 128, 0.04);
-    padding: 3px 10px;
+    padding: 3px 8px;
     border-radius: 8px;
     transition: background 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .metric-item:hover {
     background: rgba(128, 128, 128, 0.08);
   }
 
   .metric-icon {
-    font-size: 13px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .metric-icon svg {
+    width: 14px;
+    height: 14px;
     opacity: 0.5;
-    line-height: 1;
   }
 
   .metric-value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     font-family: var(--paper-font-code1_-_font-family, monospace);
     color: var(--primary-text-color);
     opacity: 0.7;
     letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
   .message-metrics .metric-toggle {
@@ -391,7 +402,7 @@ export const MESSAGE_STYLES: string = `
     font-weight: 700;
     opacity: 0.5;
     padding: 0 4px;
-    margin-left: auto;
+    margin-left: 8px;
     transition: transform 0.3s ease, opacity 0.2s ease;
     color: var(--secondary-text-color);
   }
@@ -405,43 +416,30 @@ export const MESSAGE_STYLES: string = `
   /* ---------- Path ---------- */
   .message-path {
     display: none;
-    margin-top: 6px;
-    padding: 4px 12px;
-    font-size: 10px;
+    margin-top: 4px;
+    padding: 6px 12px;
+    font-size: 11px;
     color: var(--secondary-text-color);
-    opacity: 0.5;
+    opacity: 0.6;
     background: rgba(128, 128, 128, 0.03);
     border-radius: 8px;
     border-left: 2px solid rgba(128, 128, 128, 0.15);
     word-break: break-all;
     transition: opacity 0.25s ease;
+    text-align: center;
+    width: 100%;
   }
-  .message-path {
-  display: none;
-  margin-top: 4px;
-  padding: 6px 12px;
-  font-size: 11px;
-  color: var(--secondary-text-color);
-  opacity: 0.6;
-  background: rgba(128, 128, 128, 0.03);
-  border-radius: 8px;
-  border-left: 2px solid rgba(128, 128, 128, 0.15);
-  word-break: break-all;
-  transition: opacity 0.25s ease;
-  text-align: center;
-  width: 100%;
-}
-.message-path.expanded {
-  display: block;
-  opacity: 0.8;
-}
-.message-path .path-value {
-  font-family: var(--paper-font-code1_-_font-family, monospace);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--primary-text-color);
-}
+  .message-path.expanded {
+    display: block;
+    opacity: 0.8;
+  }
+  .message-path .path-value {
+    font-family: var(--paper-font-code1_-_font-family, monospace);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--primary-text-color);
+  }
 
   /* ---------- Puste / błędy ---------- */
   .empty-messages {
@@ -485,22 +483,30 @@ export const MESSAGE_STYLES: string = `
   /* ---------- Responsywność ---------- */
   @media (max-width: 480px) {
     .message-card {
-      padding: 14px 14px 12px;
+      padding: 8px 8px 8px;
     }
     .message-bubble .message-text {
       font-size: 14px;
     }
+    .message-bubble {
+      padding: 8px 12px;
+      max-width: 90%;
+    }
     .metric-value {
-      font-size: 12px;
+      font-size: 11px;
     }
     .metrics-group {
-      gap: 10px;
+      gap: 4px;
     }
     .metric-item {
-      padding: 2px 8px;
+      padding: 2px 6px;
     }
-    .metric-icon {
-      font-size: 12px;
+    .metric-icon svg {
+      width: 12px;
+      height: 12px;
+    }
+    .metric-toggle {
+      margin-left: 4px;
     }
     .message-sender {
       font-size: 12px;
@@ -526,13 +532,12 @@ export const MESSAGE_STYLES: string = `
       align-self: flex-end;
     }
     .metrics-group {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-wrap: wrap;
       gap: 4px;
     }
     .metric-item {
-      width: 100%;
-      justify-content: center;
+      white-space: normal;
+      font-size: 10px;
     }
   }
 `;
