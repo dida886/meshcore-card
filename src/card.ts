@@ -306,7 +306,7 @@ export class MeshcoreCard extends HTMLElement {
   private _getSnrClass(snr: number | string | null): string {
     const v = Number(snr);
     if (isNaN(v)) return 'dim';
-    if (v >= 10) return 'green';
+    if (v >= 9) return 'green';
     if (v >= 6) return 'yellow';
     if (v >= 0) return 'orange';
     return 'red';
@@ -314,7 +314,7 @@ export class MeshcoreCard extends HTMLElement {
 
   private _snrDescription(snr: number | null, t: LocalizeFunc): string {
     if (snr === null || isNaN(snr)) return "";
-    if (snr >= 10) return t("card.snr_excellent");
+    if (snr >= 9) return t("card.snr_excellent");
     if (snr >= 6) return t("card.snr_good");
     if (snr >= 0) return t("card.snr_fair");
     return t("card.snr_poor");

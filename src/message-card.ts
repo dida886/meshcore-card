@@ -50,7 +50,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     const entityMap = this._rxLogData.get(entityId)!;
     const ts = Math.floor(timestamp);
     
-    // Zachowaj tylko najnowszy wpis dla danego timestampu
     const existing = entityMap.get(ts);
     if (!existing || (data.event_timestamp || 0) > (existing.event_timestamp || 0)) {
       entityMap.set(ts, data);
@@ -69,60 +68,101 @@ export class MeshcoreMessageCard extends HTMLElement {
         throw new Error(`'/local/meshcore_rx.json' not found`);
       }
       const text = await response.text();
-      const lines = text.split('\n').filter(line => line.trim() !== '');
+      
+      const entries = this._parseNDJSON(text);
 
-      for (const line of lines) {
-        try {
-          const entry = JSON.parse(line);
-          const entityId = entry.entity_id || '';
-          
-          if (!entityId) continue;
+      for (const entry of entries) {
+        const entityId = entry.entity_id || '';
+        if (!entityId) continue;
 
-          // NOWY FORMAT: płaskie pole rx_timestamp
-          if (entry.rx_timestamp !== undefined) {
-            this._indexRxLogEntry(entityId, entry.rx_timestamp, {
-              senderName: entry.sender_name || 'Unknown',
-              rssi: entry.rssi,
-              snr: entry.snr,
-              path: entry.path,
-              path_len: entry.path_len,
-              route_type: entry.route_typename,
-              channel_name: entry.channel_name,
-              channel_idx: entry.channel_idx,
-              timestamp: entry.rx_timestamp,
-              event_timestamp: entry.rx_timestamp,
+        if (entry.rx_timestamp !== undefined) {
+          this._indexRxLogEntry(entityId, entry.rx_timestamp, {
+            senderName: entry.sender_name || 'Unknown',
+            rssi: entry.rssi,
+            snr: entry.snr,
+            path: entry.path,
+            path_len: entry.path_len,
+            route_type: entry.route_typename,
+            channel_name: entry.channel_name,
+            channel_idx: entry.channel_idx,
+            timestamp: entry.rx_timestamp,
+            event_timestamp: entry.rx_timestamp,
+          });
+        }
+        else if (Array.isArray(entry.rx_log_data)) {
+          const senderName = entry.sender_name || 'Unknown';
+          for (const rx of entry.rx_log_data) {
+            const eventTimestamp = entry.timestamp
+              ? new Date(entry.timestamp).getTime() / 1000
+              : rx.timestamp;
+            
+            this._indexRxLogEntry(entityId, rx.timestamp, {
+              senderName,
+              rssi: rx.rssi,
+              snr: rx.snr,
+              path: rx.path,
+              path_len: rx.path_len,
+              route_type: rx.route_typename,
+              channel_name: rx.channel_name,
+              channel_idx: rx.channel_idx,
+              timestamp: rx.timestamp,
+              event_timestamp: eventTimestamp,
             });
           }
-          // STARY FORMAT: rx_log_data jako tablica
-          else if (Array.isArray(entry.rx_log_data)) {
-            const senderName = entry.sender_name || 'Unknown';
-            for (const rx of entry.rx_log_data) {
-              const eventTimestamp = entry.timestamp
-                ? new Date(entry.timestamp).getTime() / 1000
-                : rx.timestamp;
-              
-              this._indexRxLogEntry(entityId, rx.timestamp, {
-                senderName,
-                rssi: rx.rssi,
-                snr: rx.snr,
-                path: rx.path,
-                path_len: rx.path_len,
-                route_type: rx.route_typename,
-                channel_name: rx.channel_name,
-                channel_idx: rx.channel_idx,
-                timestamp: rx.timestamp,
-                event_timestamp: eventTimestamp,
-              });
-            }
-          }
-        } catch (e) {
-          // ignore
         }
       }
       this._pruneRxLogDataInMemory();
     } catch (error) {
       // ignore
     }
+  }
+
+  private _parseNDJSON(text: string): any[] {
+    const results: any[] = [];
+    let buffer = '';
+    let braceDepth = 0;
+    let inString = false;
+    let escapeNext = false;
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      buffer += char;
+      
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      
+      if (inString) continue;
+      
+      if (char === '{') braceDepth++;
+      if (char === '}') braceDepth--;
+      
+      if (braceDepth === 0 && buffer.trim().length > 0) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            results.push(parsed);
+          } catch (e) {
+            // ignore
+          }
+        }
+        buffer = '';
+      }
+    }
+    
+    return results;
   }
 
   // ---------- Wyszukiwanie rx_log dla wiadomości ----------
@@ -134,7 +174,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     
     const msgTimestamp = Math.floor(msgTime);
     
-    // Szukaj w zakresie ±15 sekund dla lepszego pokrycia
     for (let offset = 0; offset <= 15; offset++) {
       const ts = msgTimestamp - offset;
       if (entityMap.has(ts)) {
@@ -177,7 +216,6 @@ export class MeshcoreMessageCard extends HTMLElement {
         }
       }
       
-      // Usuń puste mapy
       if (entityMap.size === 0) {
         this._rxLogData.delete(entityId);
       }
@@ -1012,7 +1050,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       return;
     }
 
-    // Pobierz entity_id dla aktualnie wybranego kanału/kontaktu
     const currentEntityId = this._lastSelectedValue 
       ? this._findMessagesEntity(
           this._messageType === "channel" ? parseInt(this._lastSelectedValue) : this._lastSelectedValue,
@@ -1020,7 +1057,6 @@ export class MeshcoreMessageCard extends HTMLElement {
         )
       : null;
 
-    // Wyczyść expanded messages dla nieistniejących już wiadomości
     const currentKeys = new Set<string>();
     for (const msg of this._lastMessages) {
       const rxResult = currentEntityId ? this._findRxData(msg.time, currentEntityId) : null;
@@ -1042,7 +1078,6 @@ export class MeshcoreMessageCard extends HTMLElement {
         const messageClass = isSent ? "sent" : "received";
         const messageHtml = this._linkify(msg.text);
         
-        // Szukaj danych rx_log dla tej wiadomości po entity_id + timestamp
         const rxResult = currentEntityId ? this._findRxData(msg.time, currentEntityId) : null;
         const rxData = rxResult?.data || null;
         const matchedKey = rxResult?.key || null;

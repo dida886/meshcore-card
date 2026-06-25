@@ -593,33 +593,36 @@ export const STYLES: string = `
     white-space: nowrap;
   }
   .neighbor-snr {
-    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 14px;
     font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: transparent;
-    border: 1px solid var(--glass-border);
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease;
   }
   .neighbor-snr.green { 
-    color: var(--mesh-green); 
-    border-color: rgba(74, 222, 128, 0.3);
+    color: #22c55e; 
+    border: 1px solid rgba(34, 197, 94, 0.35);
   }
   .neighbor-snr.yellow { 
-    color: var(--mesh-orange); 
-    border-color: rgba(251, 146, 60, 0.3);
+    color: #eab308; 
+    border: 1px solid rgba(234, 179, 8, 0.35);
   }
   .neighbor-snr.orange { 
-    color: var(--mesh-orange); 
-    border-color: rgba(251, 146, 60, 0.3);
+    color: #f97316; 
+    border: 1px solid rgba(249, 115, 22, 0.35);
   }
   .neighbor-snr.red { 
-    color: var(--mesh-red); 
-    border-color: rgba(248, 113, 113, 0.3);
+    color: #ef4444; 
+    border: 1px solid rgba(239, 68, 68, 0.35);
   }
   .neighbor-snr.dim { 
     color: var(--secondary-text-color); 
     opacity: 0.5; 
     font-weight: normal; 
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    backdrop-filter: none;
   }
 
   .neighbor-stats {
