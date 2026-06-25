@@ -125,22 +125,11 @@ triggers:
     trigger: event
 actions:
   - data:
-      entity_id: notify.file  #<-- Insert the correct entity ID from the file integration
+      entity_id: notify.file
       message: |
         {% set d = trigger.event.data %}
         {% set rx = d.rx_log_data[0] %}
-        {
-          "entity_id":"{{ d.entity_id }}",
-          "sender_name":"{{ d.sender_name | default('unknown') }}",
-          "rx_timestamp":{{ rx.timestamp }},
-          "rssi":{{ rx.rssi }},
-          "snr":{{ rx.snr }},
-          "path":"{{ rx.path | default('') }}",
-          "path_len":{{ rx.path_len | default(0) }},
-          "route_typename":"{{ rx.route_typename | default('') }}",
-          "channel_name":"{{ rx.channel_name | default('') }}",
-          "channel_idx":{{ rx.channel_idx | default(0) }}
-        }
+        {{ {"entity_id": d.entity_id, "sender_name": d.sender_name | default('unknown'), "rx_timestamp": rx.timestamp, "rssi": rx.rssi, "snr": rx.snr, "path": rx.path | default(''), "path_len": rx.path_len | default(0), "route_typename": rx.route_typename | default(''), "channel_name": rx.channel_name | default(''), "channel_idx": rx.channel_idx | default(0)} | tojson }}
     action: notify.send_message
 mode: queued
 ```
