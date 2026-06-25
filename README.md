@@ -115,7 +115,7 @@ default_config:
 
 #### Step 2: Create the Automation
 
-Create a new automation that writes every meshcore_message event to the file:
+Create a new automation that writes every meshcore_message event to the file. The automation has been optimized in v1.3.1 to store only essential fields, reducing file size by ~50-60% compared to storing the full event data:
 
 ```yaml
 alias: MeshCore - Log RX to file
@@ -145,7 +145,9 @@ actions:
 mode: queued
 ```
 
-* Note: The entity_id must match the notification entity created in Step 1. If you used a different name, adjust accordingly (e.g., notify.file).
+What's optimized: Instead of storing the entire event JSON (~400-500 bytes per entry), the automation now extracts only the 10 essential fields needed for route visualization (~180-250 bytes per entry). Each entry is a clean, flat JSON object with no nested arrays – faster to parse and easier on disk space.
+
+Note: The entity_id must match the notification entity created in Step 1. If you used a different name, adjust accordingly (e.g., notify.file).
 
 ### Step 3: Verify
 
