@@ -164,6 +164,7 @@ export interface CustomCardEntry {
 export interface MeshcoreMessageCardConfig {
   type?: string;
   default_channel?: string | number;
+  use_repeater_names?: boolean;
 }
 
 declare global {

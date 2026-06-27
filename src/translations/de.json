@@ -127,6 +127,7 @@
     "select_prompt": "-- Wählen --",
     "contact_unavailable": "Kontakt oder Entität ist derzeit nicht verfügbar.",
     "copied": "Gespeichert!",
-    "no_path_data": "Keine Pfaddaten"
+    "no_path_data": "Keine Pfaddaten",
+    "unknown_repeater": "Unbekannter Repeater ({id})"
   }
 }

@@ -713,7 +713,7 @@ export class MeshcoreCard extends HTMLElement {
             ${sfVal ? `<span class="node-header-badge">SF${escapeHtml(sfVal)}</span>` : ""}
             ${freqVal ? `<span class="node-header-badge">${parseFloat(freqVal).toFixed(3)} MHz</span>` : ""}
             ${txPowerVal ? `<span class="node-header-badge">${escapeHtml(txPowerVal)} dBm</span>` : ""}
-            ${tempVal !== null ? `<span class="node-header-badge temp">${escapeHtml(tempVal)}°C</span>` : ""}
+            ${tempVal !== null && tempId ? `<span class="node-header-badge temp clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
             ${isRepeater ? `<span class="type-badge">${escapeHtml(t("card.type_repeater"))}</span>` : isSensor ? `<span class="type-badge">${escapeHtml(t("card.type_sensor"))}</span>` : ""}
           </div>
         </div>
@@ -847,13 +847,14 @@ export class MeshcoreCard extends HTMLElement {
       const rawSeen = n.rawSeen || null;
       const lastSeenLabel = t("card.neighbor_last_seen") || "Last seen";
       const contactsLabel = t("card.neighbor_contacts") || "Connections (48h)";
+      const entityForClick = n.contactEntityId || n.snrId || n.seenId;
+      const clickableClass = entityForClick ? 'clickable' : '';
       
       return `
         <div class="neighbor-row">
           <div class="neighbor-main">
-            <span class="neighbor-name ${n.contactEntityId ? 'clickable' : ''}" 
-              ${n.contactEntityId ? `data-entity="${escapeHtml(n.contactEntityId)}"` : 
-                (n.snrId ? `data-entity="${escapeHtml(n.snrId)}"` : '')}>
+            <span class="neighbor-name ${clickableClass}" 
+              ${entityForClick ? `data-entity="${escapeHtml(entityForClick)}"` : ''}>
               ${escapeHtml(n.name)}
             </span>
             <span class="neighbor-snr ${snrClass} clickable" 

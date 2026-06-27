@@ -128,6 +128,7 @@
     "select_prompt": "-- Select --",
     "contact_unavailable": "Contact or entity is currently unavailable.",
     "copied": "Copied!",
-    "no_path_data": "No path data"
+    "no_path_data": "No path data",
+    "unknown_repeater": "Unknown repeater ({id})"
   }
 }

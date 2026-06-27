@@ -128,6 +128,7 @@
     "author": "Auteur: Damian Mainka",
     "contact_unavailable": "Contact of entiteit is momenteel niet beschikbaar.",
     "copied": "Gekopieerd!",
-    "no_path_data": "Geen padgegevens"
+    "no_path_data": "Geen padgegevens",
+    "unknown_repeater": "Onbekend repeater ({id})"
   }
 }

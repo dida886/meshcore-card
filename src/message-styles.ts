@@ -439,6 +439,12 @@ export const MESSAGE_STYLES: string = `
     font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--primary-text-color);
+    white-space: normal;          /* pozwala na łamanie wiersza */
+    word-break: break-word;       /* łamie w razie potrzeby */
+  }
+  .path-hop {
+    white-space: nowrap;
+    display: inline; /* nie zmieniamy na inline-block, żeby strzałka była obok */
   }
 
   /* ---------- Puste / błędy ---------- */
