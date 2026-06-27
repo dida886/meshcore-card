@@ -105,15 +105,18 @@ To enable the route visualization feature, you need to set up a file-based notif
 
 [![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=file)
 
+![File integration](images/file_integration.png)
+
 Please configure **Set up a notification service**  and the file path set to  **/config/www/meshcore_rx.json**
+
+
+**Note: If you are using default_config:, add allowlist_external_dirs under a separate homeassistant: key in your configuration.yaml. This allows the card to access /local/meshcore_rx.json.**
 
 ```yaml
 default_config:
   whitelist_external_dirs:
     - '/config/www'
 ```
-
-**Note: If you are using default_config:, add allowlist_external_dirs under a separate homeassistant: key in your configuration.yaml. This allows the card to access /local/meshcore_rx.json.**
 
 #### Step 2: Create the Automation
 
