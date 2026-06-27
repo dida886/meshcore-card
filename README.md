@@ -78,6 +78,7 @@ The Message Card now displays full transmission metrics for received messages:
 * **RSSI, SNR, and hop count** shown as a compact metrics bar below each message
 * **Expandable path section** – click the metrics bar to reveal the complete transmission route (e.g., `a1b2 → c3d4 → e5f6 → ...`)
 * **Smart path formatting** – automatically splits hex paths into readable node hops, with special handling for FLOOD and FOLD route types
+* **Repeater name mapping** – optionally replaces hex identifiers with human-readable names from your discovered contacts. Unknown nodes are shown as "Unknown (hex)". Enabled by default, can be toggled via `use_repeater_names` config option.
 * **SVG icons** for signal strength, activity, and waypoints – visually clean and theme-friendly
 
 ### 💬 Bubble-Style Message Layout
@@ -441,8 +442,22 @@ views:
       - type: custom:meshcore-message-card
         default_channel: 0
 ```
+### Route Visualization with Repeater Names
+
+You can replace the raw hexadecimal identifiers in the transmission path with human-readable repeater names:
+
+- **use_repeater_names** (optional, default: `true`) – when enabled, the path will display discovered contact names instead of hex values. Unrecognized nodes are shown as "Unknown (hex)".
+
+```yaml
+# Enable/disable repeater names in path
+type: custom:meshcore-message-card
+use_repeater_names: true
+```
+
+When enabled, a path like 08d1 → f8db → 1515 → 01e6 → 5261 → 6675 will be displayed as RPT RBK Żywiec 4* → RPT RBK Żywiec 2+ → Szyndzielnia RPT 🚡 → Kapliczka → ONY Biskupia Kopa → OPO Jełowa RPT🌀
 
 ---
+
 
 ## custom:meshcore-contact-card
 
