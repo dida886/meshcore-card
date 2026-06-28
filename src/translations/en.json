@@ -68,7 +68,10 @@
     "remove_contact": "Remove contact",
     "manual_placeholder": "Enter pubkey prefix...",
     "manual_add": "Add Contact",
-    "last_message_delivery": "Last delivery"
+    "last_message_delivery": "Last delivery",
+    "advert_sent": "Advert sent",
+    "advert_flood_sent": "Advert Flood sent",
+    "advert_error": "Advert failed"
                         
   },
   "time": {

@@ -68,7 +68,10 @@
     "remove_contact": "Usuń kontakt",
     "manual_placeholder": "Wprowadź prefiks klucza publicznego...",
     "manual_add": "Dodaj kontakt",
-    "last_message_delivery": "Ostatnia dostawa"
+    "last_message_delivery": "Ostatnia dostawa",
+    "advert_sent": "Wysłano advert",
+    "advert_flood_sent": "Wysłano advert flood",
+    "advert_error": "Advert nie powiódł się"
   },
   "time": {
     "s_ago": "{n} s temu",

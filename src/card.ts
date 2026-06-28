@@ -331,6 +331,40 @@ export class MeshcoreCard extends HTMLElement {
     return `${Math.floor(diff / 86400)}d`;
   }
 
+  // ── Advert commands ──────────────────────────────────────────────────────
+
+  private _sendAdvert(pubkey: string, flood: boolean): void {
+    if (!this._hass) return;
+    const command = flood ? 'send_advert(flood=True)' : 'advert';
+    const feedbackId = `advert-feedback-${pubkey}`;
+    const feedbackEl = this.shadowRoot?.getElementById(feedbackId);
+    const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
+
+    (this._hass as any).callService('meshcore', 'execute_command', { command })
+      .then(() => {
+        if (feedbackEl) {
+          const msg = flood ? t("card.advert_flood_sent") : t("card.advert_sent");
+          feedbackEl.textContent = msg;
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = 'var(--success-color)';
+          setTimeout(() => {
+            feedbackEl.style.display = 'none';
+          }, 3000);
+        }
+      })
+      .catch((err: any) => {
+        console.error('Advert error:', err);
+        if (feedbackEl) {
+          feedbackEl.textContent = t("card.advert_error") || 'Error';
+          feedbackEl.style.display = 'block';
+          feedbackEl.style.color = 'var(--error-color)';
+          setTimeout(() => {
+            feedbackEl.style.display = 'none';
+          }, 3000);
+        }
+      });
+  }
+
   // ── Hub rendering ──────────────────────────────────────────────────────────
 
   private _renderHub(hub: HubInfo, t: LocalizeFunc): string {
@@ -345,6 +379,7 @@ export class MeshcoreCard extends HTMLElement {
     const showAdvanced = this._config?.show_hub_advanced ?? true;
     const showLocation = this._config?.show_hub_location ?? true;
     const showMqtt     = this._config?.show_hub_mqtt ?? true;
+    const showAdvertButtons = this._config?.show_hub_advert_buttons ?? true;
 
     // Existing entities
     const statusId  = e("node_status");
@@ -549,6 +584,23 @@ export class MeshcoreCard extends HTMLElement {
         </div>`;
     }
 
+    // ===== ADVERT BUTTONS =====
+    if (showAdvertButtons) {
+      html += `
+        <div class="advert-buttons">
+          <button class="advert-btn advert-zero" data-pubkey="${escapeHtml(pubkey)}" data-flood="false">
+            <ha-icon icon="mdi:radio"></ha-icon>
+            Advert
+          </button>
+          <button class="advert-btn advert-flood" data-pubkey="${escapeHtml(pubkey)}" data-flood="true">
+            <ha-icon icon="mdi:radio-tower"></ha-icon>
+            Advert Flood
+          </button>
+        </div>
+        <div class="advert-feedback" id="advert-feedback-${escapeHtml(pubkey)}" style="display:none;"></div>
+      `;
+    }
+
     html += `</div>`;
     return html;
   }
@@ -713,7 +765,7 @@ export class MeshcoreCard extends HTMLElement {
             ${sfVal ? `<span class="node-header-badge">SF${escapeHtml(sfVal)}</span>` : ""}
             ${freqVal ? `<span class="node-header-badge">${parseFloat(freqVal).toFixed(3)} MHz</span>` : ""}
             ${txPowerVal ? `<span class="node-header-badge">${escapeHtml(txPowerVal)} dBm</span>` : ""}
-            ${tempVal !== null && tempId ? `<span class="node-header-badge temp clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
+            ${tempVal !== null ? `<span class="node-header-badge temp">${escapeHtml(tempVal)}°C</span>` : ""}
             ${isRepeater ? `<span class="type-badge">${escapeHtml(t("card.type_repeater"))}</span>` : isSensor ? `<span class="type-badge">${escapeHtml(t("card.type_sensor"))}</span>` : ""}
           </div>
         </div>
@@ -847,14 +899,13 @@ export class MeshcoreCard extends HTMLElement {
       const rawSeen = n.rawSeen || null;
       const lastSeenLabel = t("card.neighbor_last_seen") || "Last seen";
       const contactsLabel = t("card.neighbor_contacts") || "Connections (48h)";
-      const entityForClick = n.contactEntityId || n.snrId || n.seenId;
-      const clickableClass = entityForClick ? 'clickable' : '';
       
       return `
         <div class="neighbor-row">
           <div class="neighbor-main">
-            <span class="neighbor-name ${clickableClass}" 
-              ${entityForClick ? `data-entity="${escapeHtml(entityForClick)}"` : ''}>
+            <span class="neighbor-name ${n.contactEntityId ? 'clickable' : ''}" 
+              ${n.contactEntityId ? `data-entity="${escapeHtml(n.contactEntityId)}"` : 
+                (n.snrId ? `data-entity="${escapeHtml(n.snrId)}"` : '')}>
               ${escapeHtml(n.name)}
             </span>
             <span class="neighbor-snr ${snrClass} clickable" 
@@ -929,6 +980,17 @@ export class MeshcoreCard extends HTMLElement {
     const cls = constrained ? " class=\"grid-rows\"" : "";
     this.shadowRoot!.innerHTML = `<style>${STYLES}</style><ha-card${cls}>${body}</ha-card>`;
     if (constrained) this._scheduleTrim(".node-block");
+
+    // Dodajemy nasłuchiwanie kliknięć dla przycisków Advert
+    this.shadowRoot!.querySelectorAll('.advert-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const pubkey = btn.getAttribute('data-pubkey');
+        const flood = btn.getAttribute('data-flood') === 'true';
+        if (pubkey) {
+          this._sendAdvert(pubkey, flood);
+        }
+      });
+    });
   }
 
   private _scheduleTrim(rowSelector: string): void {

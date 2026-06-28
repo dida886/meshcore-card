@@ -43,6 +43,8 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 * Message history viewer
 * **NEW in 1.3.0: Transmission route visualization (RSSI, SNR, hop path)**
 * **NEW in 1.3.0: Bubble-style message layout**
+* **NEW in 1.3.3: Display repeater names in path** – optionally show friendly names instead of hex IDs
+* **NEW in 1.3.4: Advert buttons on Hub card** – send Advert/Advert Flood with one click
 * URL detection and copy-to-clipboard
 * Long-press message copying
 * Mobile-friendly interaction model
@@ -67,6 +69,10 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 
 ### Channel Card
 ![MeshCore Channel](images/chanel-card-screenshot.png)
+
+## 🚀 What's New in Version 1.3.4
+
+* Added Advert Buttons to Hub Card – now you can send Advert (Zero-Hop) and Advert Flood messages directly from the hub card. Two buttons are placed at the bottom of each hub block, making it easy to announce your presence or flood the network. The buttons are configurable via **show_hub_advert_buttons: false** if you prefer to hide them.
 
 
 ## 🚀 What's New in Version 1.3.0
@@ -217,6 +223,8 @@ Configurable Sections for Hub:
 - show_hub_location – show/hide Location section
 
 - show_hub_mqtt – show/hide MQTT section
+
+- show_hub_advert_buttons - show/hide Advert buttons
 
 Node Card Improvements:
 

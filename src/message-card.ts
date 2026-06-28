@@ -725,10 +725,20 @@ export class MeshcoreMessageCard extends HTMLElement {
     const now = Math.floor(Date.now() / 1000);
     let diff = now - timestamp;
     if (diff < 0) diff = 0;
-    if (diff < 60) return t("message-card.seconds_ago", { n: diff });
-    if (diff < 3600) return t("message-card.minutes_ago", { n: Math.floor(diff / 60) });
-    if (diff < 86400) return t("message-card.hours_ago", { n: Math.floor(diff / 3600) });
-    return t("message-card.days_ago", { n: Math.floor(diff / 86400) });
+    if (diff < 60) {
+      const seconds = Math.floor(diff);
+      return t("message-card.seconds_ago", { n: seconds });
+    }
+    if (diff < 3600) {
+      const minutes = Math.floor(diff / 60);
+      return t("message-card.minutes_ago", { n: minutes });
+    }
+    if (diff < 86400) {
+      const hours = Math.floor(diff / 3600);
+      return t("message-card.hours_ago", { n: hours });
+    }
+    const days = Math.floor(diff / 86400);
+    return t("message-card.days_ago", { n: days });
   }
 
   /* ---------- Render wiadomości ---------- */

@@ -67,7 +67,8 @@ export interface MeshcoreCardConfig {
   show_hub_traffic?: boolean;     
   show_hub_advanced?: boolean;    
   show_hub_location?: boolean;    
-  show_hub_mqtt?: boolean;     
+  show_hub_mqtt?: boolean;
+  show_hub_advert_buttons?: boolean;
 }
 
 export interface MeshcoreContactCardConfig {

@@ -68,7 +68,10 @@
     "remove_contact": "Kontakt entfernen",
     "manual_placeholder": "Geben Sie das Präfix des öffentlichen Schlüssels ein...",
     "manual_add": "Kontakt hinzufügen",
-    "last_message_delivery": "Letzte Lieferung"
+    "last_message_delivery": "Letzte Lieferung",
+    "advert_sent": "Anzeige gesendet",
+    "advert_flood_sent": "Anzeigenflut gesendet",
+    "advert_error": "Anzeige fehlgeschlagen"
   },
   "time": {
     "s_ago": "vor {n}s",

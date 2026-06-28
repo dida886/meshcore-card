@@ -722,4 +722,62 @@ export const STYLES: string = `
       --glass-border: rgba(255, 255, 255, 0.1);
     }
   }
+
+  /* ---------- Advert buttons ---------- */
+  .advert-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--divider-color);
+    justify-content: center;
+  }
+
+  .advert-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--secondary-background-color);
+    color: var(--primary-text-color);
+    transition: background 0.2s, color 0.2s;
+    flex: 1;
+    min-width: 0;
+    max-width: 180px;
+  }
+
+  .advert-btn ha-icon {
+    --mdc-icon-size: 18px;
+  }
+
+  /* Advert Zero – niebieski */
+  .advert-zero {
+    border: 1px solid var(--primary-color);
+  }
+  .advert-zero:hover {
+    background: var(--primary-color);
+    color: var(--text-primary-color);
+  }
+
+  /* Advert Flood – żółty (warning) */
+  .advert-flood {
+    border: 1px solid var(--warning-color);
+  }
+  .advert-flood:hover {
+    background: var(--warning-color);
+    color: var(--text-primary-color);
+  }
+  .advert-feedback {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: opacity 0.3s;
+  }
 `;

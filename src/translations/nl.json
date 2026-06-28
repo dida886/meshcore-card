@@ -68,7 +68,10 @@
     "remove_contact": "Contact verwijderen",
     "manual_placeholder": "Voer het prefix van de publieke sleutel in...",
     "manual_add": "Contactpersoon toevoegen",
-    "last_message_delivery": "Laatste levering"
+    "last_message_delivery": "Laatste levering",
+    "advert_sent": "Advertentie verzonden",
+    "advert_flood_sent": "Er is een stortvloed aan advertenties verzonden",
+    "advert_error": "Advertentie mislukt"
   },
   "time": {
     "s_ago": "{n}s geleden",
