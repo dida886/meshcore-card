@@ -548,7 +548,6 @@ export class MeshcoreCard extends HTMLElement {
       if (txAirtime !== null) {
         chips.push(`<span class="advanced-chip clickable" data-entity="${escapeHtml(txAirtimeId)}">📡 TX air: ${parseFloat(txAirtime).toFixed(1)} min</span>`);
       }
-      console.log(msgDeliv)
       if (msgDeliv !== null && msgDeliv !== 'Idle'  ) {
         chips.push(`<span class="advanced-chip clickable" data-entity="${escapeHtml(msgDelivId)}">📨 ${escapeHtml(t("card.last_message_delivery"))}: ${escapeHtml(msgDeliv)}</span>`);
       }
@@ -572,14 +571,16 @@ export class MeshcoreCard extends HTMLElement {
       html += `
         <div class="section-header">${escapeHtml(t("card.mqtt_section"))}</div>
         <div class="mqtt-row">
-          ${mqttIds.map((id) => {
-            const v   = this._val(id);
+            ${mqttIds.map((id) => {
+            const v = this._val(id);
+            const isConnected = v === 'on'; 
+            const cls = isConnected ? 'ok' : 'err';
             const lbl = (this._attr(id, "server") as string | null) ||
               ((this._attr(id, "friendly_name") as string | null) || id)
                 .replace(/meshcore\s+\w+\s*/i, "")
                 .replace(/_/g, " ")
                 .trim();
-            return `<span class="mqtt-pill ${v ? "ok" : "err"} clickable" data-entity="${escapeHtml(id)}">${escapeHtml(lbl)}</span>`;
+            return `<span class="mqtt-pill ${cls} clickable" data-entity="${escapeHtml(id)}">${escapeHtml(lbl)}</span>`;
           }).join("")}
         </div>`;
     }
@@ -765,7 +766,7 @@ export class MeshcoreCard extends HTMLElement {
             ${sfVal ? `<span class="node-header-badge">SF${escapeHtml(sfVal)}</span>` : ""}
             ${freqVal ? `<span class="node-header-badge">${parseFloat(freqVal).toFixed(3)} MHz</span>` : ""}
             ${txPowerVal ? `<span class="node-header-badge">${escapeHtml(txPowerVal)} dBm</span>` : ""}
-            ${tempVal !== null ? `<span class="node-header-badge temp">${escapeHtml(tempVal)}°C</span>` : ""}
+            ${tempVal !== null && tempId ? `<span class="node-header-badge temp clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
             ${isRepeater ? `<span class="type-badge">${escapeHtml(t("card.type_repeater"))}</span>` : isSensor ? `<span class="type-badge">${escapeHtml(t("card.type_sensor"))}</span>` : ""}
           </div>
         </div>
