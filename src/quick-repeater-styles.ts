@@ -23,6 +23,7 @@ export const QUICK_REPEATER_STYLES = `
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
+  /* ── HEADER ── */
   .qr-repeater-header {
     display: flex;
     align-items: center;
@@ -79,16 +80,17 @@ export const QUICK_REPEATER_STYLES = `
     opacity: 0.7;
   }
 
+  /* ── METRYKI – POZIOM W JEDNEJ LINII ── */
   .qr-repeater-metrics {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* ✅ left do lewej, right do prawej */
     align-items: center;
     flex-wrap: wrap;
     gap: 8px 14px;
     font-size: 12px;
     color: var(--secondary-text-color);
     margin-bottom: 6px;
-    padding-left: 4px;
+    padding-left: 0px;
   }
 
   .qr-metrics-left {
@@ -102,6 +104,7 @@ export const QUICK_REPEATER_STYLES = `
     flex-wrap: wrap;
     gap: 8px 14px;
     flex-shrink: 0;
+    /* ✅ justify-content: space-between automatycznie przykleja do prawej */
   }
 
   .qr-metric {
@@ -122,7 +125,7 @@ export const QUICK_REPEATER_STYLES = `
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 0 4px 4px;
+    padding: 4px 0 4px 0px;
     font-size: 13px;
     font-weight: 500;
     color: var(--secondary-text-color);
@@ -151,7 +154,7 @@ export const QUICK_REPEATER_STYLES = `
   }
 
   .qr-neighbors-list {
-    padding-left: 4px;
+    padding-left: 0px;
     margin-top: 4px;
     display: none;
     flex-direction: column;
@@ -161,6 +164,7 @@ export const QUICK_REPEATER_STYLES = `
     display: flex;
   }
 
+  /* ── WIERSZ SĄSIADA ── */
   .qr-neighbor-row {
     display: flex;
     flex-direction: column;
@@ -187,27 +191,30 @@ export const QUICK_REPEATER_STYLES = `
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 300px;
   }
 
+  /* ✅ SNR do prawej */
   .qr-neighbor-snr {
     font-weight: 600;
     padding: 0 4px;
     border-radius: 4px;
     white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
   }
-  .qr-neighbor-snr.green { color: var(--mesh-green); }
-  .qr-neighbor-snr.yellow { color: var(--mesh-orange); }
+  .qr-neighbor-snr.green { color: #22c55e;  }
+  .qr-neighbor-snr.yellow { color:  #eab308; }
   .qr-neighbor-snr.orange { color: #f97316; }
-  .qr-neighbor-snr.red { color: var(--error-color); }
+  .qr-neighbor-snr.red { color: #ef4444;  }
 
+  /* ✅ Statystyki wyśrodkowane */
   .qr-neighbor-stats {
     display: flex;
+    justify-content: left;
     gap: 12px;
     font-size: 11px;
     color: var(--secondary-text-color);
     opacity: 0.7;
-    padding-left: 0px;
     flex-wrap: wrap;
   }
 
@@ -234,61 +241,49 @@ export const QUICK_REPEATER_STYLES = `
     margin-bottom: 10px;
   }
 
-  /* ── RESPONSYWNOŚĆ – DLA TELEFONÓW (S23 Ultra i podobne) ── */
+  /* ── RESPONSYWNOŚĆ – DLA TELEFONÓW ── */
   @media (max-width: 768px) {
     .qr-repeater-card {
       padding: 10px 12px;
     }
-    
+
     .qr-repeater-header {
       flex-wrap: wrap;
       gap: 6px;
     }
-    
+
     .qr-repeater-name {
-      font-size: 0.9rem; /* 14.4px zamiast 16px */
+      font-size: 0.9rem;
     }
-    
+
     .qr-header-right {
       font-size: 11px;
       gap: 6px;
       margin-left: auto;
     }
-    
-    .qr-header-battery {
-      font-size: 11px;
-    }
-    .qr-header-uptime {
-      font-size: 10px;
-    }
-    
+
+    /* ✅ POZIOM – NIE ZMIENIAMY NA KOLUMNĘ */
     .qr-repeater-metrics {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 4px;
-      font-size: 11px;
+      gap: 4px 10px;
       padding-left: 0px;
+      font-size: 11px;
+      flex-wrap: wrap;
     }
-    
+
     .qr-metrics-left {
-      gap: 6px 10px;
-      justify-content: flex-start;
-      flex-wrap: wrap;
+      gap: 4px 8px;
     }
-    
     .qr-metrics-right {
-      gap: 6px 10px;
-      justify-content: flex-start;
-      flex-wrap: wrap;
+      gap: 4px 8px;
     }
-    
+
     .qr-metric ha-icon {
       --mdc-icon-size: 12px;
     }
     .qr-metric-value {
       font-size: 11px;
     }
-    
+
     .qr-neighbors-header {
       font-size: 12px;
       padding: 3px 0 3px 0px;
@@ -301,86 +296,90 @@ export const QUICK_REPEATER_STYLES = `
     .qr-neighbors-count {
       font-size: 10px;
     }
-    
+
     .qr-neighbors-list {
       padding-left: 0px;
       gap: 2px;
     }
-    
+
     .qr-neighbor-row {
       padding: 3px 0;
     }
-    
+
     .qr-neighbor-name {
       font-size: 12px;
-      max-width: 200px;
     }
-    
+
     .qr-neighbor-snr {
       font-size: 12px;
     }
-    
+
     .qr-neighbor-stats {
       font-size: 10px;
       gap: 8px;
-      flex-wrap: wrap;
-      padding-left: 0px;
+      justify-content: left;
     }
-    
+
     .qr-neighbor-stat {
       font-size: 10px;
     }
   }
 
-  /* ── RESPONSYWNOŚĆ – DLA BARDZO MAŁYCH EKRANÓW (poniżej 400px) ── */
+  /* ── RESPONSYWNOŚĆ – DLA BARDZO MAŁYCH EKRANÓW ── */
   @media (max-width: 400px) {
     .qr-repeater-card {
       padding: 8px 10px;
     }
-    
+
     .qr-repeater-name {
       font-size: 0.85rem;
     }
-    
+
     .qr-header-right {
       font-size: 10px;
       gap: 4px;
     }
-    
+
     .qr-repeater-metrics {
       font-size: 10px;
-      gap: 3px;
+      gap: 3px 8px;
+      padding-left: 0px;
     }
-    
+
     .qr-metrics-left {
-      gap: 4px 8px;
+      gap: 3px 6px;
     }
     .qr-metrics-right {
-      gap: 4px 8px;
+      gap: 3px 6px;
     }
-    
+
     .qr-metric-value {
       font-size: 10px;
     }
-    
+
     .qr-neighbors-header {
       font-size: 11px;
+      padding-left: 0px;
     }
-    
+
+    .qr-neighbors-list {
+      padding-left: 0px;
+    }
+
     .qr-neighbor-name {
       font-size: 11px;
-      max-width: 150px;
     }
-    
+
     .qr-neighbor-snr {
       font-size: 11px;
     }
-    
+
     .qr-neighbor-stats {
       font-size: 9px;
       gap: 6px;
+      justify-content: left;
     }
-    
+
     .qr-neighbor-stat {
       font-size: 9px;
     }
