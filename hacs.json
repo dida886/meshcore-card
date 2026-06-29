@@ -1,6 +1,5 @@
 {
   "name": "MeshCore Card",
   "render_readme": true,
-  "filename": "meshcore-card.js",
-  "icon": "icon.png"
+  "filename": "meshcore-card.js"
 }
