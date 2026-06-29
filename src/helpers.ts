@@ -1,9 +1,9 @@
-// Escape any string that originates from outside the card (HA entity state,
-// HA attributes, mesh radio adv_name, raw event payloads, etc.) before it is
-// interpolated into an innerHTML template literal. Without this, a hostile
-// node operator can inject arbitrary HTML/JS via fields like adv_name —
-// the meshcore firmware does not validate or sanitize these strings, and
-// neither the meshcore_py SDK nor the HA integration escape them.
+import type { HomeAssistant } from "./types.js";
+
+// ============================================
+// ESKAPING I BEZPIECZEŃSTWO
+// ============================================
+
 export function escapeHtml(v: unknown): string {
   if (v === null || v === undefined) return "";
   return String(v)
@@ -14,21 +14,11 @@ export function escapeHtml(v: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
-export function longestCommonPrefix(strs: string[]): string {
-  if (!strs.length) return "";
-  let i = 0;
-  while (i < strs[0].length && strs.every((s) => s[i] === strs[0][i])) i++;
-  return strs[0].slice(0, i);
-}
-
-export function longestCommonSuffix(strs: string[]): string {
-  const rev = strs.map((s) => [...s].reverse().join(""));
-  return [...longestCommonPrefix(rev)].reverse().join("");
-}
+// ============================================
+// STANY I STATUSY
+// ============================================
 
 export function isOnlineState(v: unknown): boolean {
-  // "on" covers binary_sensor connectivity entities (e.g. *_online_*),
-  // which the meshcore-ha integration uses for repeater status.
   return ["online", "connected", "on", "1", "true"].includes(
     String(v).toLowerCase()
   );
@@ -46,6 +36,10 @@ export function formatLastSeen(
   if (diff < 86400) return t("time.h_ago", { n: Math.floor(diff / 3600) });
   return t("time.d_ago", { n: Math.floor(diff / 86400) });
 }
+
+// ============================================
+// BATERIA
+// ============================================
 
 export function batteryColor(pct: string | number | null): string {
   const v = Number(pct);
@@ -65,6 +59,10 @@ export function batteryClass(pct: string | number | null): ColorClass {
   return "red";
 }
 
+// ============================================
+// UPTIME
+// ============================================
+
 export function formatUptime(
   days: string | number | null | undefined
 ): string | null {
@@ -76,10 +74,320 @@ export function formatUptime(
   return `${h}h`;
 }
 
+// ============================================
+// RSSI
+// ============================================
+
 export function rssiClass(rssi: string | number | null): ColorClass {
   const v = Number(rssi);
   if (isNaN(v)) return "dim";
   if (v >= -70) return "green";
   if (v >= -90) return "yellow";
   return "red";
+}
+
+// ============================================
+// ENTITY ACCESSORS
+// ============================================
+
+export function getEntityState(hass: HomeAssistant | undefined, id: string | null): string | null {
+  if (!id || !hass) return null;
+  const s = hass.states[id];
+  return s ? s.state : null;
+}
+
+export function getEntityAttribute(hass: HomeAssistant | undefined, id: string | null, attr: string): unknown {
+  if (!id || !hass) return null;
+  return hass.states[id]?.attributes[attr] ?? null;
+}
+
+export function entityExists(hass: HomeAssistant | undefined, id: string | null | undefined): boolean {
+  return !!id && !!hass?.states[id];
+}
+
+// ============================================
+// FIND ENTITY BY DEVICE
+// ============================================
+
+export function findEntityByDevice(
+  hass: HomeAssistant | undefined,
+  deviceId: string,
+  metric: string,
+  ePrefix: string,
+  eSuffix: string
+): string | null {
+  if (!deviceId || !hass?.entities) return null;
+  const pLen = (ePrefix || "").length;
+  const sLen = (eSuffix || "").length;
+
+  for (const [entityId, info] of Object.entries(hass.entities)) {
+    if (info.device_id !== deviceId) continue;
+    const core = entityId.slice(pLen, sLen ? -sLen : undefined);
+    if (core === metric || core.endsWith(`_${metric}`)) return entityId;
+  }
+
+  for (const [entityId, info] of Object.entries(hass.entities)) {
+    if (info.device_id !== deviceId) continue;
+    if (entityId.endsWith(`_${metric}`)) return entityId;
+  }
+  return null;
+}
+
+// ============================================
+// NEIGHBOR HELPERS
+// ============================================
+
+export interface NeighborInfo {
+  id: string;
+  name: string;
+  snr: number | null;
+  lastSeen: number | null;
+  rawSeen: string | null;
+  contactEntityId: string | null;
+  snrId?: string | null;
+}
+
+export function getNeighbors(hass: HomeAssistant | undefined, deviceId: string): NeighborInfo[] {
+  if (!hass || !deviceId) return [];
+  const neighborMap = new Map<string, any>();
+
+  for (const [entityId, info] of Object.entries(hass.entities || {})) {
+    if (info.device_id !== deviceId) continue;
+
+    const seenMatch = entityId.match(/_neighbor_([0-9a-f]+)_seen$/);
+    if (seenMatch) {
+      const neighborId = seenMatch[1];
+      if (!neighborMap.has(neighborId)) {
+        neighborMap.set(neighborId, {});
+      }
+      const seenVal = getEntityState(hass, entityId);
+      if (seenVal !== null && seenVal !== "unknown" && seenVal !== "unavailable") {
+        neighborMap.get(neighborId)!.rawSeen = seenVal;
+        neighborMap.get(neighborId)!.seenId = entityId;
+      }
+    }
+
+    const neighborMatch = entityId.match(/_neighbor_([0-9a-f]+)$/);
+    if (neighborMatch && !entityId.endsWith("_seen")) {
+      const neighborId = neighborMatch[1];
+      if (!neighborMap.has(neighborId)) {
+        neighborMap.set(neighborId, {});
+      }
+      const val = getEntityState(hass, entityId);
+      const state = hass.states[entityId];
+      let lastSeenTimestamp = null;
+      if (state && state.last_changed) {
+        lastSeenTimestamp = new Date(state.last_changed).getTime() / 1000;
+      } else if (state && state.last_updated) {
+        lastSeenTimestamp = new Date(state.last_updated).getTime() / 1000;
+      }
+      const existing = neighborMap.get(neighborId)!;
+      if (lastSeenTimestamp && (!existing.lastSeen || lastSeenTimestamp < existing.lastSeen)) {
+        existing.lastSeen = lastSeenTimestamp;
+      }
+      if (val !== null && val !== "unknown" && val !== "unavailable") {
+        const numVal = parseFloat(val);
+        if (!isNaN(numVal)) {
+          existing.snr = numVal;
+          existing.snrId = entityId;
+        }
+      }
+    }
+  }
+
+  const neighbors: NeighborInfo[] = [];
+  for (const [neighborId, data] of neighborMap) {
+    let neighborName = neighborId.substring(0, 8);
+    let contactEntityId = null;
+
+    for (const [entityId, state] of Object.entries(hass.states)) {
+      if (!/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) continue;
+      const advId = state.attributes["adv_id"];
+      if (advId && String(advId) === neighborId) {
+        neighborName = state.attributes["adv_name"] || neighborName;
+        contactEntityId = entityId;
+        break;
+      }
+      if (entityId.includes(neighborId)) {
+        neighborName = state.attributes["adv_name"] || neighborName;
+        contactEntityId = entityId;
+        break;
+      }
+    }
+
+    neighbors.push({
+      id: neighborId,
+      name: neighborName,
+      snr: data.snr ?? null,
+      lastSeen: data.lastSeen ?? null,
+      rawSeen: data.rawSeen ?? null,
+      contactEntityId: contactEntityId,
+      snrId: data.snrId ?? null,
+    });
+  }
+
+  neighbors.sort((a, b) => {
+    const aSnr = a.snr !== null ? Number(a.snr) : -100;
+    const bSnr = b.snr !== null ? Number(b.snr) : -100;
+    return bSnr - aSnr;
+  });
+
+  return neighbors;
+}
+
+export function formatNeighborLastSeen(timestamp: number | null): string {
+  if (!timestamp) return "?";
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - timestamp;
+  if (diff < 0) return "?";
+  if (diff < 60) return `${Math.floor(diff)}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.ceil(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
+export function getSnrClass(snr: number | string | null): string {
+  const v = Number(snr);
+  if (isNaN(v)) return "dim";
+  if (v >= 9) return "green";
+  if (v >= 6) return "yellow";
+  if (v >= 0) return "orange";
+  return "red";
+}
+
+export function snrDescription(
+  snr: number | null,
+  t: (key: string, vars?: Record<string, string | number>) => string
+): string {
+  if (snr === null || isNaN(snr)) return "";
+  if (snr >= 9) return t("card.snr_excellent");
+  if (snr >= 6) return t("card.snr_good");
+  if (snr >= 0) return t("card.snr_fair");
+  return t("card.snr_poor");
+}
+
+// ============================================
+// DISCOVER REPEATERS
+// ============================================
+
+export interface RepeaterData {
+  name: string;
+  deviceId: string;
+  online: boolean;
+  battery: string | null;
+  rssi: string | null;
+  snr: string | null;
+  noise: string | null;
+  uptime: string | null;
+  temp: string | null;
+  neighbors: NeighborInfo[];
+  entityIds: {
+    status?: string | null;
+    battery?: string | null;
+    rssi?: string | null;
+    snr?: string | null;
+    noise?: string | null;
+    uptime?: string | null;
+    temp?: string | null;
+  };
+}
+
+import { discoverNodes } from "./discovery.js";
+
+export function discoverRepeaters(
+  hass: HomeAssistant | undefined,
+  config?: { sort_by?: "snr" | "name" | "battery" }
+): RepeaterData[] {
+  if (!hass) return [];
+  const nodes = discoverNodes(hass);
+
+  const repeaterNodes = nodes.filter((node) => {
+    const { deviceId, ePrefix, eSuffix } = node;
+    const p = (m: string) => findEntityByDevice(hass, deviceId, m, ePrefix, eSuffix);
+
+    const airtimeId = p("airtime_utilization") ?? p("airtime");
+    const rxAirtimeId = p("rx_airtime_utilization") ?? p("rx_airtime");
+    const noiseId = p("noise_floor");
+
+    const hasAirtime = !!airtimeId || !!rxAirtimeId;
+    const hasNoise = !!noiseId;
+    const hasNeighbor = (() => {
+      if (!hass?.entities) return false;
+      for (const [entityId, info] of Object.entries(hass.entities)) {
+        if (info.device_id !== deviceId) continue;
+        if (/_neighbor_[0-9a-f]+(_seen)?$/.test(entityId)) return true;
+      }
+      return false;
+    })();
+
+    return hasAirtime || hasNoise || hasNeighbor;
+  });
+
+  const result: RepeaterData[] = [];
+  for (const node of repeaterNodes) {
+    const { name, deviceId, ePrefix, eSuffix } = node;
+    const p = (m: string) => findEntityByDevice(hass, deviceId, m, ePrefix, eSuffix);
+
+    const statusId = p("online") ?? p("status");
+    const status = statusId ? hass.states[statusId]?.state : null;
+    const online = status ? isOnlineState(status) : false;
+
+    const batteryId = p("battery_percentage") ?? p("battery_level") ?? p("battery");
+    const rssiId = p("last_rssi");
+    const snrId = p("last_snr");
+    const noiseId = p("noise_floor");
+    const uptimeId = p("uptime");
+    const tempId = p("ch1_temperature") ?? p("temperature");
+
+    const battery = batteryId ? getEntityState(hass, batteryId) : null;
+    const rssi = rssiId ? getEntityState(hass, rssiId) : null;
+    const snr = snrId ? getEntityState(hass, snrId) : null;
+    const noise = noiseId ? getEntityState(hass, noiseId) : null;
+    const temp = tempId ? getEntityState(hass, tempId) : null;
+    const uptimeRaw = uptimeId ? getEntityState(hass, uptimeId) : null;
+    const uptime = uptimeRaw ? formatUptime(uptimeRaw) : null;
+
+    const neighbors = getNeighbors(hass, deviceId);
+
+    result.push({
+      name,
+      deviceId,
+      online,
+      battery,
+      rssi,
+      snr,
+      noise,
+      uptime,
+      temp,
+      neighbors,
+      entityIds: {
+        status: statusId,
+        battery: batteryId,
+        rssi: rssiId,
+        snr: snrId,
+        noise: noiseId,
+        uptime: uptimeId,
+        temp: tempId,
+      },
+    });
+  }
+
+  const sortBy = config?.sort_by || "snr";
+  if (sortBy === "snr") {
+    result.sort((a, b) => {
+      const aSnr = a.snr ? parseFloat(a.snr) : -100;
+      const bSnr = b.snr ? parseFloat(b.snr) : -100;
+      return bSnr - aSnr;
+    });
+  } else if (sortBy === "name") {
+    result.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy === "battery") {
+    result.sort((a, b) => {
+      const aBat = a.battery ? parseFloat(a.battery) : 0;
+      const bBat = b.battery ? parseFloat(b.battery) : 0;
+      return bBat - aBat;
+    });
+  }
+
+  return result;
 }

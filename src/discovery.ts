@@ -1,21 +1,30 @@
 import type { HomeAssistant, HubInfo, NodeInfo } from "./types.js";
-import { longestCommonPrefix, longestCommonSuffix } from "./helpers.js";
 
-// Longest suffix shared by at least half of the strings.
-//
-// Why: a node device's entities mostly end with `_<adv_name_slug>`
-// (e.g. `_yuba_crest_repeater`), but a few outliers — like
-// `_neighbor_<hex>` and `_neighbor_<hex>_seen` — don't, which makes the
-// strict longest-common-suffix collapse to "". A 50%-threshold suffix
-// stays robust against those outliers while still being conservative
-// enough to avoid false matches on small devices.
+// ============================================
+// FUNKCJE POMOCNICZE (przeniesione z helpers.ts)
+// ============================================
+
+function longestCommonPrefix(strs: string[]): string {
+  if (!strs.length) return "";
+  let i = 0;
+  while (i < strs[0].length && strs.every((s) => s[i] === strs[0][i])) i++;
+  return strs[0].slice(0, i);
+}
+
+function longestCommonSuffix(strs: string[]): string {
+  const rev = strs.map((s) => [...s].reverse().join(""));
+  return [...longestCommonPrefix(rev)].reverse().join("");
+}
+
+// ============================================
+// GŁÓWNE FUNKCJE DISCOVERY
+// ============================================
+
 function majoritySuffix(strs: string[]): string {
   if (strs.length <= 1) return longestCommonSuffix(strs);
   const half = Math.ceil(strs.length / 2);
   let best = "";
   for (const candidate of strs) {
-    // Walk down candidate's possible suffixes from longest. Only check
-    // suffixes longer than `best` to avoid wasted work.
     for (let len = candidate.length; len > best.length; len--) {
       const suffix = candidate.slice(-len);
       let count = 0;
@@ -44,7 +53,6 @@ export function discoverHubs(hass: HomeAssistant): HubInfo[] {
 export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
   if (!hass.entities || !hass.devices) return [];
 
-  // Map hub device_id → hub pubkey
   const hubDeviceIds = new Set<string>();
   const hubDeviceToPubkey = new Map<string, string>();
   for (const [entityId, info] of Object.entries(hass.entities)) {
@@ -55,7 +63,6 @@ export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
     }
   }
 
-  // All meshcore devices that are not hub devices
   const meshcoreDeviceIds = new Set<string>();
   for (const [, info] of Object.entries(hass.entities)) {
     if (
@@ -72,7 +79,6 @@ export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
     const device = hass.devices[deviceId];
     if (!device) continue;
 
-    // Resolve parent hub via via_device_id
     const hubPubkey = hubDeviceToPubkey.get(device.via_device_id ?? "") ?? null;
 
     const deviceEntityIds = Object.entries(hass.entities)

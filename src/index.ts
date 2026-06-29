@@ -3,6 +3,7 @@ import { MeshcoreCardEditor } from "./editor.js";
 import { MeshcoreContactCard, MeshcoreContactCardEditor } from "./contact-card.js";
 import { MeshcoreChannelCard, MeshcoreChannelCardEditor } from "./channel-card.js";
 import { MeshcoreMessageCard, MeshcoreMessageCardEditor } from "./message-card.js";
+import { MeshcoreQuickRepeaterCard,  MeshcoreQuickRepeaterCardEditor,} from "./quick-repeater-card.js";
 
 // ── Registration ──────────────────────────────────────────────────────────────
 
@@ -66,6 +67,22 @@ if (!window.customCards.find((c) => c.type === "meshcore-message-card")) {
     type: "meshcore-message-card",
     name: "MeshCore Message Card",
     description: "Send and receive MeshCore messages (channel/direct)",
+    preview: true,
+    documentationURL: "https://github.com/dida886/meshcore-card",
+  });
+}
+
+if (!customElements.get("meshcore-quick-repeater-card")) {
+  customElements.define("meshcore-quick-repeater-card", MeshcoreQuickRepeaterCard);
+}
+if (!customElements.get("meshcore-quick-repeater-card-editor")) {
+  customElements.define("meshcore-quick-repeater-card-editor", MeshcoreQuickRepeaterCardEditor);
+}
+if (!window.customCards.find((c) => c.type === "meshcore-quick-repeater-card")) {
+  window.customCards.push({
+    type: "meshcore-quick-repeater-card",
+    name: "MeshCore Quick Repeater Card",
+    description: "Quickly view MeshCore repeaters",
     preview: true,
     documentationURL: "https://github.com/dida886/meshcore-card",
   });

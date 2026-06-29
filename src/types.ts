@@ -168,6 +168,14 @@ export interface MeshcoreMessageCardConfig {
   use_repeater_names?: boolean;
 }
 
+export interface MeshcoreQuickRepeaterConfig {
+  sort_by?: "snr" | "name" | "battery";
+  max_neighbors?: number;
+  grid_options?: {
+    rows?: number;
+  };
+}
+
 declare global {
   interface Window {
     customCards: CustomCardEntry[];

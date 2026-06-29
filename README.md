@@ -45,6 +45,7 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 * **NEW in 1.3.0: Bubble-style message layout**
 * **NEW in 1.3.3: Display repeater names in path** – optionally show friendly names instead of hex IDs
 * **NEW in 1.3.4: Advert buttons on Hub card** – send Advert/Advert Flood with one click
+* **NEW in 1.4.0: Quick Repeater Card** – dedicated dashboard for monitoring all repeaters at a glance
 * URL detection and copy-to-clipboard
 * Long-press message copying
 * Mobile-friendly interaction model
@@ -55,10 +56,13 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 ---
 
 ## 📸 Screenshots
+### **NEW Quick Repeater Card (v1.4.0)**
+![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card.png)
+![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card2.png)
 
 ### Hub & Remote Nodes Card
-![MeshCore Hub Card](images/meshcore-hub-card-logo.png)
-![MeshCore Remote Nodes](images/meshcore-remote-nodes-card-logo.png)
+![MeshCore Hub Card](images/meshcore-hub-card.png)
+![MeshCore Remote Nodes](images/meshcore-remote-nodes-card.png)
 
 ### Message Card
 ![MeshCore Messages](images/message-card-screenshot.png)
@@ -66,9 +70,42 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 ### Contacts Card
 ![MeshCore Contacts](images/contact-card-screenshot.png)
 
-
 ### Channel Card
 ![MeshCore Channel](images/chanel-card-screenshot.png)
+
+
+## 🚀 What's New in Version 1.4.0
+
+### 📡 Quick Repeater Card – Dedicated Repeater Monitoring
+
+A new, lightweight card designed specifically for monitoring all MeshCore repeaters in your network:
+
+- **Complete repeater overview** – displays all repeaters in a compact, scannable list
+- **Key metrics at a glance**: battery percentage, uptime, SNR, RSSI, noise floor, and temperature
+- **Expandable neighbor list** – click the "Neighbors" header to reveal detailed information about each neighbor:
+  - Neighbor name (with clickable link to contact details)
+  - SNR value with color coding (green/yellow/orange/red)
+  - Time since last seen
+  - Connection count over the last 48 hours
+- **Smart sorting** – sort repeaters by SNR (best signal first), name (alphabetical), or battery level (highest first)
+- **Clean, mobile-first design** – optimized for small screens with large touch targets
+- **Minimal configuration** – just add the card and it works automatically
+- **Click-through** – click on any metric to open the more-info dialog for that entity
+
+**Perfect for quick network health checks** – see which repeaters are online, which have weak signals, and which need battery replacement, all from a single card.
+
+### Configuration
+
+```yaml
+type: custom:meshcore-quick-repeater-card
+
+# Optional: Sort order
+sort_by: snr  # Options: snr (default), name, battery
+
+# Optional: Grid rows for dashboard layout
+grid_options:
+  rows: 4
+```
 
 ## 🚀 What's New in Version 1.3.4
 
@@ -306,6 +343,36 @@ The cards read hub, node, contact, and channel information directly from entitie
 This package provides four card types.
 
 ---
+
+## custom:meshcore-quick-repeater-card
+
+### Quick Repeater Card
+
+Displays all MeshCore repeaters in a compact, scannable list with key metrics and expandable neighbor details.
+
+Features:
+* Repeater overview – list all repeaters with online/offline status
+* Key metrics – battery percentage, uptime, SNR, RSSI, noise floor, temperature
+* Expandable neighbors – click "Neighbors" header to reveal detailed neighbor information:
+* Neighbor name (clickable → more-info)
+* SNR with color coding
+* Time since last seen
+* Connection count (48h)
+* Smart sorting – sort by SNR (best first), name, or battery level
+* Mobile-first – optimized for small screens with large touch targets
+* Zero configuration – just add the card and it works
+* Click-through – all metrics are clickable and open more-info dialog
+
+Configuration
+```yaml
+type: custom:meshcore-quick-repeater-card
+# Optional: Sort order
+sort_by: snr  # Options: snr (default), name, battery
+# Optional: Grid rows for dashboard layout
+grid_options:
+  rows: 4
+ ``` 
+The card automatically discovers all repeaters in your MeshCore network – no manual configuration required.
 
 ## custom:meshcore-card
 
@@ -579,7 +646,7 @@ MIT
 
 Copyright (c) 2026 John Pettitt
 
-Additional enhancements and Message Card functionality:
+Additional cards, enhancements, and continuous development:
 
 Copyright (c) 2026 Damian Mainka
 
