@@ -234,36 +234,155 @@ export const QUICK_REPEATER_STYLES = `
     margin-bottom: 10px;
   }
 
-  /* ── RESPONSYWNOŚĆ ── */
-  @media (max-width: 500px) {
+  /* ── RESPONSYWNOŚĆ – DLA TELEFONÓW (S23 Ultra i podobne) ── */
+  @media (max-width: 768px) {
+    .qr-repeater-card {
+      padding: 10px 12px;
+    }
+    
     .qr-repeater-header {
       flex-wrap: wrap;
+      gap: 6px;
     }
+    
+    .qr-repeater-name {
+      font-size: 0.9rem; /* 14.4px zamiast 16px */
+    }
+    
     .qr-header-right {
+      font-size: 11px;
+      gap: 6px;
       margin-left: auto;
+    }
+    
+    .qr-header-battery {
       font-size: 11px;
     }
+    .qr-header-uptime {
+      font-size: 10px;
+    }
+    
     .qr-repeater-metrics {
       flex-direction: column;
       align-items: stretch;
       gap: 4px;
+      font-size: 11px;
+      padding-left: 0px;
     }
-    .qr-metrics-left, .qr-metrics-right {
+    
+    .qr-metrics-left {
+      gap: 6px 10px;
       justify-content: flex-start;
+      flex-wrap: wrap;
     }
+    
     .qr-metrics-right {
+      gap: 6px 10px;
       justify-content: flex-start;
+      flex-wrap: wrap;
     }
+    
+    .qr-metric ha-icon {
+      --mdc-icon-size: 12px;
+    }
+    .qr-metric-value {
+      font-size: 11px;
+    }
+    
+    .qr-neighbors-header {
+      font-size: 12px;
+      padding: 3px 0 3px 0px;
+      margin-top: 4px;
+      padding-top: 6px;
+    }
+    .qr-neighbors-header .qr-toggle-icon {
+      font-size: 14px;
+    }
+    .qr-neighbors-count {
+      font-size: 10px;
+    }
+    
     .qr-neighbors-list {
-      padding-left: 4px;
+      padding-left: 0px;
+      gap: 2px;
     }
+    
+    .qr-neighbor-row {
+      padding: 3px 0;
+    }
+    
+    .qr-neighbor-name {
+      font-size: 12px;
+      max-width: 200px;
+    }
+    
+    .qr-neighbor-snr {
+      font-size: 12px;
+    }
+    
     .qr-neighbor-stats {
       font-size: 10px;
       gap: 8px;
       flex-wrap: wrap;
+      padding-left: 0px;
     }
+    
+    .qr-neighbor-stat {
+      font-size: 10px;
+    }
+  }
+
+  /* ── RESPONSYWNOŚĆ – DLA BARDZO MAŁYCH EKRANÓW (poniżej 400px) ── */
+  @media (max-width: 400px) {
     .qr-repeater-card {
-      padding: 10px 12px;
+      padding: 8px 10px;
+    }
+    
+    .qr-repeater-name {
+      font-size: 0.85rem;
+    }
+    
+    .qr-header-right {
+      font-size: 10px;
+      gap: 4px;
+    }
+    
+    .qr-repeater-metrics {
+      font-size: 10px;
+      gap: 3px;
+    }
+    
+    .qr-metrics-left {
+      gap: 4px 8px;
+    }
+    .qr-metrics-right {
+      gap: 4px 8px;
+    }
+    
+    .qr-metric-value {
+      font-size: 10px;
+    }
+    
+    .qr-neighbors-header {
+      font-size: 11px;
+    }
+    
+    .qr-neighbor-name {
+      font-size: 11px;
+      max-width: 150px;
+    }
+    
+    .qr-neighbor-snr {
+      font-size: 11px;
+    }
+    
+    .qr-neighbor-stats {
+      font-size: 9px;
+      gap: 6px;
+    }
+    
+    .qr-neighbor-stat {
+      font-size: 9px;
     }
   }
 `;
