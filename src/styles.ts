@@ -391,21 +391,6 @@ export const STYLES: string = `
     flex-shrink: 0;
   }
 
-  /* ===== RESPONSYWNOŚĆ DLA TELEFONÓW ===== */
-  @media (max-width: 500px) {
-    .signal-row {
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-    .signal-left {
-      justify-content: center;
-      gap: 16px;
-    }
-    .signal-right {
-      flex-shrink: 1;
-    }
-  }
   .signal-item {
     display: flex;
     align-items: baseline;
@@ -779,5 +764,186 @@ export const STYLES: string = `
     font-size: 12px;
     font-weight: 500;
     transition: opacity 0.3s;
+  }
+
+  @media (max-width: 500px) {
+    ha-card {
+      padding: 12px;
+    }
+
+    /* signal-row – w jednej linii */
+    .signal-row {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    .signal-left {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .signal-right {
+      flex-shrink: 0;
+    }
+    .signal-item {
+      font-size: 10px;
+      gap: 3px;
+    }
+    .signal-label {
+      font-size: 9px;
+    }
+    .signal-value {
+      font-size: 11px;
+    }
+
+    /* traffic-grid – w jednej linii */
+    .traffic-grid {
+      flex-wrap: nowrap;
+      gap: 6px;
+      justify-content: center;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+    .traffic-item {
+      min-width: 70px;
+      padding: 4px 8px;
+      gap: 4px;
+    }
+    .traffic-label {
+      font-size: 8px;
+    }
+    .traffic-value {
+      font-size: 11px;
+    }
+
+    /* Pozostałe elementy – dostosowanie dla małych ekranów */
+    .node-block {
+      padding: 10px 10px 8px;
+      margin-bottom: 8px;
+    }
+    .node-header {
+      gap: 4px;
+    }
+    .node-left {
+      gap: 4px;
+    }
+    .node-right {
+      gap: 4px;
+    }
+    .node-name, .hub-name {
+      font-size: 0.9rem;
+    }
+    .node-header-badge {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .type-badge {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .status-text {
+      font-size: 11px;
+    }
+    .bar-row {
+      font-size: 9px;
+      margin: 6px 0 2px;
+    }
+    .bar-label {
+      gap: 3px;
+    }
+    .bar-val {
+      font-size: 10px;
+    }
+    .rf-row {
+      gap: 4px;
+      padding: 0 0 4px 0;
+    }
+    .rf-chip {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .mqtt-pill {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .chip {
+      font-size: 9px;
+      padding: 3px 8px;
+    }
+    .advanced-chip {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .loc-coords {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .map-link {
+      font-size: 8px;
+      padding: 2px 6px;
+    }
+    .neighbors-header {
+      margin: 4px 0 4px 0;
+    }
+    .neighbor-row {
+      padding: 6px 8px;
+    }
+    .neighbor-name {
+      font-size: 10px;
+      max-width: 100px;
+    }
+    .neighbor-snr {
+      font-size: 10px;
+      padding: 1px 6px;
+    }
+    .neighbor-stats {
+      gap: 6px;
+      font-size: 8px;
+    }
+    .neighbor-stat {
+      font-size: 8px;
+    }
+    .advert-btn {
+      font-size: 9px;
+      padding: 4px 6px;
+      max-width: 120px;
+    }
+    .advert-btn ha-icon {
+      --mdc-icon-size: 14px;
+    }
+    .empty {
+      font-size: 11px;
+      padding: 20px 16px;
+    }
+  }
+
+  /* ============================================ */
+  /* RESPONSYWNOŚĆ DLA BARDZO MAŁYCH EKRANÓW */
+  /* ============================================ */
+  @media (max-width: 400px) {
+    .signal-row {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .signal-left {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .signal-right {
+      justify-content: center;
+    }
+    .traffic-grid {
+      gap: 4px;
+    }
+    .traffic-item {
+      min-width: 60px;
+      padding: 3px 6px;
+    }
+    .node-name, .hub-name {
+      font-size: 0.8rem;
+    }
   }
 `;

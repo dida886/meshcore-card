@@ -100,7 +100,20 @@
     "show_hub_traffic": "Afficher la rubrique « Circulation »",
     "show_hub_advanced": "Afficher les statistiques avancées",
     "show_hub_location": "Afficher la section « Emplacement »",
-    "show_hub_mqtt": "Afficher la section MQTT"
+    "show_hub_mqtt": "Afficher la section MQTT",
+    "sort_by": "Trier par",
+    "sort_by_snr": "SNR (meilleur)",
+    "sort_by_name": "Nom",
+    "sort_by_battery": "Batterie (maximum)",
+    "max_neighbors": "Nombre maximal de voisins",
+    "show_hub_advert_buttons": "Afficher les boutons « Publicité »",
+    "filter_all": "Tout",
+    "filter_repeater": "Répéteur",
+    "filter_room": "Serveur de chambre",
+    "filter_sensor": "Capteur",
+    "filter_client": "Client",
+    "show_hide_nodes": "Afficher/Masquer les nœuds",
+    "node_type_filter": "Filtre de type de nœud par défaut"
   },
   "message-card": {
     "send_message": "ENVOYER UN MESSAGE MESHCORE",

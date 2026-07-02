@@ -57,89 +57,53 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 
 ## 📸 Screenshots
 ### **NEW Quick Repeater Card (v1.4.0)**
+```yaml
+type: custom:meshcore-quick-repeater-card
+```
 ![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card.png)
 ![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card2.png)
 
-### Hub & Remote Nodes Card
+### Hub Card
+```yaml
+custom:meshcore-hub-card
+```
 ![MeshCore Hub Card](images/meshcore-hub-card.png)
+
+### Remote Nodes Card
+```yaml
+custom:meshcore-node-card
+```
 ![MeshCore Remote Nodes](images/meshcore-remote-nodes-card.png)
 
 ### Message Card
+```yaml
+custom:meshcore-message-card
+```
 ![MeshCore Messages](images/message-card-screenshot.png)
 
 ### Contacts Card
+```yaml
+custom:meshcore-contact-card
+```
 ![MeshCore Contacts](images/contact-card-screenshot.png)
 
 ### Channel Card
+```yaml
+custom:meshcore-channel-card
+```
 ![MeshCore Channel](images/chanel-card-screenshot.png)
 
 
-## 🚀 What's New in Version 1.4.0
 
-### 📡 Quick Repeater Card – Dedicated Repeater Monitoring
+## 📡 Real-Time rx_log Data in Message Card
 
-A new, lightweight card designed specifically for monitoring all MeshCore repeaters in your network:
+The Message Card reads transmission data from a local NDJSON file (`/local/meshcore_rx.json`) and subscribes to `meshcore_message` events for live updates:
 
-- **Complete repeater overview** – displays all repeaters in a compact, scannable list
-- **Key metrics at a glance**: battery percentage, uptime, SNR, RSSI, noise floor, and temperature
-- **Expandable neighbor list** – click the "Neighbors" header to reveal detailed information about each neighbor:
-  - Neighbor name (with clickable link to contact details)
-  - SNR value with color coding (green/yellow/orange/red)
-  - Time since last seen
-  - Connection count over the last 48 hours
-- **Smart sorting** – sort repeaters by SNR (best signal first), name (alphabetical), or battery level (highest first)
-- **Clean, mobile-first design** – optimized for small screens with large touch targets
-- **Minimal configuration** – just add the card and it works automatically
-- **Click-through** – click on any metric to open the more-info dialog for that entity
+* **Automatic refresh** – the card reloads transmission data whenever a new `meshcore_message` event is received
+* **File-based caching** – transmission metrics (RSSI, SNR, path, hop count) are stored locally for historical messages
+* **Seamless integration** – route metrics appear automatically for messages with available path data
 
-**Perfect for quick network health checks** – see which repeaters are online, which have weak signals, and which need battery replacement, all from a single card.
-
-### Configuration
-
-```yaml
-type: custom:meshcore-quick-repeater-card
-
-# Optional: Sort order
-sort_by: snr  # Options: snr (default), name, battery
-
-# Optional: Grid rows for dashboard layout
-grid_options:
-  rows: 4
-```
-
-## 🚀 What's New in Version 1.3.4
-
-* Added Advert Buttons to Hub Card – now you can send Advert (Zero-Hop) and Advert Flood messages directly from the hub card. Two buttons are placed at the bottom of each hub block, making it easy to announce your presence or flood the network. The buttons are configurable via **show_hub_advert_buttons: false** if you prefer to hide them.
-
-
-## 🚀 What's New in Version 1.3.0
-
-### 🗺️ Transmission Route Visualization
-
-The Message Card now displays full transmission metrics for received messages:
-
-* **RSSI, SNR, and hop count** shown as a compact metrics bar below each message
-* **Expandable path section** – click the metrics bar to reveal the complete transmission route (e.g., `a1b2 → c3d4 → e5f6 → ...`)
-* **Smart path formatting** – automatically splits hex paths into readable node hops, with special handling for FLOOD and FOLD route types
-* **Repeater name mapping** – optionally replaces hex identifiers with human-readable names from your discovered contacts. Unknown nodes are shown as "Unknown (hex)". Enabled by default, can be toggled via `use_repeater_names` config option.
-* **SVG icons** for signal strength, activity, and waypoints – visually clean and theme-friendly
-
-### 💬 Bubble-Style Message Layout
-
-Messages now display in a modern chat-like bubble interface:
-
-* **Sent messages** – right-aligned with green accent
-* **Received messages** – left-aligned with blue accent
-* Clear header with **time and sender name**
-* Direction arrow icons integrated into the sender line
-
-### 📡 Real-Time rx_log Data
-
-The card now subscribes to `meshcore_message` events and reads transmission data from a local NDJSON file:
-
-* Automatic refresh when new messages arrive
-* Local file caching with automatic pruning (24h max age, 500 entries limit)
-* Seamless integration – metrics appear automatically for messages with available route data
+> **Note:** The card reads from the file but does not manage the file itself. You need to configure a file notification service and an automation to populate and maintain the file. See below.
 
 ### 🔧 Configuration Required for Route Visualization
 
@@ -234,50 +198,7 @@ This runs daily at 3:00 AM, keeping your log file lean and fast to load.
 
 > **Note:** Adjust the **500** value to your needs. Each entry is roughly 100-125 bytes. Keep in mind that the Message Card loads this entire file into memory when displaying route metrics – a larger file means slower initial rendering and higher memory usage on the dashboard.
 
-## 🚀 Previous Updates (Version 1.2.0)
 
-### 🏗️ Enhanced Hub & Node Card
-
-New Hub Parameters:
-
-- Signal section: RSSI, SNR, Noise Floor
-
-- Traffic section: Messages Sent, Messages Received
-
-- Advanced statistics: Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
-
-Configurable Sections for Hub:
-- Users can now hide/show individual sections via configuration:
-
-- show_hub_technical – show/hide Technical section (Frequency, Bandwidth, SF, TX Power)
-
-- show_hub_signal – show/hide Signal section (RSSI, SNR, Noise)
-
-- show_hub_traffic – show/hide Traffic section (Sent/Received)
-
-- show_hub_advanced – show/hide Advanced statistics
-
-- show_hub_location – show/hide Location section
-
-- show_hub_mqtt – show/hide MQTT section
-
-- show_hub_advert_buttons - show/hide Advert buttons
-
-Node Card Improvements:
-
-- Temperature moved to header row (next to Repeater badge)
-
-- Noise Floor moved to signal row (alongside RSSI/SNR)
-
-- Responsive signal row – wraps on mobile devices (RSSI+SNR on one line, Noise below)
-
-### 📇 Enhanced Contact Card
-
-- Contact counter next to "CONTACTS" label – updates with filters
-
-### 💬 Message Card Improvements
-
-- Mention highlighting – `@[username]` appears with gold highlight
 
 ## Requirements
 
@@ -340,9 +261,112 @@ The cards read hub, node, contact, and channel information directly from entitie
 
 # Cards
 
-This package provides four card types.
+This package provides six card types.
 
 ---
+
+## custom:meshcore-card / custom:meshcore-hub-card
+
+### Hub Card
+
+> **Note:** `custom:meshcore-card` is kept for backward compatibility and now works identically to `custom:meshcore-hub-card` – both display only MeshCore hubs. For new setups, we recommend using `custom:meshcore-hub-card`.
+
+Displays all MeshCore hubs automatically discovered from Home Assistant. Nodes are no longer displayed here – use the dedicated `custom:meshcore-node-card` for nodes.
+
+### Features
+
+* Hub online/offline status
+* Hardware model
+* Firmware version
+* Node count
+* RF parameters
+* MQTT broker status
+* Hub location links
+* RSSI and SNR indicators
+* Battery and voltage display
+* **Hub Sections** – Show/hide individual sections (Technical, Signal, Traffic, Advanced, Location, MQTT)
+* **Hub Signal Metrics** – RSSI, SNR, Noise Floor
+* **Hub Traffic Metrics** – Messages Sent, Messages Received
+* **Hub Advanced Metrics** – Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
+* **Mobile-friendly signal row** – RSSI/SNR on one line, Noise below on small screens
+* **Advert Buttons** – send Advert/Advert Flood directly from hub card
+
+### Configuration
+
+Both card types use the same configuration:
+
+```yaml
+# Option 1: Legacy card (kept for compatibility)
+type: custom:meshcore-card
+
+# Option 2: New dedicated hub card (recommended)
+type: custom:meshcore-hub-card
+
+hubs:
+  55733c:
+    enabled: true
+
+grid_options:
+  rows: 4
+
+# Hub section visibility
+show_hub_technical: true
+show_hub_signal: true
+show_hub_traffic: true
+show_hub_advanced: true
+show_hub_location: true
+show_hub_mqtt: true
+show_hub_advert_buttons: true
+```
+---
+
+## custom:meshcore-node-card
+
+### Node Card
+
+A dedicated card for monitoring all MeshCore nodes (repeaters, rooms, sensors, clients) with powerful filtering and visibility controls.
+
+### Features
+
+- **Complete node overview** – displays all nodes in a compact, scannable list
+- **Key metrics at a glance** – battery percentage, uptime, SNR, RSSI, noise floor, and temperature
+- **Filter by node type** – show only specific node types:
+  - `all` – all nodes
+  - `repeater` – only repeaters
+  - `room` – only room servers
+  - `sensor` – only sensors
+  - `client` – only client devices
+- **Hide individual nodes** – easily toggle visibility of specific nodes via checkbox list in the editor
+- **Expandable neighbor list** – click the "Neighbors" header to reveal detailed information about each neighbor:
+  - Neighbor name (with clickable link to contact details)
+  - SNR value with color coding (green/yellow/orange/red)
+  - Time since last seen
+  - Connection count over the last 48 hours
+- **Mobile-first design** – optimized for small screens with large touch targets
+- **Zero configuration required** – just add the card and it works automatically
+- **Click-through** – click on any metric to open the more-info dialog for that entity
+
+**Perfect for monitoring your entire MeshCore network** – see which devices are online, which have weak signals, and which need attention, all from a single card.
+
+### Configuration
+
+```yaml
+type: custom:meshcore-node-card
+
+# Optional: Filter by node type
+node_type_filter: all  # Options: all, repeater, room, sensor, client
+
+# Optional: Hide specific nodes (can also be configured via editor checkboxes)
+hidden_nodes:
+  - "MeshCore Repeater: OPO Jełowa RPT🌀 (667599)"
+  - "MeshCore Repeater: BB-33-PP32-J-POLE (111179)"
+
+# Optional: Grid rows for dashboard layout
+grid_options:
+  rows: 4
+```
+The card automatically discovers all nodes in your MeshCore network and displays them with all available metrics. The editor provides an intuitive checkbox interface for hiding individual nodes.
+
 
 ## custom:meshcore-quick-repeater-card
 
@@ -374,86 +398,6 @@ grid_options:
  ``` 
 The card automatically discovers all repeaters in your MeshCore network – no manual configuration required.
 
-## custom:meshcore-card
-
-### Hub & Node Card
-
-Displays all MeshCore hubs and their remote nodes automatically discovered from Home Assistant.
-
-### Features
-
-* Hub online/offline status
-* Hardware model
-* Firmware version
-* Node count
-* RF parameters
-* MQTT broker status
-* Hub location links
-* Remote node discovery
-* RSSI and SNR indicators
-* Battery and voltage display
-* Last seen timestamps
-* Repeater statistics
-* Optional sensor values
-* Drag-and-drop node ordering
-* Throttled rendering
-* **Hub Sections** – Show/hide individual sections (Technical, Signal, Traffic, Advanced, Location, MQTT)
-* **Hub Signal Metrics** – RSSI, SNR, Noise Floor
-* **Hub Traffic Metrics** – Messages Sent, Messages Received
-* **Hub Advanced Metrics** – Receive Errors, TX Queue Length, Last Message Delivery, TX Airtime, RX Airtime, Companion Prefix
-* **Mobile-friendly signal row** – RSSI/SNR on one line, Noise below on small screens
-
-### Configuration
-
-```yaml
-type: custom:meshcore-card
-
-hubs:
-  55733c:
-    enabled: true
-    battery_entity: sensor.x
-    voltage_entity: sensor.x
-
-nodes:
-  MyNode:
-    enabled: true
-    battery_entity: sensor.x
-    voltage_entity: sensor.x
-    location_entity: sensor.x
-    temperature_entity: sensor.x
-    humidity_entity: sensor.x
-    illuminance_entity: sensor.x
-    pressure_entity: sensor.x
-
-nodes_order:
-  - MyNode
-  - OtherNode
-
-grid_options:
-  rows: 4
-
-# Hub section visibility (new in v1.2.0)
-show_hub_technical: true
-show_hub_signal: true
-show_hub_traffic: true
-show_hub_advanced: true
-show_hub_location: true
-show_hub_mqtt: true
-```
-
-### Shorthand
-
-```yaml
-hubs:
-  55733c: true
-  aabbcc: false
-
-nodes:
-  JPP: true
-  YubaMonitor: false
-```
-
----
 
 ## custom:meshcore-message-card
 
@@ -467,14 +411,17 @@ Send and receive MeshCore messages directly from Home Assistant.
 * Send messages to contacts
 * View message history
 * Automatic refresh after sending
-* URL detection
-* URL copy support
+* URL detection and copy support
 * Long-press message copy
+* **Sender mention** – click on a received message sender to automatically insert `@[sender]` into the input field
+* **Mention highlighting** – `@[username]` appears with gold highlight for easy recognition
 * Mobile and desktop support
 * Multi-language support
 * Status notifications
 * Manual refresh button
-* NEW: Default channel selection
+* Default channel selection
+* Route visualization with RSSI/SNR metrics
+* Repeater name mapping in paths
 
 ### Configuration
 The Message Card automatically discovers all available channels and contacts. You can optionally set a default channel to load automatically when the card starts.

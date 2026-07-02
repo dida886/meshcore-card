@@ -38,17 +38,6 @@ export interface HubConfig {
   voltage_entity?: string;
 }
 
-export interface NodeConfig {
-  enabled?: boolean;
-  battery_entity?: string;
-  voltage_entity?: string;
-  location_entity?: string;
-  temperature_entity?: string;
-  humidity_entity?: string;
-  illuminance_entity?: string;
-  pressure_entity?: string;
-}
-
 export interface GridOptions {
   rows?: number;
   columns?: number;
@@ -57,10 +46,7 @@ export interface GridOptions {
 }
 
 export interface MeshcoreCardConfig {
-  type?: string;
   hubs?: Record<string, HubConfig | boolean>;
-  nodes?: Record<string, NodeConfig | boolean>;
-  nodes_order?: string[];
   grid_options?: GridOptions;
   show_hub_technical?: boolean;
   show_hub_signal?: boolean;    
@@ -69,6 +55,11 @@ export interface MeshcoreCardConfig {
   show_hub_location?: boolean;    
   show_hub_mqtt?: boolean;
   show_hub_advert_buttons?: boolean;
+}
+export interface MeshcoreNodeCardConfig {
+  node_type_filter?:  "all" | "repeater" | "room" | "sensor" | "client";
+  hidden_nodes?: string[];
+  grid_options?: GridOptions;
 }
 
 export interface MeshcoreContactCardConfig {

@@ -100,7 +100,20 @@
     "show_hub_traffic": "Sekcja „Ruch drogowy”",
     "show_hub_advanced": "Pokaż statystyki zaawansowane",
     "show_hub_location": "Sekcja „Pokaż lokalizację”",
-    "show_hub_mqtt": "Pokaż sekcję MQTT"
+    "show_hub_mqtt": "Pokaż sekcję MQTT",
+    "sort_by": "Sortuj według",
+    "sort_by_snr": "SNR (najlepszy)",
+    "sort_by_name": "Imię i nazwisko",
+    "sort_by_battery": "Bateria (najwyższy poziom)",
+    "max_neighbors": "Maksymalna liczba sąsiadów",
+    "show_hub_advert_buttons": "Pokaż przyciski reklamowe",
+    "filter_all": "Wszystkie",
+    "filter_repeater": "Przekaźnik",
+    "filter_room": "Serwer pokojowy",
+    "filter_sensor": "Czujnik",
+    "filter_client": "Klient",
+    "show_hide_nodes": "Pokaż/Ukryj węzły",
+    "node_type_filter": "Domyślny filtr typu węzła"
   },
   "message-card": {
     "send_message": "WYŚLIJ WIADOMOŚĆ MESHCORE",

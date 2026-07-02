@@ -265,6 +265,49 @@ export function snrDescription(
   if (snr >= 0) return t("card.snr_fair");
   return t("card.snr_poor");
 }
+// ── Filter neighbors ──────────────────────────────────────────
+
+export interface FilteredNeighborOptions {
+  /** Pomijaj sąsiadów z "unavailable network" (domyślnie true) */
+  skipUnavailable?: boolean;
+  /** Pomijaj sąsiadów bez SNR (domyślnie true) */
+  skipNoSnr?: boolean;
+  /** Maksymalna liczba sąsiadów do zwrócenia (domyślnie brak limitu) */
+  maxNeighbors?: number;
+}
+
+export function filterNeighbors(
+  neighbors: NeighborInfo[],
+  options: FilteredNeighborOptions = {}
+): NeighborInfo[] {
+  const {
+    skipUnavailable = true,
+    skipNoSnr = true,
+    maxNeighbors,
+  } = options;
+
+  let filtered = neighbors.filter((n) => {
+    if (skipUnavailable && n.name === "unavailable network") {
+      return false;
+    }
+    if (skipNoSnr && (n.snr === null || isNaN(Number(n.snr)))) {
+      return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    const aSnr = a.snr !== null ? Number(a.snr) : -100;
+    const bSnr = b.snr !== null ? Number(b.snr) : -100;
+    return bSnr - aSnr;
+  });
+
+  if (maxNeighbors && maxNeighbors > 0) {
+    filtered = filtered.slice(0, maxNeighbors);
+  }
+
+  return filtered;
+}
 
 // ============================================
 // DISCOVER REPEATERS
@@ -333,6 +376,17 @@ export function discoverRepeaters(
     const online = status ? isOnlineState(status) : false;
 
     const batteryId = p("battery_percentage") ?? p("battery_level") ?? p("battery");
+    let battVId = p("battery_voltage");
+    if (!battVId && hass) {
+      for (const [entityId, info] of Object.entries(hass.entities)) {
+        if (info.device_id !== deviceId) continue;
+        if (/_bat$|_battery_voltage$|_bat_/i.test(entityId) &&
+            !/percentage|level/i.test(entityId)) {
+          battVId = entityId;
+          break;
+        }
+      }
+    }
     const rssiId = p("last_rssi");
     const snrId = p("last_snr");
     const noiseId = p("noise_floor");

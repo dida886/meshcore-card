@@ -1,5 +1,5 @@
-import { MeshcoreCard } from "./card.js";
-import { MeshcoreCardEditor } from "./editor.js";
+import { MeshcoreHubCard, MeshcoreHubCardEditor } from "./hub-card.js";
+import { MeshcoreNodeCard, MeshcoreNodeCardEditor } from "./node-card.js";
 import { MeshcoreContactCard, MeshcoreContactCardEditor } from "./contact-card.js";
 import { MeshcoreChannelCard, MeshcoreChannelCardEditor } from "./channel-card.js";
 import { MeshcoreMessageCard, MeshcoreMessageCardEditor } from "./message-card.js";
@@ -8,10 +8,22 @@ import { MeshcoreQuickRepeaterCard,  MeshcoreQuickRepeaterCardEditor,} from "./q
 // ── Registration ──────────────────────────────────────────────────────────────
 
 if (!customElements.get("meshcore-card")) {
-  customElements.define("meshcore-card", MeshcoreCard);
+  customElements.define("meshcore-card", MeshcoreHubCard);
 }
 if (!customElements.get("meshcore-card-editor")) {
-  customElements.define("meshcore-card-editor", MeshcoreCardEditor);
+  customElements.define("meshcore-card-editor", MeshcoreHubCardEditor);
+}
+if (!customElements.get("meshcore-hub-card")) {
+  customElements.define("meshcore-hub-card", MeshcoreHubCard);
+}
+if (!customElements.get("meshcore-hub-card-editor")) {
+  customElements.define("meshcore-hub-card-editor", MeshcoreHubCardEditor);
+}
+if (!customElements.get("meshcore-node-card")) {
+  customElements.define("meshcore-node-card", MeshcoreNodeCard);
+}
+if (!customElements.get("meshcore-node-card-editor")) {
+  customElements.define("meshcore-node-card-editor", MeshcoreNodeCardEditor);
 }
 if (!customElements.get("meshcore-contact-card")) {
   customElements.define("meshcore-contact-card", MeshcoreContactCard);
@@ -25,6 +37,25 @@ if (!window.customCards.find((c) => c.type === "meshcore-card")) {
   window.customCards.push({
     type: "meshcore-card",
     name: "MeshCore Card",
+    description: "Displays hub statistics from the MeshCore integration",
+    preview: true,
+    documentationURL: "https://github.com/dida886/meshcore-card",
+  });
+}
+// MeshCore Hub Card
+if (!window.customCards.find((c) => c.type === "meshcore-hub-card")) {
+  window.customCards.push({
+    type: "meshcore-hub-card",
+    name: "MeshCore Hub Card",
+    description: "Displays hub statistics from the MeshCore integration",
+    preview: true,
+    documentationURL: "https://github.com/dida886/meshcore-card",
+  });
+}
+if (!window.customCards.find((c) => c.type === "meshcore-node-card")) {
+  window.customCards.push({
+    type: "meshcore-node-card",
+    name: "MeshCore Node Card",
     description: "Displays node statistics from the MeshCore integration",
     preview: true,
     documentationURL: "https://github.com/dida886/meshcore-card",

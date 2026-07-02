@@ -100,7 +100,20 @@
     "show_hub_traffic": "Het gedeelte ‘Verkeer’ weergeven",
     "show_hub_advanced": "Geavanceerde statistieken weergeven",
     "show_hub_location": "Het gedeelte ‘Locatie’ weergeven",
-    "show_hub_mqtt": "MQTT-sectie weergeven"
+    "show_hub_mqtt": "MQTT-sectie weergeven",
+    "sort_by": "Sorteren op",
+    "sort_by_snr": "SNR (beste)",
+    "sort_by_name": "Naam",
+    "sort_by_battery": "Batterij (maximaal)",
+    "max_neighbors": "Maximaal aantal buren",
+    "show_hub_advert_buttons": "Knoppen voor advertenties weergeven",
+    "filter_all": "Alles",
+    "filter_repeater": "Herhaler",
+    "filter_room": "Kamerbedieningspaneel",
+    "filter_sensor": "Sensor",
+    "filter_client": "Klant",
+    "show_hide_nodes": "Knooppunten weergeven/verbergen",
+    "node_type_filter": "Standaardfilter voor knooppunttypen"
   },
   "message-card": {
     "send_message": "MESHCORE-BERICHT VERSTUREN",

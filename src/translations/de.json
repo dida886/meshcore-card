@@ -100,7 +100,20 @@
     "show_hub_traffic": "Abschnitt „Verkehr“ anzeigen",
     "show_hub_advanced": "Erweiterte Statistiken anzeigen",
     "show_hub_location": "Abschnitt „Standort anzeigen“",
-    "show_hub_mqtt": "MQTT-Abschnitt anzeigen"
+    "show_hub_mqtt": "MQTT-Abschnitt anzeigen",
+    "sort_by": "Sortieren nach",
+    "sort_by_snr": "SNR (best)",
+    "sort_by_name": "Name",
+    "sort_by_battery": "Akku (maximal)",
+    "max_neighbors": "Maximale Anzahl von Nachbarn",
+    "show_hub_advert_buttons": "Schaltflächen „Anzeige anzeigen“ anzeigen",
+    "filter_all": "Alle",
+    "filter_repeater": "Repeater",
+    "filter_room": "Raumserver",
+    "filter_sensor": "Sensor",
+    "filter_client": "Kunde",
+    "show_hide_nodes": "Knoten anzeigen/ausblenden",
+    "node_type_filter": "Standardfilter für Knotentypen"
   },
   "message-card": {
     "send_message": "MESHCORE-NACHRICHT SENDEN",
