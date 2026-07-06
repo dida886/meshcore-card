@@ -695,7 +695,7 @@ export const STYLES: string = `
     padding: 6px 10px;
     font-size: 11px;
     line-height: 1;
-    color: #c8d8ea;
+    color: var(--primary-text-color);
     background: transparent;
     border: none;
     white-space: nowrap;
@@ -743,7 +743,7 @@ export const STYLES: string = `
     padding: 4px 8px;
     border-radius: 999px;
     border: none;
-    color: rgba(184, 201, 224, 0.88);
+    color: var(--primary-text-color);
     background: transparent;
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
@@ -766,7 +766,7 @@ export const STYLES: string = `
     border-radius: 12px;
     border: none;
     background: transparent;
-    color: #b9cce4;
+    color: var(--primary-text-color);
   }
   .hub-type-pill,
   .node-card-type-pill {
@@ -1085,8 +1085,8 @@ export const STYLES: string = `
     line-height: 1;
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
-  .hub-traffic-stat.sent .hub-traffic-value { color: #2be27a; }
-  .hub-traffic-stat.recv .hub-traffic-value { color: #8b5cf6; }
+  .hub-traffic-stat.sent .hub-traffic-value { color: #00ff6e; }
+  .hub-traffic-stat.recv .hub-traffic-value { color: #00cafd; }
   .hub-traffic-center {
     position: relative;
     width: 58px;
@@ -1120,13 +1120,13 @@ export const STYLES: string = `
         rgba(88, 166, 255, 0.12) 28deg,
         rgba(88, 166, 255, 1) 78deg,
         rgba(45, 212, 255, 1) 120deg,
-        rgba(139, 92, 246, 0.95) 170deg,
+        rgba(43, 226, 122, 0.95) 170deg,
         rgba(88, 166, 255, 0.14) 232deg,
         rgba(88, 166, 255, 0) 360deg);
     -webkit-mask: radial-gradient(circle, transparent 0 60%, #000 61% 100%);
     mask: radial-gradient(circle, transparent 0 60%, #000 61% 100%);
     filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.45));
-    animation: hub-traffic-ring-spin 1.2s linear infinite;
+    animation: hub-traffic-ring-spin 3.2s linear infinite;
   }
   .hub-traffic-center ha-icon {
     --mdc-icon-size: 18px;

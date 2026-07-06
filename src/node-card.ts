@@ -647,7 +647,7 @@ export class MeshcoreNodeCard extends HTMLElement {
     const neighborRows = filteredNeighbors.map((n: NeighborInfo) => {
       const snrVal = parseFloat(String(n.snr));
       const snrClass = getSnrClass(snrVal);
-      const shouldRenderSnrHistory = snrClass === "yellow" && !!n.snrId;
+      const shouldRenderSnrHistory = !!n.snrId;
       if (shouldRenderSnrHistory && n.snrId) this._ensureNeighborSnrHistory(n.snrId);
       const snrSeries = shouldRenderSnrHistory && n.snrId
         ? (this._neighborSnrHistory.get(n.snrId) ?? [])

@@ -104,7 +104,7 @@ export class MeshcoreHubCard extends HTMLElement {
       ? battPct
       : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
     const pctNumber = Math.min(100, Math.max(0, Number.isFinite(rawPct) ? rawPct : 0));
-    const dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 120)}, 92%, 56%)`;
+    const dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 110)}, 92%, 56%)`;
     const pctText = `${pctNumber.toFixed(0)}%`;
     const voltageText = battV !== null && Number.isFinite(Number(battV)) && Number(battV) >= 0.001
       ? `${Number(battV).toFixed(3)}V`
