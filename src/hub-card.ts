@@ -446,20 +446,20 @@ export class MeshcoreHubCard extends HTMLElement {
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
         <div class="hub-hero">
-          <div class="hub-hero-left">
-            <div class="hub-top-row">
+          <div class="hub-card-hero-left">
+            <div class="hub-card-top-row">
               <div class="hub-online-pill">
                 <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
                 <span class="status-text ${online ? "online" : "offline"}">${escapeHtml(online ? t("card.online") : t("card.offline"))}</span>
               </div>
               <span class="hub-type-pill">Hub</span>
             </div>
-            <div class="hub-main-row">
-              <div class="hub-title-line">
+            <div class="hub-card-main-row">
+              <div class="hub-card-title-line">
                 <span class="hub-name">${escapeHtml(displayName)}</span>
                 <span class="hub-id-pill clickable" data-entity="${escapeHtml(statusId ?? countId)}">(${escapeHtml(pubkey)})</span>
               </div>
-              <div class="hub-meta-row">
+              <div class="hub-card-meta-row">
                 ${nodeCount !== null ? `<span class="hub-meta-pill clickable" data-entity="${escapeHtml(countId)}">${escapeHtml(t("card.nodes_count", { n: nodeCount }))}</span>` : ""}
               </div>
             </div>

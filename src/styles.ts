@@ -41,7 +41,8 @@ export const STYLES: string = `
   }
 
   /* ===== ZMIANA: Hub name – teraz taki sam jak node-name ===== */
-  .hub-name {
+  .hub-name,
+  .node-card-name {
     font-size: 1.38rem;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -49,13 +50,16 @@ export const STYLES: string = `
     position: relative;
     z-index: 1;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.28));
+    animation: hub-levitate-b 4.2s ease-in-out infinite;
   }
   .node-name,
-  .hub-name {
+  .hub-name,
+  .node-card-name {
     text-transform: none;
   }
   .node-name::first-letter,
-  .hub-name::first-letter {
+  .hub-name::first-letter,
+  .node-card-name::first-letter {
     text-transform: uppercase;
   }
   
@@ -599,45 +603,48 @@ export const STYLES: string = `
     background: transparent;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
   }
-  .hub-hero-left {
+  .hub-card-hero-left,
+  .node-card-hero-left {
     min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 3px;
-    align-items: center;
+    align-items: stretch;
   }
-  .hub-top-row {
+  .hub-card-top-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
+    width: 100%;
   }
-  .node-top-row {
+  .node-card-top-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 12px;
     flex-wrap: nowrap;
-    width: fit-content;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
   }
-  .node-top-left,
-  .node-top-right {
+  .node-card-top-left,
+  .node-card-top-right {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     min-width: 0;
   }
-  .node-top-left {
+  .node-card-top-left {
     flex: 0 0 auto;
   }
-  .node-top-right {
+  .node-card-top-right {
     justify-content: flex-end;
     flex: 0 0 auto;
+    margin-left: auto;
   }
-  .node-temp-pill {
+  .node-card-temp-pill {
     white-space: nowrap;
   }
   .hub-online-pill {
@@ -652,7 +659,6 @@ export const STYLES: string = `
     box-shadow:
       0 10px 24px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-    animation: hub-levitate-a 3.8s ease-in-out infinite;
   }
   .hub-uptime-pill {
     display: inline-flex;
@@ -667,26 +673,43 @@ export const STYLES: string = `
     white-space: nowrap;
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
-  .hub-main-row {
+  .hub-card-main-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 10px;
     min-width: 0;
     flex-wrap: wrap;
     padding: 0px 0px 0px 4px;
+    width: 100%;
   }
-  .hub-title-line {
-    animation: hub-levitate-b 4.2s ease-in-out infinite;
-  }
-  .hub-title-line {
+  .hub-card-title-line {
     display: flex;
     align-items: baseline;
     gap: 4px;
     min-width: 0;
     flex-wrap: wrap;
   }
-  .hub-id-pill {
+  .node-card-main-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .node-card-title-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 4px;
+    min-width: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .hub-id-pill,
+  .node-card-id-pill {
     font-size: 11px;
     line-height: 1;
     padding: 4px 8px;
@@ -695,25 +718,30 @@ export const STYLES: string = `
     color: rgba(184, 201, 224, 0.88);
     background: transparent;
     font-family: var(--paper-font-code1_-_font-family, monospace);
-    animation: hub-levitate-b 4.4s ease-in-out infinite;
   }
-  .hub-meta-row {
+  .hub-card-meta-row,
+  .node-card-meta-row {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-left: 0;
     justify-content: center;
   }
-  .hub-meta-pill {
+  .node-card-meta-row {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .hub-meta-pill,
+  .node-card-meta-pill {
     font-size: 11px;
     padding: 5px 9px;
     border-radius: 12px;
     border: none;
     background: transparent;
     color: #b9cce4;
-    animation: hub-levitate-c 4.1s ease-in-out infinite;
   }
-  .hub-type-pill {
+  .hub-type-pill,
+  .node-card-type-pill {
     font-size: 13px;
     font-weight: 700;
     color: #f6a432;
@@ -724,7 +752,6 @@ export const STYLES: string = `
     box-shadow:
       0 10px 24px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-    animation: hub-levitate-d 3.6s ease-in-out infinite;
   }
   .node-name {
     font-size: 1.15rem;
@@ -841,10 +868,12 @@ export const STYLES: string = `
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     align-items: stretch;
+    width: 100%;
     background: transparent;
     border: none;
     padding: 0;
-    margin-top: 10px;
+    margin: 10px 0 0;
+    border-radius: 0;
   }
   .signal-card {
     border-radius: 12px;
@@ -1003,8 +1032,8 @@ export const STYLES: string = `
   }
 
   .hub-traffic-panel {
-    border-top: 1px solid rgba(120, 150, 220, 0.2);
-    border-bottom: 1px solid rgba(120, 150, 220, 0.12);
+    border-top: none;
+    border-bottom: none;
     padding: 8px 0 6px;
     background: transparent;
   }
@@ -1179,6 +1208,17 @@ export const STYLES: string = `
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
+  }
+  .node-card-traffic-bottom-row {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+  }
+  .node-card-traffic-bottom-row .hub-traffic-chip {
+    flex: 0 0 auto;
+    text-align: center;
   }
   .hub-traffic-chip {
     font-size: 12px;
@@ -1423,33 +1463,30 @@ export const STYLES: string = `
   }
 
   .neighbor-row {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 12px;
+    row-gap: 6px;
     padding: 8px 10px;
     background: transparent;
     border-radius: 12px;
     border: 1px solid rgba(120, 150, 220, 0.14);
-    box-shadow:
-      0 10px 24px rgba(0, 0, 0, 0.18),
-      0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
   .neighbor-row:hover {
     transform: translateY(-2px);
     border-color: rgba(120, 150, 220, 0.22);
-    box-shadow:
-      0 14px 30px rgba(0, 0, 0, 0.22),
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
   }
 
   .neighbor-main {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 6px;
     width: 100%;
   }
   .neighbor-name {
@@ -1457,7 +1494,7 @@ export const STYLES: string = `
     font-size: 12px;
     font-weight: 700;
     color: var(--primary-text-color);
-    max-width: 160px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1469,6 +1506,14 @@ export const STYLES: string = `
     font-weight: 700;
     backdrop-filter: blur(4px);
     transition: all 0.2s ease;
+  }
+  .neighbor-snr-wrap {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 0;
+    justify-self: end;
   }
   .neighbor-snr.green { 
     color: #22c55e; 
@@ -1500,7 +1545,7 @@ export const STYLES: string = `
     flex-wrap: wrap;
     gap: 14px;
     align-items: center;
-    margin-top: 6px;
+    margin-top: 0;
     justify-content: flex-start;
   }
   .neighbor-stat {
@@ -1510,6 +1555,18 @@ export const STYLES: string = `
     align-items: center;
     gap: 4px;
     opacity: 0.6;
+  }
+  .neighbor-snr-history {
+    width: 118px;
+    max-width: 100%;
+  }
+  .neighbor-snr-history .signal-sparkline {
+    height: 16px;
+    margin-top: 0;
+  }
+  .neighbor-snr-history .signal-sparkline polyline {
+    stroke-width: 1.7;
+    opacity: 0.92;
   }
 
   .neighbor-name.clickable, .neighbor-snr.clickable {
@@ -1560,7 +1617,6 @@ export const STYLES: string = `
 
   .chip,
   .mqtt-pill,
-  .neighbor-row,
   .traffic-item,
   .advanced-chip,
   .node-header-badge,
@@ -1572,7 +1628,6 @@ export const STYLES: string = `
 
   .chip:hover,
   .mqtt-pill:hover,
-  .neighbor-row:hover,
   .traffic-item:hover,
   .advanced-chip:hover {
     background: rgba(128, 128, 128, 0.07);
@@ -1612,6 +1667,7 @@ export const STYLES: string = `
     .hw-info,
     .node-name,
     .hub-name,
+    .node-card-name,
     .node-key,
     .count-badge,
     .node-route,
@@ -1625,8 +1681,11 @@ export const STYLES: string = `
     .hub-battery-label,
     .hub-battery-voltage,
     .hub-id-pill,
+    .node-card-id-pill,
     .hub-meta-pill,
+    .node-card-meta-pill,
     .hub-type-pill,
+    .node-card-type-pill,
     .hub-uptime-pill,
     .hub-tech-label,
     .hub-tech-value,
@@ -1648,8 +1707,11 @@ export const STYLES: string = `
 
     .hub-online-pill,
     .hub-type-pill,
+    .node-card-type-pill,
     .hub-id-pill,
+    .node-card-id-pill,
     .hub-meta-pill,
+    .node-card-meta-pill,
     .hub-uptime-pill,
     .signal-card,
     .hub-tech-item,
@@ -1686,6 +1748,14 @@ export const STYLES: string = `
     .hub-battery-shell {
       border-color: rgba(15, 23, 42, 0.08);
     }
+
+    .hub-id-pill,
+    .hub-meta-pill,
+    .hub-uptime-pill,
+    .node-card-meta-pill,
+    .node-card-temp-pill {
+      color: #000;
+    }
   }
 
   /* ---------- Advert buttons ---------- */
@@ -1709,7 +1779,7 @@ export const STYLES: string = `
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    background: var(--secondary-background-color);
+    background: transparent;
     color: var(--primary-text-color);
     transition: background 0.2s, color 0.2s;
     flex: 1;
@@ -1759,32 +1829,37 @@ export const STYLES: string = `
       padding: 10px;
       border-radius: 18px;
     }
-    .hub-top-row {
+    .hub-card-top-row {
       flex-wrap: nowrap;
       gap: 8px;
     }
-    .node-top-row {
+    .node-card-top-row {
       flex-wrap: nowrap;
       gap: 8px;
     }
-    .hub-main-row {
+    .hub-signal-row {
+      padding: 0;
+      margin: 8px 0 0;
+    }
+    .hub-card-main-row {
       align-items: center;
       flex-wrap: nowrap;
       gap: 8px;
     }
-    .hub-title-line {
+    .hub-card-title-line {
       flex: 1 1 auto;
       min-width: 0;
       flex-wrap: nowrap;
     }
-    .hub-name {
+    .hub-name,
+    .node-card-name {
       font-size: 1.3rem;
       min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .hub-meta-row {
+    .hub-card-meta-row {
       margin-left: auto;
       width: auto;
       flex-wrap: nowrap;
@@ -1792,11 +1867,19 @@ export const STYLES: string = `
       gap: 6px;
       flex-shrink: 0;
     }
+    .node-card-meta-row {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 6px;
+    }
     .hub-id-pill,
-    .hub-meta-pill {
+    .hub-meta-pill,
+    .node-card-id-pill,
+    .node-card-meta-pill {
       white-space: nowrap;
     }
-    .hub-type-pill {
+    .hub-type-pill,
+    .node-card-type-pill {
       font-size: 11px;
       padding: 4px 10px;
     }
@@ -1804,10 +1887,12 @@ export const STYLES: string = `
       font-size: 10px;
       padding: 4px 8px;
     }
-    .hub-id-pill {
+    .hub-id-pill,
+    .node-card-id-pill {
       font-size: 10px;
     }
-    .hub-meta-pill {
+    .hub-meta-pill,
+    .node-card-meta-pill {
       font-size: 11px;
       padding: 4px 8px;
     }
@@ -2019,10 +2104,12 @@ export const STYLES: string = `
     }
     .neighbor-row {
       padding: 6px 8px;
+      column-gap: 8px;
+      row-gap: 4px;
     }
     .neighbor-name {
       font-size: 10px;
-      max-width: 100px;
+      max-width: 100%;
     }
     .neighbor-snr {
       font-size: 10px;
@@ -2098,11 +2185,14 @@ export const STYLES: string = `
       height: 26px;
       padding: 2px;
     }
-    .hub-name {
+    .hub-name,
+    .node-card-name {
       font-size: 1.3rem;
     }
     .hub-id-pill,
-    .hub-meta-pill {
+    .hub-meta-pill,
+    .node-card-id-pill,
+    .node-card-meta-pill {
       font-size: 9px;
       padding: 4px 7px;
     }
@@ -2144,8 +2234,12 @@ export const STYLES: string = `
       font-size: 9px;
       padding: 4px 7px;
     }
-    .hub-top-row {
+    .hub-card-top-row {
       gap: 6px;
+    }
+    .hub-signal-row {
+      padding: 0;
+      margin: 6px 0 0;
     }
     .hub-signal-row {
       gap: 6px;

@@ -30,6 +30,9 @@ export class MeshcoreNodeCard extends HTMLElement {
   private _lastRender = 0;
   private _renderTimer: ReturnType<typeof setTimeout> | null = null;
   private _trimTimer: ReturnType<typeof requestAnimationFrame> | null = null;
+  private _neighborSnrHistory = new Map<string, number[]>();
+  private _neighborSnrHistoryFetchedAt = new Map<string, number>();
+  private _neighborSnrHistoryLoading = new Set<string>();
 
   constructor() {
     super();
@@ -143,6 +146,81 @@ export class MeshcoreNodeCard extends HTMLElement {
     if (!match) return null;
     const n = Number(match[0]);
     return Number.isFinite(n) ? n : null;
+  }
+
+  private _sampleSeries(values: number[]): number[] {
+    if (values.length <= 24) return values;
+    const step = Math.ceil(values.length / 24);
+    return values.filter((_, idx) => idx % step === 0).slice(-24);
+  }
+
+  private _extractNumericSeriesFromLogbook(entries: unknown[]): number[] {
+    const values: number[] = [];
+    for (const entry of entries) {
+      if (!entry || typeof entry !== "object") continue;
+      const e = entry as Record<string, unknown>;
+      const candidates = [
+        e["state"],
+        e["message"],
+        e["name"],
+        e["context_state"],
+        e["display_message"],
+      ];
+      for (const candidate of candidates) {
+        const parsed = this._parseNumericMetric(candidate);
+        if (parsed !== null) {
+          values.push(parsed);
+          break;
+        }
+      }
+    }
+    return values;
+  }
+
+  private _fetchHistoryFromRecorder(entityId: string, startIso: string, endIso: string): Promise<number[]> {
+    const path = `history/period/${startIso}?filter_entity_id=${encodeURIComponent(entityId)}&end_time=${encodeURIComponent(endIso)}&minimal_response&no_attributes`;
+    return (this._hass as any).callApi("GET", path).then((response: unknown) => {
+      if (!Array.isArray(response) || !Array.isArray(response[0])) return [];
+      return (response[0] as Array<{ state?: string }>)
+        .map((row) => this._parseNumericMetric(row.state))
+        .filter((v): v is number => v !== null);
+    });
+  }
+
+  private _ensureNeighborSnrHistory(entityId: string): void {
+    if (!this._hass) return;
+    if (this._neighborSnrHistoryLoading.has(entityId)) return;
+    const now = Date.now();
+    const fetchedAt = this._neighborSnrHistoryFetchedAt.get(entityId) ?? 0;
+    const ttlMs = 5 * 60 * 1000;
+    if (now - fetchedAt < ttlMs) return;
+
+    this._neighborSnrHistoryLoading.add(entityId);
+    const startIso = new Date(now - 48 * 3600 * 1000).toISOString();
+    const endIso = new Date(now).toISOString();
+    const logbookPath = `logbook/${startIso}?entity=${encodeURIComponent(entityId)}&end_time=${encodeURIComponent(endIso)}`;
+
+    (this._hass as any).callApi("GET", logbookPath)
+      .then((response: unknown) => {
+        const fromLogbook = Array.isArray(response) ? this._extractNumericSeriesFromLogbook(response) : [];
+        if (fromLogbook.length >= 2) {
+          this._neighborSnrHistory.set(entityId, this._sampleSeries(fromLogbook));
+          this._neighborSnrHistoryFetchedAt.set(entityId, Date.now());
+          this._render();
+          return;
+        }
+        return this._fetchHistoryFromRecorder(entityId, startIso, endIso).then((fromHistory) => {
+          this._neighborSnrHistory.set(entityId, this._sampleSeries(fromHistory));
+          this._neighborSnrHistoryFetchedAt.set(entityId, Date.now());
+          this._render();
+        });
+      })
+      .catch((err: unknown) => {
+        console.error(`Neighbor SNR history fetch failed for ${entityId}:`, err);
+      })
+      .finally(() => {
+        this._neighborSnrHistoryLoading.delete(entityId);
+      });
   }
 
   private _signalGaugePct(value: number, variant: "rssi" | "snr" | "noise"): number {
@@ -469,27 +547,27 @@ export class MeshcoreNodeCard extends HTMLElement {
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
         <div class="hub-hero">
-          <div class="hub-hero-left">
-            <div class="node-top-row">
-              <div class="node-top-left">
+          <div class="node-card-hero-left">
+            <div class="node-card-top-row">
+              <div class="node-card-top-left">
                 <div class="hub-online-pill">
                   <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
                   <span class="status-text ${online ? "online" : "offline"}">${escapeHtml(online ? t("card.online") : t("card.offline"))}</span>
                 </div>
                 ${uptime ? `<span class="hub-uptime-pill">${escapeHtml(uptime)}</span>` : ""}
               </div>
-              <div class="node-top-right">
-                ${tempVal !== null && tempId ? `<span class="hub-meta-pill node-temp-pill clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
-                <span class="hub-type-pill">${escapeHtml(nodeTypeLabel.toUpperCase())}</span>
+              <div class="node-card-top-right">
+                ${tempVal !== null && tempId ? `<span class="node-card-meta-pill node-card-temp-pill clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
+                <span class="node-card-type-pill">${escapeHtml(nodeTypeLabel.toUpperCase())}</span>
               </div>
             </div>
-            <div class="hub-main-row">
-              <div class="hub-title-line">
-                <span class="hub-name">${escapeHtml(displayName)}</span>
-                ${nodeKey ? `<span class="hub-id-pill clickable" data-entity="${escapeHtml(contactId ?? statusId ?? "")}">(${escapeHtml(nodeKey)})</span>` : ""}
+            <div class="node-card-main-row">
+              <div class="node-card-title-line">
+                <span class="node-card-name">${escapeHtml(displayName)}</span>
+                ${nodeKey ? `<span class="node-card-id-pill clickable" data-entity="${escapeHtml(contactId ?? statusId ?? "")}">(${escapeHtml(nodeKey)})</span>` : ""}
               </div>
             </div>
-            ${lastSeen ? `<div class="hub-meta-row"><span class="hub-meta-pill">${escapeHtml(lastSeen)}</span></div>` : ""}
+            ${lastSeen ? `<div class="node-card-meta-row"><span class="node-card-meta-pill">${escapeHtml(lastSeen)}</span></div>` : ""}
           </div>
         </div>
 
@@ -532,7 +610,7 @@ export class MeshcoreNodeCard extends HTMLElement {
                 <span class="hub-traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getEntityState(this._hass, receivedId) ?? "N/A")}</span>
               </div>
             </div>
-            ${trafficBottom.length ? `<div class="hub-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
+            ${trafficBottom.length ? `<div class="node-card-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
           </div>` : ""}
 
         ${lat !== null && lon !== null ? `
@@ -569,6 +647,11 @@ export class MeshcoreNodeCard extends HTMLElement {
     const neighborRows = filteredNeighbors.map((n: NeighborInfo) => {
       const snrVal = parseFloat(String(n.snr));
       const snrClass = getSnrClass(snrVal);
+      const shouldRenderSnrHistory = snrClass === "yellow" && !!n.snrId;
+      if (shouldRenderSnrHistory && n.snrId) this._ensureNeighborSnrHistory(n.snrId);
+      const snrSeries = shouldRenderSnrHistory && n.snrId
+        ? (this._neighborSnrHistory.get(n.snrId) ?? [])
+        : [];
       const timeString = formatNeighborLastSeen(n.lastSeen);
       const rawSeen = n.rawSeen || null;
       const lastSeenLabel = t("card.neighbor_last_seen") || "Last seen";
@@ -582,12 +665,15 @@ export class MeshcoreNodeCard extends HTMLElement {
                 (n.snrId ? `data-entity="${escapeHtml(n.snrId)}"` : '')}>
               ${escapeHtml(n.name)}
             </span>
+            <div class="neighbor-stats">
+              <span class="neighbor-stat">🕒 ${escapeHtml(lastSeenLabel)}: ${escapeHtml(timeString)}</span>
+              ${rawSeen ? `<span class="neighbor-stat">🔗 ${escapeHtml(contactsLabel)}: ${escapeHtml(rawSeen)}x</span>` : ""}
+            </div>
+          </div>
+          <div class="neighbor-snr-wrap">
             <span class="neighbor-snr ${snrClass} clickable" 
                 data-entity="${escapeHtml(n.snrId || '')}">📡 ${escapeHtml(snrVal.toFixed(1))} dB</span>
-          </div>
-          <div class="neighbor-stats">
-            <span class="neighbor-stat">🕒 ${escapeHtml(lastSeenLabel)}: ${escapeHtml(timeString)}</span>
-            ${rawSeen ? `<span class="neighbor-stat">🔗 ${escapeHtml(contactsLabel)}: ${escapeHtml(rawSeen)}x</span>` : ""}
+            ${snrSeries.length >= 2 ? `<div class="neighbor-snr-history">${this._renderSignalSparkline(snrSeries, "snr")}</div>` : ""}
           </div>
         </div>
       `;
