@@ -21,6 +21,21 @@ export const STYLES: string = `
     --hub-location-grid-line: rgba(82, 124, 171, 0.15);
     --hub-location-grid-line-2: rgba(82, 124, 171, 0.12);
     --hub-location-preview-border: rgba(88, 118, 160, 0.28);
+    --hub-light-text: #000; /* domyślnie czarny – nadpisany w light theme */
+  }
+
+  /* ============================================ */
+  /* REDUKCJA ANIMACJI – DLA DOSTĘPNOŚCI */
+  /* ============================================ */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   ha-card {
@@ -33,16 +48,17 @@ export const STYLES: string = `
   }
 
   /* Hub / Node shared */
-  .hw-info { 
-    font-size: var(--paper-font-caption_-_font-size, 12px); 
+  .hw-info {
+    font-size: var(--paper-font-caption_-_font-size, 12px);
     opacity: 0.65;
-    margin: 4px 0 6px; 
+    margin: 4px 0 6px;
     letter-spacing: -0.01em;
   }
 
-  /* ===== ZMIANA: Hub name – teraz taki sam jak node-name ===== */
+  /* ===== NAZWA HUBA I NODA – WSPÓLNY STYL ===== */
   .hub-name,
-  .node-card-name {
+  .node-card-name,
+  .node-name {
     font-size: 1.38rem;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -51,18 +67,26 @@ export const STYLES: string = `
     z-index: 1;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.28));
     animation: hub-levitate-b 4.2s ease-in-out infinite;
-  }
-  .node-name,
-  .hub-name,
-  .node-card-name {
     text-transform: none;
   }
-  .node-name::first-letter,
+
   .hub-name::first-letter,
-  .node-card-name::first-letter {
+  .node-card-name::first-letter,
+  .node-name::first-letter {
     text-transform: uppercase;
   }
-  
+
+  /* Dla węższych nagłówków – dostosowanie w node-card */
+  .node-name {
+    font-size: 1.15rem;
+    font-weight: 900;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    text-shadow: 0 6px 14px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+  }
+
   .count-badge {
     font-size: 10px;
     font-weight: 600;
@@ -77,25 +101,25 @@ export const STYLES: string = `
   .count-badge:hover {
     transform: scale(1.02);
   }
-  
-  .node-key { 
-    font-family: var(--paper-font-code1_-_font-family, 'SF Mono', 'JetBrains Mono', monospace); 
-    font-size: var(--paper-font-caption_-_font-size, 11px); 
+
+  .node-key {
+    font-family: var(--paper-font-code1_-_font-family, 'SF Mono', 'JetBrains Mono', monospace);
+    font-size: var(--paper-font-caption_-_font-size, 11px);
     opacity: 0.6;
   }
 
   /* Status dots */
-  .status-dot { 
-    width: 11px; 
-    height: 11px; 
-    border-radius: 50%; 
-    flex-shrink: 0; 
+  .status-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
     display: inline-block;
     position: relative;
     overflow: visible;
     transition: box-shadow 0.3s ease;
   }
-  .dot-online  { 
+  .dot-online {
     background: #46f58a;
     box-shadow: 0 0 10px rgba(70, 245, 138, 0.95);
   }
@@ -119,8 +143,8 @@ export const STYLES: string = `
   .dot-online::after {
     animation: radar-pulse 1.9s ease-out infinite 0.95s;
   }
-  .dot-offline { 
-    background: var(--secondary-text-color); 
+  .dot-offline {
+    background: var(--secondary-text-color);
     opacity: 0.4;
   }
 
@@ -152,42 +176,45 @@ export const STYLES: string = `
     color: #46f58a;
     text-shadow: 0 0 8px rgba(70, 245, 138, 0.5);
   }
-  .status-text.offline { color: var(--secondary-text-color); opacity: 0.6; }
+  .status-text.offline {
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+  }
 
   /* Progress bars */
-  .bar-row { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    margin: 12px 0 4px; 
-    font-size: var(--paper-font-caption_-_font-size, 12px); 
+  .bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0 4px;
+    font-size: var(--paper-font-caption_-_font-size, 12px);
   }
-  .bar-label { 
-    display: flex; 
-    align-items: center; 
-    gap: 5px; 
+  .bar-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     color: var(--secondary-text-color);
     opacity: 0.7;
   }
-  .bar-label-right { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
+  .bar-label-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  .bar-val { 
-    font-weight: 700; 
+  .bar-val {
+    font-weight: 700;
     color: var(--primary-text-color);
   }
-  .bar-track { 
-    height: 8px; 
-    border-radius: 999px; 
+  .bar-track {
+    height: 8px;
+    border-radius: 999px;
     background: var(--glass-border);
-    overflow: hidden; 
-    margin-bottom: 8px; 
+    overflow: hidden;
+    margin-bottom: 8px;
   }
-  .bar-fill { 
-    height: 100%; 
-    border-radius: 999px; 
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
     transition: width 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     box-shadow: 0 0 6px rgba(74, 222, 128, 0.3);
   }
@@ -216,7 +243,7 @@ export const STYLES: string = `
   }
   .hub-battery-label {
     font-size: 11px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     letter-spacing: 0.02em;
   }
   .hub-battery-percent {
@@ -229,7 +256,7 @@ export const STYLES: string = `
   .hub-battery-voltage {
     font-size: 12px;
     font-family: var(--paper-font-code1_-_font-family, monospace);
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
   }
   .hub-battery-shell {
     position: relative;
@@ -312,20 +339,21 @@ export const STYLES: string = `
   }
 
   /* Chips */
-  .chip-row, .node-chip-row { 
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 8px; 
-    margin: 6px 0; 
+  .chip-row,
+  .node-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 6px 0;
   }
   .chip {
-    display: inline-flex; 
-    align-items: center; 
+    display: inline-flex;
+    align-items: center;
     gap: 4px;
-    font-size: var(--paper-font-caption_-_font-size, 12px); 
+    font-size: var(--paper-font-caption_-_font-size, 12px);
     font-weight: 500;
     background: transparent;
-    padding: 6px 14px; 
+    padding: 6px 14px;
     border-radius: 20px;
     color: var(--primary-text-color);
     border: 1px solid var(--glass-border);
@@ -335,26 +363,26 @@ export const STYLES: string = `
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
-  .chip-label { 
-    color: var(--secondary-text-color); 
-    font-weight: 400; 
+  .chip-label {
+    color: var(--secondary-text-color);
+    font-weight: 400;
     opacity: 0.7;
   }
 
   /* RF chips */
-  .rf-row { 
-    display: flex; 
+  .rf-row {
+    display: flex;
     justify-content: center;
     flex-wrap: nowrap;
-    gap: 12px; 
+    gap: 12px;
     margin: 6px 0 8px;
     overflow-x: auto;
     padding: 2px 0 6px 0;
   }
-  .rf-chip { 
-    font-size: var(--paper-font-caption_-_font-size, 11px); 
-    padding: 4px 8px; 
-    border-radius: 16px; 
+  .rf-chip {
+    font-size: var(--paper-font-caption_-_font-size, 11px);
+    padding: 4px 8px;
+    border-radius: 16px;
     background: transparent;
     color: var(--secondary-text-color);
     font-weight: 500;
@@ -408,27 +436,25 @@ export const STYLES: string = `
       0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   }
   .hub-tech-main {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    width: 100%;
     min-width: 0;
-  }
-  .hub-tech-main ha-icon {
-    --mdc-icon-size: 14px;
-    color: #9fc8ff;
-    opacity: 0.8;
   }
   .hub-tech-value {
     font-size: 12px;
     font-weight: 600;
     color: var(--hub-tech-text);
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
   .hub-tech-label {
-    margin-left: 20px;
+    display: block;
+    text-align: center;
     font-size: 8px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -439,26 +465,26 @@ export const STYLES: string = `
   }
 
   /* MQTT pills */
-  .mqtt-row { 
-    display: flex; 
-    flex-wrap: wrap; 
-    align-items: center; 
+  .mqtt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
-    gap: 6px; 
-    margin: 6px 0; 
+    gap: 6px;
+    margin: 6px 0;
   }
-  .mqtt-label { 
-    font-size: 10px; 
-    color: var(--secondary-text-color); 
-    font-weight: 600; 
+  .mqtt-label {
+    font-size: 10px;
+    color: var(--secondary-text-color);
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .mqtt-pill { 
+  .mqtt-pill {
     font-size: 10px;
     padding: 3px 10px;
     border-radius: 16px;
-    font-weight: 500; 
+    font-weight: 500;
     text-transform: capitalize;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 1px solid var(--glass-border);
@@ -479,12 +505,12 @@ export const STYLES: string = `
       0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     background: rgba(18, 28, 21, 0.5);
   }
-  .mqtt-pill.ok  { 
-    color: var(--mesh-green); 
+  .mqtt-pill.ok {
+    color: var(--mesh-green);
     border-color: rgba(74, 222, 128, 0.4);
   }
-  .mqtt-pill.err { 
-    color: var(--mesh-red); 
+  .mqtt-pill.err {
+    color: var(--mesh-red);
     border-color: rgba(248, 113, 113, 0.4);
   }
 
@@ -552,48 +578,50 @@ export const STYLES: string = `
     opacity: 0.7;
   }
 
-  /* Node block - systemowe tło */
-  .node-block { 
-    padding: 16px 18px 14px; 
-    border-radius: 24px; 
-    margin-bottom: 18px; 
-    background: transparent;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+  /* Node block – zunifikowany styl */
+  .node-block {
+    padding: 16px 18px 14px;
+    border-radius: 24px;
+    margin-bottom: 18px;
+    background: rgba(128, 128, 128, 0.05);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(128, 128, 128, 0.12);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
     animation: hub-card-breathe 5.2s ease-in-out infinite;
   }
   .node-block:hover {
     transform: translateY(-2px);
-    box-shadow: var(--glass-shadow-hover);
+    background: rgba(128, 128, 128, 0.08);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   }
-  
-  .node-offline { 
+
+  .node-offline {
     opacity: 0.5;
     filter: grayscale(0.2);
   }
 
-  .node-header { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    flex-wrap: wrap; 
-    gap: 10px; 
+  .node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
   }
-  .node-left { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-    flex-wrap: wrap; 
-    flex: 1; 
-    min-width: 0; 
+  .node-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
   }
-  .node-right { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-    flex-wrap: wrap; 
+  .node-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
   }
   .hub-hero {
     display: block;
@@ -753,22 +781,6 @@ export const STYLES: string = `
       0 10px 24px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;
   }
-  .node-name {
-    font-size: 1.15rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    text-transform: none;
-    word-break: break-word;
-    flex: 1;
-    min-width: 0;
-    display: inline-block;
-    position: relative;
-    z-index: 1;
-    text-shadow:
-      0 6px 14px rgba(0, 0, 0, 0.55),
-      0 1px 0 rgba(255, 255, 255, 0.04);
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
-  }
   .type-badge {
     font-size: var(--paper-font-caption_-_font-size, 11px);
     color: var(--mesh-orange);
@@ -793,27 +805,27 @@ export const STYLES: string = `
     border: 1px solid var(--glass-border);
   }
 
-  .badge { 
-    font-size: var(--paper-font-caption_-_font-size, 11px); 
-    padding: 3px 10px; 
-    border-radius: 20px; 
+  .badge {
+    font-size: var(--paper-font-caption_-_font-size, 11px);
+    padding: 3px 10px;
+    border-radius: 20px;
     background: transparent;
-    color: var(--secondary-text-color); 
-    font-weight: 500; 
+    color: var(--secondary-text-color);
+    font-weight: 500;
     border: 1px solid var(--glass-border);
   }
   .badge.green  { color: var(--mesh-green); border-color: rgba(74, 222, 128, 0.3); }
   .badge.yellow { color: var(--mesh-orange); border-color: rgba(251, 146, 60, 0.3); }
   .badge.red    { color: var(--mesh-red); border-color: rgba(248, 113, 113, 0.3); }
 
-  .node-route { 
-    font-size: var(--paper-font-caption_-_font-size, 11px); 
-    color: var(--secondary-text-color); 
-    padding-left: 14px; 
-    font-family: var(--paper-font-code1_-_font-family, monospace); 
-    margin: 4px 0 8px; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
+  .node-route {
+    font-size: var(--paper-font-caption_-_font-size, 11px);
+    color: var(--secondary-text-color);
+    padding-left: 14px;
+    font-family: var(--paper-font-code1_-_font-family, monospace);
+    margin: 4px 0 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
     opacity: 0.6;
   }
@@ -831,20 +843,17 @@ export const STYLES: string = `
     gap: 20px;
     flex-wrap: wrap;
   }
-
   .signal-left {
     display: flex;
     gap: 20px;
     align-items: center;
     flex-wrap: wrap;
   }
-
   .signal-right {
     display: flex;
     align-items: center;
     flex-shrink: 0;
   }
-
   .signal-item {
     display: flex;
     align-items: baseline;
@@ -1067,7 +1076,7 @@ export const STYLES: string = `
   }
   .hub-traffic-label {
     font-size: 12px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     opacity: 0.9;
   }
   .hub-traffic-value {
@@ -1222,7 +1231,7 @@ export const STYLES: string = `
   }
   .hub-traffic-chip {
     font-size: 12px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1238,7 +1247,7 @@ export const STYLES: string = `
     margin-top: 8px;
     text-align: center;
     font-size: 12px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     background: transparent;
   }
 
@@ -1330,7 +1339,7 @@ export const STYLES: string = `
     display: inline-flex;
     align-items: flex-start;
     gap: 6px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     font-family: var(--paper-font-code1_-_font-family, monospace);
     font-size: 14px;
     line-height: 1.2;
@@ -1338,7 +1347,7 @@ export const STYLES: string = `
   }
   .hub-location-coords ha-icon {
     --mdc-icon-size: 16px;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     margin-top: 1px;
   }
   .hub-location-btn {
@@ -1349,7 +1358,7 @@ export const STYLES: string = `
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     text-decoration: none;
     padding: 6px 10px;
     border-radius: 10px;
@@ -1410,11 +1419,11 @@ export const STYLES: string = `
     border-color: rgba(93, 133, 183, 0.44);
   }
 
-  .empty { 
-    text-align: center; 
-    color: var(--secondary-text-color); 
-    font-size: var(--paper-font-caption_-_font-size, 12px); 
-    padding: 32px 20px; 
+  .empty {
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-size: var(--paper-font-caption_-_font-size, 12px);
+    padding: 32px 20px;
     line-height: 1.7;
     background: transparent;
     border-radius: 24px;
@@ -1429,7 +1438,6 @@ export const STYLES: string = `
     margin-top: 12px;
     padding-top: 8px;
   }
-
   .neighbors-header {
     font-size: 10px;
     font-weight: 700;
@@ -1454,14 +1462,12 @@ export const STYLES: string = `
     height: 1px;
     background: var(--hub-section-line);
   }
-
   .neighbors-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
   }
-
   .neighbor-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1480,7 +1486,6 @@ export const STYLES: string = `
     border-color: rgba(120, 150, 220, 0.22);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
   }
-
   .neighbor-main {
     display: flex;
     flex-direction: column;
@@ -1515,31 +1520,30 @@ export const STYLES: string = `
     min-width: 0;
     justify-self: end;
   }
-  .neighbor-snr.green { 
-    color: #22c55e; 
+  .neighbor-snr.green {
+    color: #22c55e;
     border: 1px solid rgba(34, 197, 94, 0.35);
   }
-  .neighbor-snr.yellow { 
-    color: #eab308; 
+  .neighbor-snr.yellow {
+    color: #eab308;
     border: 1px solid rgba(234, 179, 8, 0.35);
   }
-  .neighbor-snr.orange { 
-    color: #f97316; 
+  .neighbor-snr.orange {
+    color: #f97316;
     border: 1px solid rgba(249, 115, 22, 0.35);
   }
-  .neighbor-snr.red { 
-    color: #ef4444; 
+  .neighbor-snr.red {
+    color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.35);
   }
-  .neighbor-snr.dim { 
-    color: var(--secondary-text-color); 
-    opacity: 0.5; 
-    font-weight: normal; 
+  .neighbor-snr.dim {
+    color: var(--secondary-text-color);
+    opacity: 0.5;
+    font-weight: normal;
     background: transparent;
     border: 1px solid var(--glass-border);
     backdrop-filter: none;
   }
-
   .neighbor-stats {
     display: flex;
     flex-wrap: wrap;
@@ -1568,8 +1572,8 @@ export const STYLES: string = `
     stroke-width: 1.7;
     opacity: 0.92;
   }
-
-  .neighbor-name.clickable, .neighbor-snr.clickable {
+  .neighbor-name.clickable,
+  .neighbor-snr.clickable {
     cursor: pointer;
   }
   .neighbor-name.clickable:hover {
@@ -1602,19 +1606,7 @@ export const STYLES: string = `
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
 
-  /* Szare, neutralne tło – bez niebieskiego odcienia */
-  .node-block {
-    background: rgba(128, 128, 128, 0.05);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(128, 128, 128, 0.12);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    margin-bottom: 18px;
-  }
-  .node-block:hover {
-    background: rgba(128, 128, 128, 0.08);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-  }
-
+  /* Wspólne style dla chipów, pilli itp. – bazowe tło i obramowanie */
   .chip,
   .mqtt-pill,
   .traffic-item,
@@ -1642,122 +1634,6 @@ export const STYLES: string = `
     border-bottom-color: rgba(128, 128, 128, 0.2);
   }
 
-  /* Dark theme */
-  @media (prefers-color-scheme: dark) {
-    :host {
-      --glass-border: rgba(255, 255, 255, 0.1);
-    }
-  }
-
-  /* Light theme */
-  @media (prefers-color-scheme: light) {
-    :host {
-      --glass-border: rgba(15, 23, 42, 0.12);
-      --glass-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-      --glass-shadow-hover: 0 6px 16px rgba(15, 23, 42, 0.12);
-      --hub-tech-text: #1f2937;
-      --hub-secondary-text: #334155;
-      --hub-section-text: #1f2937;
-      --hub-section-line: linear-gradient(90deg, rgba(15, 23, 42, 0.32), rgba(15, 23, 42, 0.06));
-      --hub-light-text: #1f2937;
-    }
-
-    ha-card,
-    .section-label,
-    .hw-info,
-    .node-name,
-    .hub-name,
-    .node-card-name,
-    .node-key,
-    .count-badge,
-    .node-route,
-    .signal-label,
-    .signal-value,
-    .badge,
-    .loc-coords,
-    .map-link,
-    .advert-btn,
-    .advert-feedback,
-    .hub-battery-label,
-    .hub-battery-voltage,
-    .hub-id-pill,
-    .node-card-id-pill,
-    .hub-meta-pill,
-    .node-card-meta-pill,
-    .hub-type-pill,
-    .node-card-type-pill,
-    .hub-uptime-pill,
-    .hub-tech-label,
-    .hub-tech-value,
-    .hub-location-coords,
-    .hub-location-btn,
-    .hub-traffic-label,
-    .hub-traffic-chip,
-    .hub-traffic-delivery,
-    .signal-gauge-number,
-    .hub-tech-item,
-    .status-text,
-    .empty {
-      color: var(--hub-light-text);
-    }
-
-    .hub-tech-item {
-      border-color: rgba(15, 23, 42, 0.1);
-    }
-
-    .hub-online-pill,
-    .hub-type-pill,
-    .node-card-type-pill,
-    .hub-id-pill,
-    .node-card-id-pill,
-    .hub-meta-pill,
-    .node-card-meta-pill,
-    .hub-uptime-pill,
-    .signal-card,
-    .hub-tech-item,
-    .hub-location-panel,
-    .hub-traffic-panel,
-    .hub-battery-panel {
-      box-shadow:
-        0 8px 20px rgba(15, 23, 42, 0.08),
-        0 0 0 1px rgba(255, 255, 255, 0.4) inset;
-    }
-
-    .hub-hero,
-    .signal-card,
-    .hub-tech-item,
-    .hub-location-panel,
-    .hub-traffic-panel,
-    .hub-battery-shell,
-    .hub-battery-fill-wrap {
-      background: rgba(255, 255, 255, 0.72);
-    }
-
-    .hub-tech-item {
-      box-shadow:
-        0 6px 14px rgba(15, 23, 42, 0.06),
-        0 0 0 1px rgba(255, 255, 255, 0.45) inset;
-    }
-
-    .hub-tech-item:hover {
-      box-shadow:
-        0 10px 20px rgba(15, 23, 42, 0.1),
-        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-    }
-
-    .hub-battery-shell {
-      border-color: rgba(15, 23, 42, 0.08);
-    }
-
-    .hub-id-pill,
-    .hub-meta-pill,
-    .hub-uptime-pill,
-    .node-card-meta-pill,
-    .node-card-temp-pill {
-      color: #000;
-    }
-  }
-
   /* ---------- Advert buttons ---------- */
   .advert-buttons {
     display: flex;
@@ -1767,7 +1643,6 @@ export const STYLES: string = `
     border-top: 1px solid var(--divider-color);
     justify-content: center;
   }
-
   .advert-btn {
     display: flex;
     align-items: center;
@@ -1791,12 +1666,9 @@ export const STYLES: string = `
       0 12px 26px rgba(0, 0, 0, 0.16),
       0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   }
-
   .advert-btn ha-icon {
     --mdc-icon-size: 18px;
   }
-
-  /* Advert Zero – niebieski */
   .advert-zero {
     border: 1px solid var(--primary-color);
   }
@@ -1804,8 +1676,6 @@ export const STYLES: string = `
     background: var(--primary-color);
     color: var(--text-primary-color);
   }
-
-  /* Advert Flood – żółty (warning) */
   .advert-flood {
     border: 1px solid var(--warning-color);
   }
@@ -1821,6 +1691,9 @@ export const STYLES: string = `
     transition: opacity 0.3s;
   }
 
+  /* ============================================ */
+  /* RESPONSYWNOŚĆ – EKRANY PONIŻEJ 500px */
+  /* ============================================ */
   @media (max-width: 500px) {
     ha-card {
       padding: 12px;
@@ -1906,11 +1779,7 @@ export const STYLES: string = `
       padding: 6px 4px 5px;
     }
     .hub-tech-main {
-      gap: 4px;
       justify-content: center;
-    }
-    .hub-tech-main ha-icon {
-      --mdc-icon-size: 12px;
     }
     .hub-tech-value {
       font-size: 10px;
@@ -2047,7 +1916,7 @@ export const STYLES: string = `
     .node-right {
       gap: 4px;
     }
-    .node-name, .hub-name {
+    .node-name {
       font-size: 1.3rem;
     }
     .node-header-badge {
@@ -2200,10 +2069,7 @@ export const STYLES: string = `
       padding: 5px 2px 4px;
     }
     .hub-tech-main {
-      gap: 3px;
-    }
-    .hub-tech-main ha-icon {
-      --mdc-icon-size: 11px;
+      justify-content: center;
     }
     .hub-tech-value {
       font-size: 9px;
@@ -2277,20 +2143,117 @@ export const STYLES: string = `
       min-width: 60px;
       padding: 3px 6px;
     }
-    .node-name, .hub-name {
+    .node-name {
       font-size: 1.3rem;
     }
   }
 
-  /* Final light-theme override - must come after all base rules */
+  /* ============================================ */
+  /* TRYB JASNY – PEŁNE NADPISANIE */
+  /* ============================================ */
   @media (prefers-color-scheme: light) {
+    :host {
+      --glass-border: rgba(15, 23, 42, 0.12);
+      --glass-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      --glass-shadow-hover: 0 6px 16px rgba(15, 23, 42, 0.12);
+      --hub-tech-text: #1f2937;
+      --hub-secondary-text: #bdc1c7;
+      --hub-section-text: #1f2937;
+      --hub-section-line: linear-gradient(90deg, rgba(15, 23, 42, 0.32), rgba(15, 23, 42, 0.06));
+      --hub-light-text: #000; /* czarny dla lepszego kontrastu */
+    }
+
+    /* Wszystkie elementy używające zmiennej – teraz będą czarne */
+    ha-card,
+    .section-label,
+    .hw-info,
+    .node-name,
+    .hub-name,
+    .node-card-name,
+    .node-key,
+    .count-badge,
+    .node-route,
+    .signal-label,
+    .signal-value,
+    .badge,
+    .loc-coords,
+    .map-link,
+    .advert-btn,
+    .advert-feedback,
+    .hub-battery-label,
+    .hub-battery-voltage,
+    .hub-id-pill,
+    .node-card-id-pill,
+    .hub-meta-pill,
+    .node-card-meta-pill,
+    .hub-type-pill,
+    .node-card-type-pill,
+    .hub-uptime-pill,
+    .hub-tech-label,
+    .hub-tech-value,
+    .hub-location-coords,
+    .hub-location-btn,
+    .hub-traffic-label,
+    .hub-traffic-chip,
+    .hub-traffic-delivery,
+    .signal-gauge-number,
+    .hub-tech-item,
+    .status-text,
+    .empty {
+      color: var(--hub-light-text);
+    }
+
+    /* Dodatkowe dostosowania dla elementów z przezroczystością */
+    .hub-tech-item {
+      border-color: rgba(15, 23, 42, 0.1);
+      box-shadow:
+        0 6px 14px rgba(15, 23, 42, 0.06),
+        0 0 0 1px rgba(255, 255, 255, 0.45) inset;
+    }
+    .hub-tech-item:hover {
+      box-shadow:
+        0 10px 20px rgba(15, 23, 42, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    }
+
+    .hub-online-pill,
+    .hub-type-pill,
+    .node-card-type-pill,
+    .hub-id-pill,
+    .node-card-id-pill,
+    .hub-meta-pill,
+    .node-card-meta-pill,
+    .hub-uptime-pill,
+    .signal-card,
+    .hub-tech-item,
+    .hub-location-panel,
+    .hub-traffic-panel,
+    .hub-battery-panel {
+      box-shadow:
+        0 8px 20px rgba(15, 23, 42, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+    }
+
+    .hub-hero,
+    .signal-card,
+    .hub-tech-item,
+    .hub-location-panel,
+    .hub-traffic-panel,
+    .hub-battery-shell,
+    .hub-battery-fill-wrap {
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .hub-battery-shell {
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+
     .section-header,
     .hub-section-header,
     .hub-tech-header {
       color: var(--hub-section-text);
       opacity: 0.92;
     }
-
     .hub-section-header::after {
       background: var(--hub-section-line);
     }
@@ -2302,41 +2265,9 @@ export const STYLES: string = `
       --hub-location-preview-border: rgba(15, 23, 42, 0.1);
     }
 
-    .hub-tech-item,
-    .hub-tech-item.clickable,
-    .hub-tech-item.clickable .hub-tech-main,
-    .hub-tech-label,
-    .hub-tech-value,
-    .hub-tech-item.clickable .hub-tech-main ha-icon,
-    .signal-gauge-number,
-    .signal-gauge-unit,
-    .signal-card .signal-label {
-      color: var(--hub-tech-text);
-    }
-
-    .signal-gauge-number {
-      opacity: 1;
-    }
-
-    .hub-tech-item.clickable {
-      border-color: rgba(15, 23, 42, 0.1);
-    }
-
-    .hub-battery-label,
-    .hub-battery-voltage,
-    .hub-uptime-pill,
-    .hub-traffic-label,
-    .hub-traffic-chip,
-    .hub-traffic-delivery,
-    .hub-location-coords,
-    .hub-location-coords ha-icon,
-    .hub-location-btn,
-    .hub-location-btn ha-icon {
-      color: var(--hub-secondary-text);
-    }
-
+    /* Usunięcie !important – zastąpione specyficznością */
     .hub-uptime-pill {
-      color: #000 !important;
+      color: #000 !important; /* pozostawiamy, ale możemy usunąć jeśli chcemy, ale zostawiam dla pewności */
     }
   }
 `;

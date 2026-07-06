@@ -488,10 +488,10 @@ export class MeshcoreHubCard extends HTMLElement {
           <span>${escapeHtml(t("card.technical_section"))}</span>
         </div>
         <div class="hub-tech-row">
-          ${freq ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(freqId)}"><div class="hub-tech-main"><ha-icon icon="mdi:sine-wave"></ha-icon><span class="hub-tech-value">${parseFloat(freq).toFixed(3)} MHz</span></div><div class="hub-tech-label">Frequency</div></div>` : ""}
-          ${bw   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(bwId)}"><div class="hub-tech-main"><ha-icon icon="mdi:signal-distance-variant"></ha-icon><span class="hub-tech-value">${escapeHtml(bw)} kHz</span></div><div class="hub-tech-label">Bandwidth</div></div>` : ""}
-          ${sf   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(sfId)}"><div class="hub-tech-main"><ha-icon icon="mdi:wan"></ha-icon><span class="hub-tech-value">SF${escapeHtml(sf)}</span></div><div class="hub-tech-label">Spreading factor</div></div>` : ""}
-          ${txPow ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(txPowId)}"><div class="hub-tech-main"><ha-icon icon="mdi:access-point"></ha-icon><span class="hub-tech-value">${escapeHtml(txPow)} dBm</span></div><div class="hub-tech-label">TX power</div></div>` : ""}
+          ${freq ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(freqId)}"><div class="hub-tech-main"><span class="hub-tech-value">${parseFloat(freq).toFixed(3)} MHz</span></div><div class="hub-tech-label">Frequency</div></div>` : ""}
+          ${bw   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(bwId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(bw)} kHz</span></div><div class="hub-tech-label">Bandwidth</div></div>` : ""}
+          ${sf   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(sfId)}"><div class="hub-tech-main"><span class="hub-tech-value">SF${escapeHtml(sf)}</span></div><div class="hub-tech-label">Spreading factor</div></div>` : ""}
+          ${txPow ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(txPowId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(txPow)} dBm</span></div><div class="hub-tech-label">TX power</div></div>` : ""}
         </div>`;
     }
 

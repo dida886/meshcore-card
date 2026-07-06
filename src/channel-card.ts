@@ -50,7 +50,7 @@ const CHANNEL_STYLES: string = `
 
   .channel-hub {
     font-weight: 600;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     white-space: nowrap;
     flex-shrink: 0;
     font-size: 11px;

@@ -35,7 +35,7 @@ const CONTACT_STYLES: string = `
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     background: transparent;
     border: 1px solid var(--glass-border);
     border-radius: 50%;
@@ -134,7 +134,7 @@ const CONTACT_STYLES: string = `
     font-weight: 600;
     letter-spacing: normal;
     text-transform: none;
-    color: var(--hub-secondary-text);
+    color: var(--primary-text-color);
     opacity: 0.85;
   }
 
