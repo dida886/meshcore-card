@@ -32,11 +32,11 @@ export const MESSAGE_STYLES: string = `
     display: flex;
     gap: 12px;
     margin: 12px 0 16px;
-    background: rgba(128, 128, 128, 0.04);
-    backdrop-filter: blur(4px);
+    background: transparent;
     border-radius: 24px;
     padding: 4px;
-    border: 1px solid rgba(128, 128, 128, 0.1);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
   .radio-option {
     display: flex;
@@ -81,8 +81,8 @@ export const MESSAGE_STYLES: string = `
     width: 100%;
     padding: 10px 14px;
     border-radius: 16px;
-    border: 1px solid var(--divider-color, rgba(128, 128, 128, 0.2));
-    background: var(--ha-card-background, var(--card-background-color, #2c2c3a));
+    border: 1px solid var(--glass-border);
+    background: transparent;
     color: var(--primary-text-color);
     font-family: inherit;
     font-size: 14px;
@@ -117,12 +117,12 @@ export const MESSAGE_STYLES: string = `
     background: linear-gradient(135deg, var(--mesh-green), #3b8c3e);
     color: white;
     margin: 16px 0 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
   }
   button:hover {
     transform: translateY(-1px);
     background: linear-gradient(135deg, #5ee090, #2f6e32);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
   }
 
   .status {
@@ -130,8 +130,9 @@ export const MESSAGE_STYLES: string = `
     text-align: center;
     padding: 8px;
     border-radius: 20px;
-    background: rgba(128, 128, 128, 0.04);
-    backdrop-filter: blur(4px);
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     margin: 12px 0 8px;
   }
 
@@ -192,8 +193,7 @@ export const MESSAGE_STYLES: string = `
     max-height: 300px;
     overflow-y: auto;
     border-radius: 18px;
-    background: rgba(128, 128, 128, 0.02);
-    backdrop-filter: blur(2px);
+    background: transparent;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -210,17 +210,16 @@ export const MESSAGE_STYLES: string = `
   }
 
   .message-card {
-    background: var(--ha-card-background, var(--card-background-color, #2c2c3a));
-    border-radius: 20px;
+    background: transparent;
+    border-radius: 22px;
     padding: 10px 10px 10px;
-    border: 1px solid rgba(128, 128, 128, 0.1);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
   }
   .message-card:hover {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
-    border-color: rgba(128, 128, 128, 0.15);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+    border-color: rgba(120, 150, 220, 0.22);
   }
 
   /* ---------- Nagłówek ---------- */
@@ -544,6 +543,14 @@ export const MESSAGE_STYLES: string = `
     .metric-item {
       white-space: normal;
       font-size: 10px;
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    select,
+    textarea {
+      border-color: rgba(15, 23, 42, 0.34);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08) inset;
     }
   }
 `;

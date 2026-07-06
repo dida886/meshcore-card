@@ -7,25 +7,24 @@ const CHANNEL_STYLES: string = `
   .channel-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
 
   .channel-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 18px;
-    background: rgba(128, 128, 128, 0.04);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(128, 128, 128, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    padding: 12px 14px;
+    border-radius: 22px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
   }
   .channel-row:hover {
-    transform: translateY(-1px);
-    background: rgba(128, 128, 128, 0.07);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
   }
 
   .channel-dot {
@@ -35,8 +34,8 @@ const CHANNEL_STYLES: string = `
     flex-shrink: 0;
   }
   .channel-dot.active {
-    background: var(--mesh-green);
-    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+    background: #46f58a;
+    box-shadow: 0 0 10px rgba(70, 245, 138, 0.95);
     animation: channel-pulse-glow 2s ease-in-out infinite;
   }
   .channel-dot.inactive {
@@ -50,21 +49,27 @@ const CHANNEL_STYLES: string = `
   }
 
   .channel-hub {
-    font-weight: 500;
-    color: var(--secondary-text-color);
+    font-weight: 600;
+    color: var(--hub-secondary-text);
     white-space: nowrap;
     flex-shrink: 0;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: -0.01em;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
   }
 
   .channel-name {
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-weight: 700;
+    font-size: 1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--primary-text-color);
+    flex: 1;
+    min-width: 0;
   }
 `;
 

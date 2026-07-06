@@ -2324,6 +2324,7 @@ export const STYLES: string = `
 
     .hub-battery-label,
     .hub-battery-voltage,
+    .hub-uptime-pill,
     .hub-traffic-label,
     .hub-traffic-chip,
     .hub-traffic-delivery,
@@ -2333,5 +2334,9 @@ export const STYLES: string = `
     .hub-location-btn ha-icon {
       color: var(--hub-secondary-text);
     }
+
+    .hub-uptime-pill {
+      color: #000 !important;
+    }
   }
-`; 
+`;

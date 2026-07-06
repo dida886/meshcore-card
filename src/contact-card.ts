@@ -8,25 +8,24 @@ const CONTACT_STYLES: string = `
   .contact-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
 
   .contact-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 18px;
-    background: rgba(128, 128, 128, 0.04);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(128, 128, 128, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    padding: 12px 14px;
+    border-radius: 22px;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
   }
   .contact-row:hover {
-    transform: translateY(-1px);
-    background: rgba(128, 128, 128, 0.07);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
   }
 
   .contact-icon {
@@ -36,8 +35,9 @@ const CONTACT_STYLES: string = `
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    color: var(--secondary-text-color);
-    background: rgba(128, 128, 128, 0.05);
+    color: var(--hub-secondary-text);
+    background: transparent;
+    border: 1px solid var(--glass-border);
     border-radius: 50%;
   }
   .contact-icon ha-icon {
@@ -62,8 +62,8 @@ const CONTACT_STYLES: string = `
     flex-wrap: wrap;
   }
   .contact-name {
-    font-weight: 600;
-    font-size: 0.95rem;
+    font-weight: 700;
+    font-size: 1rem;
     text-transform: capitalize;
     white-space: nowrap;
     overflow: hidden;
@@ -79,7 +79,7 @@ const CONTACT_STYLES: string = `
     margin-top: 4px;
     font-size: 11px;
     color: var(--secondary-text-color);
-    opacity: 0.7;
+    opacity: 0.82;
   }
 
   .meta-loc {
@@ -97,22 +97,19 @@ const CONTACT_STYLES: string = `
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    margin-left: auto; /* przycisk zawsze po prawej */
+    margin-left: auto;
   }
 
   .type-badge {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--mesh-orange);
     background: transparent;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-    border: 1px solid rgba(251, 146, 60, 0.3);
-    transition: all 0.2s ease;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    border: 1px solid rgba(251, 146, 60, 0.45);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
     text-transform: capitalize;
-  }
-  .type-badge:hover {
-    transform: translateY(-1px);
   }
 
   .dim {
@@ -120,22 +117,25 @@ const CONTACT_STYLES: string = `
     opacity: 0.5;
   }
 
-  /* ---------- Section label (with counter) ---------- */
   .section-label {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--secondary-text-color);
-    padding: 8px 0 4px 0;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-    margin-bottom: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hub-section-text);
+    padding: 8px 0 6px 0;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 10px;
   }
   .contact-count {
-    font-weight: 400;
-    color: var(--secondary-text-color);
-    opacity: 0.7;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--hub-secondary-text);
+    opacity: 0.85;
   }
 
   /* ---------- Filter (select) ---------- */
@@ -144,7 +144,7 @@ const CONTACT_STYLES: string = `
     align-items: center;
     gap: 16px;
     padding: 8px 0 12px 0;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    border-bottom: 1px solid var(--glass-border);
     margin-bottom: 12px;
     flex-wrap: wrap;
   }
@@ -157,35 +157,37 @@ const CONTACT_STYLES: string = `
     gap: 6px;
   }
   .filter-bar select {
-    padding: 4px 10px;
-    border-radius: 16px;
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    background: var(--card-background-color, #fff);
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: transparent;
     color: var(--primary-text-color);
     font-size: 13px;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
   .filter-bar select:hover,
   .filter-bar select:focus {
-    border-color: var(--primary-color);
+    border-color: rgba(96, 165, 250, 0.42);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.16);
   }
 
   .action-btn {
     background: transparent;
-    border: none;
+    border: 1px solid var(--glass-border);
     cursor: pointer;
     padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: transform 0.2s ease, background 0.2s ease;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .action-btn:hover {
     transform: scale(1.1);
-    background: rgba(128, 128, 128, 0.1);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   }
   .add-btn ha-icon {
     color: var(--mesh-green);
