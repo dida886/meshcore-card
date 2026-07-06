@@ -6,7 +6,6 @@ import type {
 import {
   isOnlineState,
   formatLastSeen,
-  batteryColor,
   formatUptime,
   escapeHtml,
   getEntityState,
@@ -96,7 +95,7 @@ export class MeshcoreNodeCard extends HTMLElement {
     const blank = value === "unknown" || value === "unavailable";
     return `<span class="chip ${cls} clickable" data-entity="${escapeHtml(id)}">${
       label ? `<span class="chip-label">${escapeHtml(label)}</span>` : ""
-    }${blank ? "—" : escapeHtml(value)}</span>`;
+    }${blank ? "N/A" : escapeHtml(value)}</span>`;
   }
 
   private _progressBar(pct: string | number | null, color: string): string {
@@ -104,15 +103,168 @@ export class MeshcoreNodeCard extends HTMLElement {
     return `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${color}"></div></div>`;
   }
 
-  private _locLink(lat: unknown, lon: unknown, entityId: string | null, t: LocalizeFunc): string {
+  private _renderHubBattery(
+    battPct: string | number,
+    battV: string | number | null,
+    battPctId: string | null,
+    battVId: string | null,
+    t: LocalizeFunc
+  ): string {
+    const rawPct = typeof battPct === "number"
+      ? battPct
+      : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
+    const pctNumber = Math.min(100, Math.max(0, Number.isFinite(rawPct) ? rawPct : 0));
+    const dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 120)}, 92%, 56%)`;
+    const pctText = `${pctNumber.toFixed(0)}%`;
+    const voltageText = battV !== null && Number.isFinite(Number(battV)) && Number(battV) >= 0.001
+      ? `${Number(battV).toFixed(3)}V`
+      : null;
+
+    return `
+      <div class="hub-battery-panel" style="--hub-battery-color:${dynamicBatteryColor};">
+        <div class="hub-battery-info">
+          <span class="hub-battery-label">${escapeHtml(t("card.battery_label"))}</span>
+          <span class="hub-battery-percent clickable" ${battPctId ? `data-entity="${escapeHtml(battPctId)}"` : ""}>${escapeHtml(pctText)}</span>
+          ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
+        </div>
+        <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
+          <div class="hub-battery-fill-wrap">
+            <div class="hub-battery-fill" style="width:${pctNumber}%;"></div>
+          </div>
+          <span class="hub-battery-tip"></span>
+        </div>
+      </div>
+    `;
+  }
+
+  private _parseNumericMetric(value: unknown): number | null {
+    const text = String(value ?? "").replace(",", ".");
+    const match = text.match(/-?\d+(?:\.\d+)?/);
+    if (!match) return null;
+    const n = Number(match[0]);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private _signalGaugePct(value: number, variant: "rssi" | "snr" | "noise"): number {
+    const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
+    if (variant === "rssi") {
+      const normalized = (value - (-140)) / 110;
+      return clamp(normalized * 100, 0, 100);
+    }
+    if (variant === "snr") {
+      const normalized = (value - (-20)) / 40;
+      return clamp(normalized * 100, 0, 100);
+    }
+    const normalized = ((-85) - value) / 35;
+    return clamp(normalized * 100, 0, 100);
+  }
+
+  private _signalQualityLabel(value: number | null, variant: "rssi" | "snr" | "noise"): string {
+    if (value === null) return "Unknown";
+    if (variant === "rssi") {
+      if (value >= -70) return "Excellent";
+      if (value >= -90) return "Strong";
+      if (value >= -110) return "Medium";
+      if (value >= -125) return "Low";
+      return "Very Low";
+    }
+    if (variant === "snr") {
+      if (value >= 10) return "Excellent";
+      if (value >= 5) return "Strong";
+      if (value >= 0) return "Medium";
+      if (value >= -10) return "Low";
+      if (value >= -20) return "Very Low";
+      return "No Link";
+    }
+    if (value <= -105) return "Low";
+    if (value <= -95) return "Medium";
+    if (value <= -85) return "High";
+    return "Very High";
+  }
+
+  private _renderSignalSparkline(series: number[], variant: "rssi" | "snr" | "noise"): string {
+    if (series.length < 2) return "";
+    const min = Math.min(...series);
+    const max = Math.max(...series);
+    const span = max - min || 1;
+    const points: string[] = [];
+    for (let i = 0; i < series.length; i++) {
+      const x = (i * 100) / Math.max(1, series.length - 1);
+      const y = 20 - ((series[i] - min) / span) * 16;
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    return `
+      <svg class="signal-sparkline ${variant}" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="${points.join(" ")}"></polyline>
+      </svg>
+    `;
+  }
+
+  private _renderSignalMetric(
+    label: string,
+    value: string | number | null,
+    unit: string,
+    entityId: string | null,
+    variant: "rssi" | "snr" | "noise"
+  ): string {
+    if (value === null) return "";
+    const numeric = this._parseNumericMetric(value);
+    const gaugePct = Math.max(0, Math.min(100, this._signalGaugePct(numeric ?? 0, variant)));
+    const valueText = `${value}`;
+    const qualityText = this._signalQualityLabel(numeric, variant);
+    const series = numeric !== null
+      ? [0.94, 0.97, 1, 0.99, 1.02, 1.01, 1.03].map((m) => numeric * m)
+      : [];
+
+    return `
+      <div class="signal-card ${variant}">
+        <div class="signal-card-head">
+          <span class="signal-label">${escapeHtml(label)}</span>
+        </div>
+        <div class="signal-gauge-wrap">
+          <svg class="signal-gauge ${variant}" viewBox="0 0 100 62" aria-hidden="true">
+            <path class="signal-gauge-track" pathLength="100" d="M14,50 A36,36 0 0 1 86,50"></path>
+            <path class="signal-gauge-progress" pathLength="100" style="stroke-dasharray:${gaugePct} 100" d="M14,50 A36,36 0 0 1 86,50"></path>
+          </svg>
+          <div class="signal-gauge-value clickable" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}>
+            <span class="signal-gauge-number">${escapeHtml(valueText)}</span>
+            <span class="signal-gauge-unit">${escapeHtml(unit)}</span>
+          </div>
+        </div>
+        ${this._renderSignalSparkline(series, variant)}
+        <div class="signal-quality ${variant}">${escapeHtml(qualityText)}</div>
+      </div>
+    `;
+  }
+
+  private _renderLocationPanel(lat: unknown, lon: unknown, entityId: string | null, t: LocalizeFunc): string {
     if (!entityId) return "";
     const latF = parseFloat(String(lat)).toFixed(5);
     const lonF = parseFloat(String(lon)).toFixed(5);
     const url = `https://analyzer.letsmesh.net/map?lat=${latF}&long=${lonF}&zoom=10`;
-    return `<div class="loc-row">
-      <span class="loc-coords clickable" data-entity="${escapeHtml(entityId)}">📍 ${latF}, ${lonF}</span>
-      <a class="map-link" href="${url}" target="_blank" rel="noopener">${escapeHtml(t("card.map_link"))}</a>
+    return `<div class="hub-location-panel">
+      <div class="hub-location-info">
+        <span class="hub-location-coords clickable" data-entity="${escapeHtml(entityId)}">
+          <ha-icon icon="mdi:map-marker"></ha-icon>
+          <span>${latF},<br>${lonF}</span>
+        </span>
+        <a class="hub-location-btn" href="${url}" target="_blank" rel="noopener">
+          ${escapeHtml(t("card.map_link"))}
+          <ha-icon icon="mdi:arrow-top-right"></ha-icon>
+        </a>
+      </div>
+      <a class="hub-location-preview" href="${url}" target="_blank" rel="noopener" aria-label="Open map preview">
+        <span class="hub-location-grid"></span>
+        <span class="hub-location-rings"></span>
+        <span class="hub-location-pin"></span>
+      </a>
     </div>`;
+  }
+
+  private _renderTechItem(label: string, value: string | number | null, unit: string = "", entityId: string | null = null): string {
+    if (value === null || value === "") return "";
+    const valueText = unit ? `${value} ${unit}` : `${value}`;
+    return `<div class="hub-tech-item${entityId ? " clickable" : ""}" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(valueText)}</span></div><div class="hub-tech-label">${escapeHtml(label)}</div></div>`;
   }
 
   // ── Node rendering ─────────────────────────────────────────────────────────
@@ -238,6 +390,13 @@ export class MeshcoreNodeCard extends HTMLElement {
     const uptime = formatUptime(uptimeRaw);
     const txRate = txRateId ? getEntityState(this._hass, txRateId) : null;
     const rxRate = rxRateId ? getEntityState(this._hass, rxRateId) : null;
+    const nodeTypeLabel = isRepeater
+      ? (t("card.type_repeater") || "Repeater")
+      : isRoom
+        ? (t("card.type_room") || "Room")
+        : isSensor
+          ? (t("card.type_sensor") || "Sensor")
+          : (t("card.type_client") || "Client");
 
     // ── Badges ────────────────────────────────────────────────────────────────
 
@@ -247,6 +406,37 @@ export class MeshcoreNodeCard extends HTMLElement {
     const sfVal = sfEntity ? getEntityState(this._hass, sfEntity) : null;
     const freqVal = freqEntity ? getEntityState(this._hass, freqEntity) : null;
     const txPowerVal = txPowerEntity ? getEntityState(this._hass, txPowerEntity) : null;
+    const techItems = [
+      freqVal ? this._renderTechItem("Frequency", parseFloat(freqVal).toFixed(3), "MHz", freqEntity) : "",
+      sfVal ? this._renderTechItem("Spreading factor", `SF${sfVal}`, "", sfEntity) : "",
+      txPowerVal ? this._renderTechItem("TX power", txPowerVal, "dBm", txPowerEntity) : "",
+      pathLen !== null ? this._renderTechItem("Path", pathLen, "", pathId) : "",
+    ].filter(Boolean).join("");
+    const trafficBottom: string[] = [];
+    if (entityExists(this._hass, relayedId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(relayedId)}">↺ Relayed: ${escapeHtml(getEntityState(this._hass, relayedId) ?? "N/A")}</span>`);
+    }
+    if (entityExists(this._hass, canceledId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(canceledId)}">✗ Canceled: ${escapeHtml(getEntityState(this._hass, canceledId) ?? "N/A")}</span>`);
+    }
+    if (entityExists(this._hass, dupId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(dupId)}">↻ Duplicate: ${escapeHtml(getEntityState(this._hass, dupId) ?? "N/A")}</span>`);
+    }
+    if (isRepeater && entityExists(this._hass, airtimeId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(airtimeId)}">↓ TX air: ${escapeHtml(getEntityState(this._hass, airtimeId) ?? "N/A")}%</span>`);
+    }
+    if (isRepeater && entityExists(this._hass, rxAirtimeId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">↑ RX air: ${escapeHtml(getEntityState(this._hass, rxAirtimeId) ?? "N/A")}%</span>`);
+    }
+    if (isRepeater && entityExists(this._hass, queueId)) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(queueId)}">Queue: ${escapeHtml(getEntityState(this._hass, queueId) ?? "N/A")}</span>`);
+    }
+    if (txRate) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(txRateId)}">TX/min: ${escapeHtml(txRate)}</span>`);
+    }
+    if (rxRate) {
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxRateId)}">RX/min: ${escapeHtml(rxRate)}</span>`);
+    }
 
     // ── Node key ─────────────────────────────────────────────────────────────
 
@@ -278,89 +468,80 @@ export class MeshcoreNodeCard extends HTMLElement {
 
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
-        <div class="node-header">
-          <div class="node-left">
-            <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
-            <span class="status-text ${online ? "online" : "offline"}">${escapeHtml(online ? t("card.online") : t("card.offline"))}</span>
-            ${uptime ? `<span class="node-header-badge">${escapeHtml(uptime)}</span>` : ""}
-          </div>
-          <div class="node-right">
-            ${sfVal ? `<span class="node-header-badge">SF${escapeHtml(sfVal)}</span>` : ""}
-            ${freqVal ? `<span class="node-header-badge">${parseFloat(freqVal).toFixed(3)} MHz</span>` : ""}
-            ${txPowerVal ? `<span class="node-header-badge">${escapeHtml(txPowerVal)} dBm</span>` : ""}
-            ${tempVal !== null && tempId ? `<span class="node-header-badge temp clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
-            ${isRepeater ? `<span class="type-badge">${escapeHtml(t("card.type_repeater"))}</span>` : isRoom ? `<span class="type-badge">${escapeHtml(t("card.type_room"))}</span>` : isSensor ? `<span class="type-badge">${escapeHtml(t("card.type_sensor"))}</span>` : ""}
-          </div>
-        </div>
-        <div class="node-title-row">
-          <span class="node-name">${escapeHtml(displayName)}</span>
-          ${nodeKey ? `<span class="node-key dim clickable" data-entity="${escapeHtml(contactId ?? statusId ?? "")}">(${escapeHtml(nodeKey)})</span>` : ""}
-        </div>
-        ${route && !["unknown", "unavailable"].includes(route) ? `<div class="node-route">↝ ${escapeHtml(route)}</div>` : ""}
-        ${(rssi !== null || snr !== null || (isRepeater && noise !== null)) ? `
-          <div class="signal-row">
-            <div class="signal-left">
-              ${rssi !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.rssi_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(rssiId)}">${escapeHtml(rssi)} dBm</span></div>` : ""}
-              ${snr !== null ? `<div class="signal-item"><span class="signal-label">${escapeHtml(t("card.snr_label"))}</span><span class="signal-value clickable" data-entity="${escapeHtml(snrId)}">${escapeHtml(snr)} dB</span></div>` : ""}
-            </div>
-            ${(isRepeater && noise !== null) ? `
-              <div class="signal-right">
-                <div class="signal-item">
-                  <span class="signal-label">🔊 Noise</span>
-                  <span class="signal-value clickable" data-entity="${escapeHtml(noiseId)}">${escapeHtml(noise)} dBm</span>
+        <div class="hub-hero">
+          <div class="hub-hero-left">
+            <div class="node-top-row">
+              <div class="node-top-left">
+                <div class="hub-online-pill">
+                  <span class="status-dot ${online ? "dot-online" : "dot-offline"}"></span>
+                  <span class="status-text ${online ? "online" : "offline"}">${escapeHtml(online ? t("card.online") : t("card.offline"))}</span>
                 </div>
-              </div>` : ""}
-          </div>` : ""}
-        ${battPct !== null && Number(battPct) !== 0 ? `
-          <div class="bar-row">
-            <span class="bar-label">${escapeHtml(t("card.battery_label"))}</span>
-            <span class="bar-label-right">
-              ${battV !== null && parseFloat(String(battV)) >= 0.001 ? `<span class="clickable" data-entity="${escapeHtml(battVId)}">⚡ ${parseFloat(String(battV)).toFixed(3)}V</span>` : ""}
-              <span class="bar-val clickable" data-entity="${escapeHtml(battPctId)}" style="color:${batteryColor(battPct)}">${escapeHtml(battPct)}%</span>
-            </span>
+                ${uptime ? `<span class="hub-uptime-pill">${escapeHtml(uptime)}</span>` : ""}
+              </div>
+              <div class="node-top-right">
+                ${tempVal !== null && tempId ? `<span class="hub-meta-pill node-temp-pill clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
+                <span class="hub-type-pill">${escapeHtml(nodeTypeLabel.toUpperCase())}</span>
+              </div>
+            </div>
+            <div class="hub-main-row">
+              <div class="hub-title-line">
+                <span class="hub-name">${escapeHtml(displayName)}</span>
+                ${nodeKey ? `<span class="hub-id-pill clickable" data-entity="${escapeHtml(contactId ?? statusId ?? "")}">(${escapeHtml(nodeKey)})</span>` : ""}
+              </div>
+            </div>
+            ${lastSeen ? `<div class="hub-meta-row"><span class="hub-meta-pill">${escapeHtml(lastSeen)}</span></div>` : ""}
           </div>
-          ${this._progressBar(battPct, batteryColor(battPct))}` : ""}
-        ${battV !== null && parseFloat(String(battV)) >= 0.001 && (battPct === null || Number(battPct) === 0) ? `
-          <div class="node-chip-row">
-            ${this._chip(battVId, "⚡ ", parseFloat(String(battV)).toFixed(3) + "V")}
+        </div>
+
+        ${battPct !== null && Number(battPct) !== 0 ? this._renderHubBattery(battPct, battV, battPctId, battVId, t) : ""}
+
+        ${(rssi !== null || snr !== null || noise !== null) ? `
+          <div class="section-header hub-section-header">Signal</div>
+          <div class="signal-row hub-signal-row">
+            ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi")}
+            ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr")}
+            ${this._renderSignalMetric("Noise", noise, "dBm", noiseId, "noise")}
           </div>` : ""}
+
+        ${techItems ? `
+          <div class="section-header hub-section-header hub-tech-header">
+            <ha-icon icon="mdi:cog-outline"></ha-icon>
+            <span>${escapeHtml(t("card.technical_section"))}</span>
+          </div>
+          <div class="hub-tech-row">
+            ${techItems}
+          </div>` : ""}
+
         ${(entityExists(this._hass, sentId) || entityExists(this._hass, receivedId)) ? `
-          <div class="section-header">${escapeHtml(t("card.traffic_section"))}</div>
-          <div class="traffic-grid">
-            ${entityExists(this._hass, sentId) ? `
-              <div class="traffic-item">
-                <span class="traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-                <span class="traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(getEntityState(this._hass, sentId) ?? "—")}</span>
-              </div>` : ""}
-            ${entityExists(this._hass, receivedId) ? `
-              <div class="traffic-item">
-                <span class="traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-                <span class="traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getEntityState(this._hass, receivedId) ?? "—")}</span>
-              </div>` : ""}
+          <div class="section-header hub-section-header">↕ ${escapeHtml(t("card.traffic_section"))}</div>
+          <div class="hub-traffic-panel">
+            <div class="hub-traffic-top-row">
+              <div class="hub-traffic-stat sent">
+                <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
+                <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(getEntityState(this._hass, sentId) ?? "N/A")}</span>
+              </div>
+              <div class="hub-traffic-center" aria-hidden="true">
+                <span class="hub-traffic-center-ring"></span>
+                <div class="hub-traffic-center-arrows">
+                  <ha-icon class="hub-traffic-center-arrow left" icon="mdi:arrow-up-bold"></ha-icon>
+                  <ha-icon class="hub-traffic-center-arrow right" icon="mdi:arrow-down-bold"></ha-icon>
+                </div>
+              </div>
+              <div class="hub-traffic-stat recv">
+                <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
+                <span class="hub-traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getEntityState(this._hass, receivedId) ?? "N/A")}</span>
+              </div>
+            </div>
+            ${trafficBottom.length ? `<div class="hub-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
           </div>` : ""}
-        ${(entityExists(this._hass, relayedId) || entityExists(this._hass, canceledId) || entityExists(this._hass, dupId)) ? `
-          <div class="advanced-chips">
-            ${entityExists(this._hass, relayedId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(relayedId)}">↺ ${escapeHtml(t("card.traffic_relayed"))}: ${escapeHtml(getEntityState(this._hass, relayedId) ?? "—")}</span>` : ""}
-            ${entityExists(this._hass, canceledId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(canceledId)}">✗ ${escapeHtml(t("card.traffic_canceled"))}: ${escapeHtml(getEntityState(this._hass, canceledId) ?? "—")}</span>` : ""}
-            ${entityExists(this._hass, dupId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(dupId)}">↻ ${escapeHtml(t("card.traffic_duplicate"))}: ${escapeHtml(getEntityState(this._hass, dupId) ?? "—")}</span>` : ""}
-          </div>` : ""}
-        ${isRepeater && (entityExists(this._hass, airtimeId) || entityExists(this._hass, rxAirtimeId) || entityExists(this._hass, queueId) || txRate || rxRate) ? `
-          <div class="advanced-chips">
-            ${entityExists(this._hass, airtimeId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(airtimeId)}">📡 TX air: ${escapeHtml(getEntityState(this._hass, airtimeId) ?? "—")}%</span>` : ""}
-            ${entityExists(this._hass, rxAirtimeId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">📡 RX air: ${escapeHtml(getEntityState(this._hass, rxAirtimeId) ?? "—")}%</span>` : ""}
-            ${entityExists(this._hass, queueId) ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(queueId)}">📥 Queue: ${escapeHtml(getEntityState(this._hass, queueId) ?? "—")}</span>` : ""}
-            ${txRate ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(txRateId)}">📤 TX/min: ${escapeHtml(txRate)}</span>` : ""}
-            ${rxRate ? `<span class="advanced-chip clickable" data-entity="${escapeHtml(rxRateId)}">📥 RX/min: ${escapeHtml(rxRate)}</span>` : ""}
-          </div>` : ""}
+
         ${lat !== null && lon !== null ? `
-          <div class="section-header">${escapeHtml(t("card.location_section"))}</div>
-          ${this._locLink(lat, lon, locId, t)}` : ""}
+          <div class="section-header hub-section-header">${escapeHtml(t("card.location_section"))}</div>
+          ${this._renderLocationPanel(lat, lon, locId, t)}` : ""}
+        ${route && !["unknown", "unavailable"].includes(route) ? `<div class="hub-traffic-delivery${routeId ? " clickable" : ""}" ${routeId ? `data-entity="${escapeHtml(routeId)}"` : ""}>↝ ${escapeHtml(route)}</div>` : ""}
+        ${this._renderNeighbors(node, t)}
+      </div>
     `;
-
-    // ✅ Neighbors – zawsze wyświetlane jeśli istnieją
-    html += this._renderNeighbors(node, t);
-
-    html += `</div>`;
     return html;
   }
 

@@ -141,7 +141,7 @@
     "hours_ago": "il y a {n}h",
     "days_ago": "il y a {n}j",
     "select_prompt": "-- Sélectionnez --",
-    "contact_unavailable": "Contact ou entité actuellement indisponible.",
+    "contact_unavailable": "Contact ou entité actuellement N/A.",
     "copied": "Copié !",
     "no_path_data": "Aucune donnée relative au chemin d'accès",
     "unknown_repeater": "Répéteur inconnu ({id})"

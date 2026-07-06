@@ -141,7 +141,7 @@
     "hours_ago": "vor {n}h",
     "days_ago": "vor {n}d",
     "select_prompt": "-- Wählen --",
-    "contact_unavailable": "Kontakt oder Entität ist derzeit nicht verfügbar.",
+    "contact_unavailable": "Kontakt oder Entität ist derzeit N/A.",
     "copied": "Gespeichert!",
     "no_path_data": "Keine Pfaddaten",
     "unknown_repeater": "Unbekannter Repeater ({id})"

@@ -142,7 +142,7 @@
     "days_ago": "{n}d geleden",
     "select_prompt": "-- Selecteer --",
     "author": "Auteur: Damian Mainka",
-    "contact_unavailable": "Contact of entiteit is momenteel niet beschikbaar.",
+    "contact_unavailable": "Contact of entiteit is momenteel N/A.",
     "copied": "Gekopieerd!",
     "no_path_data": "Geen padgegevens",
     "unknown_repeater": "Onbekend repeater ({id})"

@@ -234,7 +234,7 @@ export class MeshcoreQuickRepeaterCard extends HTMLElement {
                 <span class="qr-neighbor-snr ${snrClass} clickable" 
                     data-entity="${escapeHtml(n.snrId || '')}"
                     title="${escapeHtml(snrDesc)}">
-                  📡 ${n.snr !== null ? escapeHtml(n.snr.toFixed(1)) + " dB" : "—"}
+                  📡 ${n.snr !== null ? escapeHtml(n.snr.toFixed(1)) + " dB" : "N/A"}
                 </span>
               </div>
               <div class="qr-neighbor-stats">
