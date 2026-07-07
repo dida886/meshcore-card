@@ -489,119 +489,152 @@ export function discoverRepeaters(
 // ============================================
 // PARTICLE GENERATOR – STATYCZNA FALA
 // ============================================
-
 export function drawParticles(
   canvas: HTMLCanvasElement,
   options: {
-    count?: number;
+    count?: [number, number];
     color?: string;
     spacing?: number;
     jitter?: number;
-    opacity?: number;
+    lineWidth?: [number, number];
+    heightFromBottom?: number;
+    maxHeight?: number;
+    waveAmplitude?: [number, number];
+    waveFrequency?: [number, number];
+    waveLength?: [number, number];
+    speed?: number;
+    animate?: boolean;
+
+    // Efekty
+    floatingDots?: boolean;           // ← osobny parametr dla unoszących się kropek
+    floatingDotsCount?: number;
+    pulse?: boolean;
     glow?: boolean;
-    mask?: boolean;
-    maskCenter?: number;
-    maskSpread?: number;
-    retries?: number;
-    waveAmplitude?: number;      // amplituda fali (domyślnie 12)
-    waveFrequency?: number;      // częstotliwość fali (domyślnie 0.025)
-  } = {},
-  retryCount: number = 0
+    glowStrength?: number;
+    opacity?: number;
+  } = {}
 ): void {
   const parent = canvas.parentElement;
-  if (!parent) {
-    console.warn('drawParticles: canvas has no parent');
-    return;
-  }
+  if (!parent) return;
 
   const rect = parent.getBoundingClientRect();
-  if (!rect || rect.width === 0 || rect.height === 0) {
-    const maxRetries = options.retries ?? 5;
-    if (retryCount < maxRetries) {
-      setTimeout(() => {
-        drawParticles(canvas, options, retryCount + 1);
-      }, 100);
-    } else {
-      console.warn('drawParticles: parent still has zero size after retries');
-    }
-    return;
-  }
+  if (rect.width === 0 || rect.height === 0) return;
 
   const dpr = window.devicePixelRatio || 1;
-  const w = rect.width;
-  const h = rect.height;
-  canvas.width = w * dpr;
-  canvas.height = h * dpr;
-  canvas.style.width = w + 'px';
-  canvas.style.height = h + 'px';
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+
   const ctx = canvas.getContext('2d')!;
   ctx.scale(dpr, dpr);
 
-  // Parametry
   const {
-    color = '#3cff88',
-    spacing = 16,
-    jitter = 2,
-    opacity = 0.6,
+    count = [7, 11],
+    color = '#00ff9d',
+    spacing = 4.1,
+    jitter = 0.7,
+    lineWidth = [1.2, 2.3],
+    heightFromBottom = 5,
+    maxHeight = 52,
+    waveAmplitude = [4, 13],
+    waveFrequency = [0.013, 0.027],
+    waveLength = [150, 380],
+    speed = 0.034,
+    animate = true,
+
+    floatingDots = true,              // domyślnie włączone
+    floatingDotsCount = 50,
+    pulse = true,
     glow = true,
-    mask = true,
-    maskCenter = 0.7,
-    maskSpread = 0.35,
-    waveAmplitude = 12,
-    waveFrequency = 0.025,
+    glowStrength = 14,
+    opacity = 0.78,
   } = options;
 
-  // Generowanie punktów w siatce z efektem fali
-  const cols = Math.ceil(w / spacing) + 2;
-  const rows = Math.ceil(h / spacing) + 2;
-  const particles: { x: number; y: number; size: number }[] = [];
+  const actualCount = Math.floor(count[0] + Math.random() * (count[1] - count[0] + 1));
 
-  // Stała wartość czasu (bez animacji)
-  const time = 0;
+  const waves = Array.from({ length: actualCount }, () => ({
+    amplitude: waveAmplitude[0] + Math.random() * (waveAmplitude[1] - waveAmplitude[0]),
+    frequency: waveFrequency[0] + Math.random() * (waveFrequency[1] - waveFrequency[0]),
+    length: waveLength[0] + Math.random() * (waveLength[1] - waveLength[0]),
+    phase: Math.random() * Math.PI * 4,
+    yBase: heightFromBottom + Math.random() * maxHeight * 0.75,
+    opacity: opacity * (0.65 + Math.random() * 0.35),
+    lineWidth: lineWidth[0] + Math.random() * (lineWidth[1] - lineWidth[0]),
+  }));
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      // Podstawowa pozycja
-      const baseX = c * spacing;
-      const baseY = r * spacing;
+  // Unoszące się kropki
+  const floating = floatingDots ? Array.from({ length: floatingDotsCount }, () => ({
+    x: Math.random() * rect.width,
+    y: rect.height - Math.random() * maxHeight * 1.4,
+    size: 0.6 + Math.random() * 0.7,
+    speed: 0.1 + Math.random() * 0.5,
+  })) : [];
 
-      // Efekt fali – przesunięcie w Y zależne od X
-      const waveY = Math.sin(baseX * waveFrequency + time) * waveAmplitude;
+  let time = 0;
 
-      // Perspektywa – punkty na dole gęstsze
-      const perspective = 1 - (baseY / h) * 0.5;
-      const x = (baseX) * perspective + w * (1 - perspective) * 0.5 + (Math.random() - 0.5) * jitter;
-      const y = baseY + waveY + (Math.random() - 0.5) * jitter * 0.5;
+  function drawFrame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Rozmiar z pulsowaniem (statyczne, oparte na pozycji)
-      const size = 1.0 + 0.6 * Math.sin(baseX * 0.03 + baseY * 0.03);
+    const pulseFactor = pulse ? (Math.sin(time * 1.8) * 0.08 + 1) : 1;
 
-      particles.push({ x, y, size });
+    // Linie fal przy prawej stronie
+    for (const wave of waves) {
+      if (glow) {
+        ctx.shadowBlur = glowStrength;
+        ctx.shadowColor = color;
+      }
+
+      const rightEdge = rect.width - 25;
+      const startX = rightEdge - wave.length + Math.sin(time * 0.45 + wave.phase) * 25;
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = wave.lineWidth;
+      ctx.lineCap = "round";
+      ctx.globalAlpha = wave.opacity * pulseFactor;
+      ctx.beginPath();
+
+      let first = true;
+      for (let x = Math.max(20, startX); x < rightEdge + 30; x += spacing) {
+        let y = rect.height - wave.yBase +
+                Math.sin(x * wave.frequency + time + wave.phase) * wave.amplitude;
+
+        if (first) {
+          ctx.moveTo(x, y);
+          first = false;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
     }
-  }
 
-  // Glow
-  if (glow) {
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = color;
-  }
+    // LATAJĄCE KROPKI
+    if (floatingDots && floating.length > 0) {
+      ctx.shadowBlur = 9;
+      ctx.shadowColor = color;
+      ctx.fillStyle = color;
 
-  // Rysowanie punktów
-  for (const p of particles) {
-    let alpha = opacity;
-    if (mask) {
-      const factor = 1 - Math.abs(p.y - maskCenter * h) / (maskSpread * h);
-      alpha = Math.max(0, Math.min(1, factor * opacity));
+      for (const dot of floating) {
+        dot.y -= dot.speed;
+        if (dot.y < 30) {
+          dot.y = rect.height - 20;
+          dot.x = Math.random() * rect.width;
+        }
+
+        ctx.globalAlpha = 0.4 + Math.sin(time * 3.5 + dot.x) * 0.3;
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-    if (alpha < 0.02) continue;
 
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    if (animate) time += speed;
+    requestAnimationFrame(drawFrame);
   }
 
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 1;
+  drawFrame();
 }

@@ -556,13 +556,6 @@ export class MeshcoreNodeCard extends HTMLElement {
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
         <div class="hub-hero" style="position:relative; overflow:hidden;">
-          ${online ? `
-            <!-- Dekoracje tylko dla online -->
-            <div class="background-grid"></div>
-           <svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none">
-            <path d="M0 30 C60 10 120 50 180 30 S300 10 400 30"/>
-          </svg>
-          ` : ""}
           <div class="node-card-hero-left">
             <div class="node-card-top-row">
               <div class="node-card-top-left">

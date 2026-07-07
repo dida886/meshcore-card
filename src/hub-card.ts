@@ -629,27 +629,31 @@ export class MeshcoreHubCard extends HTMLElement {
 
 
   private _drawParticles(): void {
-  const canvases = this.shadowRoot?.querySelectorAll('.particle-canvas');
-  if (!canvases || canvases.length === 0) return;
+    const canvases = this.shadowRoot?.querySelectorAll('.particle-canvas');
+    if (!canvases || canvases.length === 0) return;
 
   requestAnimationFrame(() => {
     canvases.forEach((canvas) => {
       drawParticles(canvas as HTMLCanvasElement, {
-        count: 600,              // więcej punktów
-        spacing: 14,
-        jitter: 2,
-        opacity: 0.7,
-        glow: true,
-        mask: true,
-        maskCenter: 0.7,
-        maskSpread: 0.4,
-        waveAmplitude: 14,       // amplituda fali
-        waveFrequency: 0.03,     // częstotliwość fali
-        retries: 5,
+          count: [4, 7],                
+          color: '#00ff9d',
+          lineWidth: [0.4, 2.0],
+          heightFromBottom: 0,
+          maxHeight: 45,
+          waveLength: [50, 400],
+          waveAmplitude: [2, 10],
+          waveFrequency: [0.012, 0.065],
+          animate: true,
+          speed: 0.040,
+          floatingDots: true,           
+          floatingDotsCount: 50,
+          pulse: true,
+          glow: true,
+          glowStrength: 15,                   
       });
     });
   });
-}
+  }
 
   private _scheduleTrim(rowSelector: string): void {
     if (this._trimTimer !== null) cancelAnimationFrame(this._trimTimer);
