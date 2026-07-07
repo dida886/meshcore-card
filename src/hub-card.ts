@@ -9,6 +9,9 @@ import {
   escapeHtml,
   getEntityState,
   getEntityAttribute,
+  getDisplayState,
+  signalQualityLabel,
+  drawParticles, 
 } from "./helpers.js";
 import { STYLES } from "./styles.js";
 import { discoverHubs } from "./discovery.js";
@@ -94,21 +97,44 @@ export class MeshcoreHubCard extends HTMLElement {
   }
 
   private _renderHubBattery(
-    battPct: string | number,
+    battPct: string | number | null,
     battV: string | number | null,
     battPctId: string | null,
     battVId: string | null,
     t: LocalizeFunc
   ): string {
-    const rawPct = typeof battPct === "number"
-      ? battPct
-      : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
-    const pctNumber = Math.min(100, Math.max(0, Number.isFinite(rawPct) ? rawPct : 0));
-    const dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 110)}, 92%, 56%)`;
-    const pctText = `${pctNumber.toFixed(0)}%`;
-    const voltageText = battV !== null && Number.isFinite(Number(battV)) && Number(battV) >= 0.001
-      ? `${Number(battV).toFixed(3)}V`
-      : null;
+    // Używamy getDisplayState do odczytu stanu
+    const pctDisplay = battPctId ? getDisplayState(this._hass, battPctId) : "N/A";
+    const vDisplay = battVId ? getDisplayState(this._hass, battVId) : "N/A";
+
+    // Jeśli obie wartości to "N/A", nie wyświetlamy panelu
+    if (pctDisplay === "N/A" && vDisplay === "N/A") return "";
+
+    let pctNumber: number | null = null;
+    let pctText = "N/A";
+    let dynamicBatteryColor = "#666";
+
+    if (pctDisplay !== "N/A") {
+      const rawPct = typeof battPct === "number"
+        ? battPct
+        : parseFloat(pctDisplay.replace(",", ".").replace(/[^\d.-]/g, ""));
+      if (Number.isFinite(rawPct)) {
+        pctNumber = Math.min(100, Math.max(0, rawPct));
+        pctText = `${pctNumber.toFixed(0)}%`;
+        dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 110)}, 70%, 45%)`;
+      }
+    }
+
+    let voltageText: string | null = null;
+    if (vDisplay !== "N/A") {
+      const v = Number(vDisplay);
+      if (Number.isFinite(v) && v >= 0.001) {
+        voltageText = `${v.toFixed(3)}V`;
+      }
+    }
+
+    // Jeśli nadal nie ma żadnej wartości, nie wyświetlamy
+    if (pctNumber === null && voltageText === null) return "";
 
     return `
       <div class="hub-battery-panel" style="--hub-battery-color:${dynamicBatteryColor};">
@@ -119,7 +145,7 @@ export class MeshcoreHubCard extends HTMLElement {
         </div>
         <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
           <div class="hub-battery-fill-wrap">
-            <div class="hub-battery-fill" style="width:${pctNumber}%;"></div>
+            <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
           </div>
           <span class="hub-battery-tip"></span>
         </div>
@@ -162,16 +188,13 @@ export class MeshcoreHubCard extends HTMLElement {
   private _signalGaugePct(value: number, variant: "rssi" | "snr" | "noise"): number {
     const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
     if (variant === "rssi") {
-      // LoRa practical range: -140 dBm (worst) -> -30 dBm (best)
       const normalized = (value - (-140)) / 110;
       return clamp(normalized * 100, 0, 100);
     }
     if (variant === "snr") {
-      // LoRa practical range: -20 dB (worst) -> +20 dB (best)
       const normalized = (value - (-20)) / 40;
       return clamp(normalized * 100, 0, 100);
     }
-    // Noise practical range: -120 dBm (best / low noise) -> -85 dBm (worst / high noise)
     const normalized = ((-85) - value) / 35;
     return clamp(normalized * 100, 0, 100);
   }
@@ -181,13 +204,17 @@ export class MeshcoreHubCard extends HTMLElement {
     value: string | number | null,
     unit: string,
     entityId: string | null,
-    variant: "rssi" | "snr" | "noise"
+    variant: "rssi" | "snr" | "noise",
+    t: LocalizeFunc
   ): string {
-    if (value === null) return "";
-    const numeric = this._parseNumericMetric(value);
-    const gaugePct = Math.max(0, Math.min(100, this._signalGaugePct(numeric ?? 0, variant)));
-    const valueText = `${value}`;
-    const qualityText = this._signalQualityLabel(numeric, variant);
+    // Jeśli brak encji lub wartość niedostępna – pomijamy
+    if (!entityId) return "";
+    const displayVal = getDisplayState(this._hass, entityId);
+    if (displayVal === "N/A") return "";
+
+    const numeric = this._parseNumericMetric(displayVal);
+    const gaugePct = numeric !== null ? Math.max(0, Math.min(100, this._signalGaugePct(numeric, variant))) : 0;
+    const qualityText = signalQualityLabel(numeric, variant, t);
 
     let series: number[] = [];
     if (entityId) {
@@ -208,8 +235,8 @@ export class MeshcoreHubCard extends HTMLElement {
             <path class="signal-gauge-track" pathLength="100" d="M14,50 A36,36 0 0 1 86,50"></path>
             <path class="signal-gauge-progress" pathLength="100" style="stroke-dasharray:${gaugePct} 100" d="M14,50 A36,36 0 0 1 86,50"></path>
           </svg>
-          <div class="signal-gauge-value clickable" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}>
-            <span class="signal-gauge-number">${escapeHtml(valueText)}</span>
+          <div class="signal-gauge-value clickable" data-entity="${escapeHtml(entityId)}">
+            <span class="signal-gauge-number">${escapeHtml(displayVal)}</span>
             <span class="signal-gauge-unit">${escapeHtml(unit)}</span>
           </div>
         </div>
@@ -219,28 +246,6 @@ export class MeshcoreHubCard extends HTMLElement {
     `;
   }
 
-  private _signalQualityLabel(value: number | null, variant: "rssi" | "snr" | "noise"): string {
-    if (value === null) return "Unknown";
-    if (variant === "rssi") {
-      if (value >= -70) return "Excellent";
-      if (value >= -90) return "Strong";
-      if (value >= -110) return "Medium";
-      if (value >= -125) return "Low";
-      return "Very Low";
-    }
-    if (variant === "snr") {
-      if (value >= 10) return "Excellent";
-      if (value >= 5) return "Strong";
-      if (value >= 0) return "Medium";
-      if (value >= -10) return "Low";
-      if (value >= -20) return "Very Low";
-      return "No Link";
-    }
-    if (value <= -105) return "Low";
-    if (value <= -95) return "Medium";
-    if (value <= -85) return "High";
-    return "Very High";
-  }
 
   private _extractNumericSeriesFromLogbook(entries: unknown[]): number[] {
     const values: number[] = [];
@@ -313,8 +318,13 @@ export class MeshcoreHubCard extends HTMLElement {
 
   private _locLink(lat: unknown, lon: unknown, entityId: string | null, t: LocalizeFunc): string {
     if (!entityId) return "";
-    const latF = parseFloat(String(lat)).toFixed(5);
-    const lonF = parseFloat(String(lon)).toFixed(5);
+    // Sprawdzenie, czy współrzędne są prawidłowe
+    const latNum = parseFloat(String(lat));
+    const lonNum = parseFloat(String(lon));
+    if (isNaN(latNum) || isNaN(lonNum) || (latNum === 0 && lonNum === 0)) return "";
+
+    const latF = latNum.toFixed(5);
+    const lonF = lonNum.toFixed(5);
     const url = `https://analyzer.letsmesh.net/map?lat=${latF}&long=${lonF}&zoom=10`;
     return `<div class="hub-location-panel">
       <div class="hub-location-info">
@@ -408,32 +418,33 @@ export class MeshcoreHubCard extends HTMLElement {
       .filter((id) => /meshcore_[a-f0-9]+_mqtt/.test(id) && id.includes(pubkey))
       .sort();
 
+    // Pobieramy stany za pomocą getDisplayState
     const status = getEntityState(this._hass, statusId) ?? "unknown";
     const battPct = getEntityState(this._hass, battPctId);
     const battV = getEntityState(this._hass, battVId);
-    const nodeCount = getEntityState(this._hass, countId);
-    const freq = getEntityState(this._hass, freqId);
-    const bw = getEntityState(this._hass, bwId);
-    const sf = getEntityState(this._hass, sfId);
-    const txPow = getEntityState(this._hass, txPowId);
+    const nodeCount = getDisplayState(this._hass, countId);
+    const freq = getDisplayState(this._hass, freqId);
+    const bw = getDisplayState(this._hass, bwId);
+    const sf = getDisplayState(this._hass, sfId);
+    const txPow = getDisplayState(this._hass, txPowId);
     const lat = getEntityState(this._hass, latId);
     const lon = getEntityState(this._hass, lonId);
-    const rssi = getEntityState(this._hass, rssiId);
-    const snr = getEntityState(this._hass, snrId);
-    const noise = getEntityState(this._hass, noiseId);
-    const sent = getEntityState(this._hass, sentId);
-    const recv = getEntityState(this._hass, recvId);
-    const recvErr = getEntityState(this._hass, recvErrId);
-    const queue = getEntityState(this._hass, queueId);
-    const msgDeliv = getEntityState(this._hass, msgDelivId);
-    const txAirtime = getEntityState(this._hass, txAirtimeId);
-    const rxAirtime = getEntityState(this._hass, rxAirtimeId);
+    const rssi = rssiId ? getDisplayState(this._hass, rssiId) : "N/A";
+    const snr = snrId ? getDisplayState(this._hass, snrId) : "N/A";
+    const noise = noiseId ? getDisplayState(this._hass, noiseId) : "N/A";
+    const sent = getDisplayState(this._hass, sentId);
+    const recv = getDisplayState(this._hass, recvId);
+    const recvErr = getDisplayState(this._hass, recvErrId);
+    const queue = getDisplayState(this._hass, queueId);
+    const msgDeliv = getDisplayState(this._hass, msgDelivId);
+    const txAirtime = getDisplayState(this._hass, txAirtimeId);
+    const rxAirtime = getDisplayState(this._hass, rxAirtimeId);
 
     const hwModel = getEntityAttribute(this._hass, statusId, "hw_model") || getEntityAttribute(this._hass, countId, "hw_model");
     const firmware = getEntityAttribute(this._hass, statusId, "firmware_version") || getEntityAttribute(this._hass, countId, "firmware_version");
 
     const online = isOnlineState(status);
-    const showRf = freq || bw || sf || txPow;
+    const showRf = (freq && freq !== "N/A") || (bw && bw !== "N/A") || (sf && sf !== "N/A") || (txPow && txPow !== "N/A");
 
     let displayName = name.replace(/_/g, " ");
     const meshcorePattern = /^MeshCore\s+/i;
@@ -445,7 +456,8 @@ export class MeshcoreHubCard extends HTMLElement {
 
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
-        <div class="hub-hero">
+        <div class="hub-hero" style="position:relative; overflow:hidden;">
+          <canvas class="particle-canvas"></canvas>
           <div class="hub-card-hero-left">
             <div class="hub-card-top-row">
               <div class="hub-online-pill">
@@ -460,49 +472,46 @@ export class MeshcoreHubCard extends HTMLElement {
                 <span class="hub-id-pill clickable" data-entity="${escapeHtml(statusId ?? countId)}">(${escapeHtml(pubkey)})</span>
               </div>
               <div class="hub-card-meta-row">
-                ${nodeCount !== null ? `<span class="hub-meta-pill clickable" data-entity="${escapeHtml(countId)}">${escapeHtml(t("card.nodes_count", { n: nodeCount }))}</span>` : ""}
+                ${nodeCount && nodeCount !== "N/A" ? `<span class="hub-meta-pill clickable" data-entity="${escapeHtml(countId)}">${escapeHtml(t("card.nodes_count", { n: nodeCount }))}</span>` : ""}
               </div>
             </div>
           </div>
         </div>
         ${hwModel || firmware ? `<div class="hw-info">${[hwModel, firmware].filter(Boolean).map((s) => escapeHtml(s)).join(" • ")}</div>` : ""}
-        ${battPct !== null && Number(battPct) !== 0
-          ? this._renderHubBattery(battPct, battV, battPctId, battVId, t)
-          : ""}
+        ${battPct !== null ? this._renderHubBattery(battPct, battV, battPctId, battVId, t) : ""}
     `;
 
-    if (showSignal && (rssi !== null || snr !== null || noise !== null)) {
+    if (showSignal && (rssi !== "N/A" || snr !== "N/A" || noise !== "N/A")) {
       html += `
         <div class="section-header hub-section-header">Signal</div>
         <div class="signal-row hub-signal-row">
-          ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi")}
-          ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr")}
-          ${this._renderSignalMetric("Noise", noise, "dBm", noiseId, "noise")}
+          ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi", t)}
+          ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr", t)}
+          ${this._renderSignalMetric(t("card.noise_label"), noise, "dBm", noiseId, "noise", t)}
         </div>`;
     }
 
     if (showTech && showRf) {
       html += `
         <div class="section-header hub-section-header hub-tech-header">
-          <ha-icon icon="mdi:cog-outline"></ha-icon>
           <span>${escapeHtml(t("card.technical_section"))}</span>
         </div>
         <div class="hub-tech-row">
-          ${freq ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(freqId)}"><div class="hub-tech-main"><span class="hub-tech-value">${parseFloat(freq).toFixed(3)} MHz</span></div><div class="hub-tech-label">Frequency</div></div>` : ""}
-          ${bw   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(bwId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(bw)} kHz</span></div><div class="hub-tech-label">Bandwidth</div></div>` : ""}
-          ${sf   ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(sfId)}"><div class="hub-tech-main"><span class="hub-tech-value">SF${escapeHtml(sf)}</span></div><div class="hub-tech-label">Spreading factor</div></div>` : ""}
-          ${txPow ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(txPowId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(txPow)} dBm</span></div><div class="hub-tech-label">TX power</div></div>` : ""}
+          ${freq && freq !== "N/A" ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(freqId)}"><div class="hub-tech-main"><span class="hub-tech-value">${parseFloat(freq).toFixed(3)} MHz</span></div><div class="hub-tech-label">Frequency</div></div>` : ""}
+          ${bw && bw !== "N/A" ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(bwId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(bw)} kHz</span></div><div class="hub-tech-label">Bandwidth</div></div>` : ""}
+          ${sf && sf !== "N/A" ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(sfId)}"><div class="hub-tech-main"><span class="hub-tech-value">SF${escapeHtml(sf)}</span></div><div class="hub-tech-label">Spreading factor</div></div>` : ""}
+          ${txPow && txPow !== "N/A" ? `<div class="hub-tech-item clickable" data-entity="${escapeHtml(txPowId)}"><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(txPow)} dBm</span></div><div class="hub-tech-label">TX power</div></div>` : ""}
         </div>`;
     }
 
-    if (showTraffic && (sent !== null || recv !== null)) {
+    if (showTraffic && (sent !== "N/A" || recv !== "N/A")) {
       html += `
-        <div class="section-header hub-section-header">↕ ${escapeHtml(t("card.traffic_section"))}</div>
+        <div class="section-header hub-section-header">${escapeHtml(t("card.traffic_section"))}</div>
         <div class="hub-traffic-panel">
           <div class="hub-traffic-top-row">
             <div class="hub-traffic-stat sent">
               <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(sent ?? "N/A")}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(sent !== "N/A" ? sent : "N/A")}</span>
             </div>
             <div class="hub-traffic-center" aria-hidden="true">
               <span class="hub-traffic-center-ring"></span>
@@ -513,21 +522,21 @@ export class MeshcoreHubCard extends HTMLElement {
             </div>
             <div class="hub-traffic-stat recv">
               <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(recvId)}">${escapeHtml(recv ?? "N/A")}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(recvId)}">${escapeHtml(recv !== "N/A" ? recv : "N/A")}</span>
             </div>
           </div>
           <div class="hub-traffic-bottom-row">
-            ${rxAirtime !== null ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">↓ RX air: ${parseFloat(rxAirtime).toFixed(1)} min</span>` : ""}
-            ${recvErr !== null ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(recvErrId)}">⊗ RX errors: <span class="hub-traffic-error">${escapeHtml(recvErr)}</span></span>` : ""}
-            ${txAirtime !== null ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(txAirtimeId)}">↑ TX air: ${parseFloat(txAirtime).toFixed(1)} min</span>` : ""}
+            ${rxAirtime && rxAirtime !== "N/A" ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">↓ RX air: ${parseFloat(rxAirtime).toFixed(1)} min</span>` : ""}
+            ${recvErr && recvErr !== "N/A" ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(recvErrId)}">⊗ RX errors: <span class="hub-traffic-error">${escapeHtml(recvErr)}</span></span>` : ""}
+            ${txAirtime && txAirtime !== "N/A" ? `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(txAirtimeId)}">↑ TX air: ${parseFloat(txAirtime).toFixed(1)} min</span>` : ""}
           </div>
-          ${msgDeliv !== null && msgDeliv !== "Idle" ? `<div class="hub-traffic-delivery clickable" data-entity="${escapeHtml(msgDelivId)}">📨 ${escapeHtml(t("card.last_message_delivery"))}: ${escapeHtml(msgDeliv)}</div>` : ""}
+          ${msgDeliv && msgDeliv !== "N/A" && msgDeliv !== "Idle" ? `<div class="hub-traffic-delivery clickable" data-entity="${escapeHtml(msgDelivId)}">📨 ${escapeHtml(t("card.last_message_delivery"))}: ${escapeHtml(msgDeliv)}</div>` : ""}
         </div>`;
     }
 
     if (showAdvanced) {
       const chips: string[] = [];
-      if (queue !== null) {
+      if (queue && queue !== "N/A") {
         chips.push(`<span class="advanced-chip clickable" data-entity="${escapeHtml(queueId)}">📥 Queue: ${escapeHtml(queue)}</span>`);
       }
       if (chips.length > 0) {
@@ -578,7 +587,6 @@ export class MeshcoreHubCard extends HTMLElement {
     html += `</div>`;
     return html;
   }
-
   // ── Main render ────────────────────────────────────────────────────────────
 
   private _render(): void {
@@ -616,7 +624,32 @@ export class MeshcoreHubCard extends HTMLElement {
         }
       });
     });
+    this._drawParticles();
   }
+
+
+  private _drawParticles(): void {
+  const canvases = this.shadowRoot?.querySelectorAll('.particle-canvas');
+  if (!canvases || canvases.length === 0) return;
+
+  requestAnimationFrame(() => {
+    canvases.forEach((canvas) => {
+      drawParticles(canvas as HTMLCanvasElement, {
+        count: 600,              // więcej punktów
+        spacing: 14,
+        jitter: 2,
+        opacity: 0.7,
+        glow: true,
+        mask: true,
+        maskCenter: 0.7,
+        maskSpread: 0.4,
+        waveAmplitude: 14,       // amplituda fali
+        waveFrequency: 0.03,     // częstotliwość fali
+        retries: 5,
+      });
+    });
+  });
+}
 
   private _scheduleTrim(rowSelector: string): void {
     if (this._trimTimer !== null) cancelAnimationFrame(this._trimTimer);

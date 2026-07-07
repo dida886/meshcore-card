@@ -144,8 +144,9 @@ export const STYLES: string = `
     animation: radar-pulse 1.9s ease-out infinite 0.95s;
   }
   .dot-offline {
-    background: var(--secondary-text-color);
-    opacity: 0.4;
+    background: #f87171;
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+    opacity: 1;
   }
 
   @keyframes pulse-glow {
@@ -177,8 +178,9 @@ export const STYLES: string = `
     text-shadow: 0 0 8px rgba(70, 245, 138, 0.5);
   }
   .status-text.offline {
-    color: var(--secondary-text-color);
-    opacity: 0.6;
+    color: var(--error-color, #f44336) !important;
+    font-weight: 800;
+    font-size: 1.1rem;
   }
 
   /* Progress bars */
@@ -242,7 +244,7 @@ export const STYLES: string = `
     min-width: 0;
   }
   .hub-battery-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--primary-text-color);
     letter-spacing: 0.02em;
   }
@@ -287,11 +289,8 @@ export const STYLES: string = `
     inset: 0 auto 0 0;
     min-width: 0;
     border-radius: 7px;
-    background:
-      linear-gradient(90deg, rgba(69, 255, 165, 0.18) 0%, rgba(69, 255, 165, 0.78) 45%, rgba(153, 255, 205, 0.96) 100%);
-    box-shadow:
-      inset 0 0 10px rgba(231, 255, 244, 0.3),
-      0 0 8px rgba(69, 255, 165, 0.5);
+    background: linear-gradient(90deg, color-mix(in hsl, var(--hub-battery-color), black 30%), var(--hub-battery-color));
+    box-shadow: 0 0 12px var(--hub-battery-color);  
     transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: width;
   }
@@ -416,11 +415,11 @@ export const STYLES: string = `
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: transparent;
+    background: transparent;A
     border-radius: 12px;
     border: 1px solid rgba(120, 150, 220, 0.14);
     box-shadow:
-      0 8px 18px rgba(0, 0, 0, 0.12),
+      2px 4px 8px rgba(0, 0, 0, 0.12),
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;
     transform: translateY(0);
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
@@ -569,7 +568,7 @@ export const STYLES: string = `
   /* Nodes section */
   .nodes-section { margin-top: 8px; }
   .section-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     color: var(--secondary-text-color);
@@ -693,7 +692,7 @@ export const STYLES: string = `
     align-items: center;
     border-radius: 999px;
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1;
     color: var(--primary-text-color);
     background: transparent;
@@ -738,7 +737,7 @@ export const STYLES: string = `
   }
   .hub-id-pill,
   .node-card-id-pill {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1;
     padding: 4px 8px;
     border-radius: 999px;
@@ -761,7 +760,7 @@ export const STYLES: string = `
   }
   .hub-meta-pill,
   .node-card-meta-pill {
-    font-size: 11px;
+    font-size: 12px;
     padding: 5px 9px;
     border-radius: 12px;
     border: none;
@@ -992,7 +991,7 @@ export const STYLES: string = `
   .signal-quality {
     margin-top: 4px;
     text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.01em;
     opacity: 0.95;
@@ -1026,7 +1025,7 @@ export const STYLES: string = `
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
   .traffic-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--secondary-text-color);
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -1285,7 +1284,7 @@ export const STYLES: string = `
   }
   .loc-coords {
     font-family: var(--paper-font-code1_-_font-family, monospace);
-    font-size: 11px;
+    font-size: 12px;
     background: transparent;
     padding: 4px 12px;
     border-radius: 20px;
@@ -1293,7 +1292,7 @@ export const STYLES: string = `
     color: var(--primary-text-color);
   }
   .map-link {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--mesh-blue);
     text-decoration: none;
@@ -1355,7 +1354,7 @@ export const STYLES: string = `
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--primary-text-color);
@@ -1435,7 +1434,7 @@ export const STYLES: string = `
 
   /* Neighbors section */
   .neighbors-section {
-    margin-top: 12px;
+    margin-top: 4px;
     padding-top: 8px;
   }
   .neighbors-header {
@@ -1753,7 +1752,7 @@ export const STYLES: string = `
     }
     .hub-type-pill,
     .node-card-type-pill {
-      font-size: 11px;
+      font-size: 12px;
       padding: 4px 10px;
     }
     .hub-uptime-pill {
@@ -1762,11 +1761,11 @@ export const STYLES: string = `
     }
     .hub-id-pill,
     .node-card-id-pill {
-      font-size: 10px;
+      font-size: 12px;
     }
     .hub-meta-pill,
     .node-card-meta-pill {
-      font-size: 11px;
+      font-size: 12px;
       padding: 4px 8px;
     }
     .hub-tech-row {
@@ -1861,7 +1860,7 @@ export const STYLES: string = `
       justify-content: space-between;
       gap: 6px;
       padding: 4px 8px;
-      font-size: 11px;
+      font-size: 12px;
     }
     .signal-left {
       display: flex;
@@ -1879,7 +1878,7 @@ export const STYLES: string = `
       font-size: 9px;
     }
     .signal-value {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     /* traffic-grid – w jednej linii */
@@ -1899,7 +1898,7 @@ export const STYLES: string = `
       font-size: 8px;
     }
     .traffic-value {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     /* Pozostałe elementy – dostosowanie dla małych ekranów */
@@ -1928,7 +1927,7 @@ export const STYLES: string = `
       padding: 2px 6px;
     }
     .status-text {
-      font-size: 11px;
+      font-size: 12px;
     }
     .bar-row {
       font-size: 9px;
@@ -2033,7 +2032,7 @@ export const STYLES: string = `
       margin-top: 3px;
     }
     .empty {
-      font-size: 11px;
+      font-size: 12px;
       padding: 20px 16px;
     }
   }
@@ -2086,7 +2085,7 @@ export const STYLES: string = `
       padding: 6px;
     }
     .hub-location-coords {
-      font-size: 11px;
+      font-size: 12px;
     }
     .hub-traffic-value {
       font-size: 22px;
@@ -2270,4 +2269,15 @@ export const STYLES: string = `
       color: #000 !important; /* pozostawiamy, ale możemy usunąć jeśli chcemy, ale zostawiam dla pewności */
     }
   }
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+  will-change: transform;
+}
 `;

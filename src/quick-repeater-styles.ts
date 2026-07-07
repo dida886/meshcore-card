@@ -43,8 +43,8 @@ export const QUICK_REPEATER_STYLES = `
     box-shadow: 0 0 10px rgba(70, 245, 138, 0.95);
   }
   .qr-status-dot.offline {
-    background: var(--secondary-text-color);
-    opacity: 0.4;
+    background: var(--error-color, #f44336);
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
   }
   .qr-status-dot.warning {
     background: var(--mesh-orange);
@@ -322,7 +322,7 @@ export const QUICK_REPEATER_STYLES = `
     }
 
     .qr-neighbor-row {
-      padding: 3px 0;
+      padding: 3px 4px;
     }
 
     .qr-neighbor-name {

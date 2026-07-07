@@ -1,4 +1,6 @@
 import type { HomeAssistant } from "./types.js";
+import { makeLocalize, type LocalizeFunc } from "./localize.js";
+import { discoverNodes } from "./discovery.js";
 
 // ============================================
 // ESKAPING I BEZPIECZEŃSTWO
@@ -334,8 +336,47 @@ export interface RepeaterData {
     temp?: string | null;
   };
 }
+export function getDisplayState(
+  hass: HomeAssistant | undefined,
+  entityId: string | null,
+  fallback: string = "N/A"
+): string {
+  if (!entityId) return fallback;
+  const state = getEntityState(hass, entityId);
+  if (state == null || state === "unavailable" || state === "unknown") return fallback;
+  return state;
+}
 
-import { discoverNodes } from "./discovery.js";
+export function signalQualityLabel(
+  value: number | null,
+  variant: "rssi" | "snr" | "noise",
+  t: LocalizeFunc
+): string {
+  if (value === null) return t("card.signal_unknown") || "Unknown";
+
+  if (variant === "rssi") {
+    if (value >= -70) return t("card.signal_excellent") || "Excellent";
+    if (value >= -90) return t("card.signal_strong") || "Strong";
+    if (value >= -110) return t("card.signal_medium") || "Medium";
+    if (value >= -125) return t("card.signal_low") || "Low";
+    return t("card.signal_very_low") || "Very Low";
+  }
+
+  if (variant === "snr") {
+    if (value >= 10) return t("card.signal_excellent") || "Excellent";
+    if (value >= 5) return t("card.signal_strong") || "Strong";
+    if (value >= 0) return t("card.signal_medium") || "Medium";
+    if (value >= -10) return t("card.signal_low") || "Low";
+    if (value >= -20) return t("card.signal_very_low") || "Very Low";
+    return t("card.signal_no_link") || "No Link";
+  }
+
+  // noise
+  if (value <= -105) return t("card.signal_low") || "Low";
+  if (value <= -95) return t("card.signal_medium") || "Medium";
+  if (value <= -85) return t("card.signal_high") || "High";
+  return t("card.signal_very_high") || "Very High";
+}
 
 export function discoverRepeaters(
   hass: HomeAssistant | undefined,
@@ -444,4 +485,123 @@ export function discoverRepeaters(
   }
 
   return result;
+}
+// ============================================
+// PARTICLE GENERATOR – STATYCZNA FALA
+// ============================================
+
+export function drawParticles(
+  canvas: HTMLCanvasElement,
+  options: {
+    count?: number;
+    color?: string;
+    spacing?: number;
+    jitter?: number;
+    opacity?: number;
+    glow?: boolean;
+    mask?: boolean;
+    maskCenter?: number;
+    maskSpread?: number;
+    retries?: number;
+    waveAmplitude?: number;      // amplituda fali (domyślnie 12)
+    waveFrequency?: number;      // częstotliwość fali (domyślnie 0.025)
+  } = {},
+  retryCount: number = 0
+): void {
+  const parent = canvas.parentElement;
+  if (!parent) {
+    console.warn('drawParticles: canvas has no parent');
+    return;
+  }
+
+  const rect = parent.getBoundingClientRect();
+  if (!rect || rect.width === 0 || rect.height === 0) {
+    const maxRetries = options.retries ?? 5;
+    if (retryCount < maxRetries) {
+      setTimeout(() => {
+        drawParticles(canvas, options, retryCount + 1);
+      }, 100);
+    } else {
+      console.warn('drawParticles: parent still has zero size after retries');
+    }
+    return;
+  }
+
+  const dpr = window.devicePixelRatio || 1;
+  const w = rect.width;
+  const h = rect.height;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(dpr, dpr);
+
+  // Parametry
+  const {
+    color = '#3cff88',
+    spacing = 16,
+    jitter = 2,
+    opacity = 0.6,
+    glow = true,
+    mask = true,
+    maskCenter = 0.7,
+    maskSpread = 0.35,
+    waveAmplitude = 12,
+    waveFrequency = 0.025,
+  } = options;
+
+  // Generowanie punktów w siatce z efektem fali
+  const cols = Math.ceil(w / spacing) + 2;
+  const rows = Math.ceil(h / spacing) + 2;
+  const particles: { x: number; y: number; size: number }[] = [];
+
+  // Stała wartość czasu (bez animacji)
+  const time = 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      // Podstawowa pozycja
+      const baseX = c * spacing;
+      const baseY = r * spacing;
+
+      // Efekt fali – przesunięcie w Y zależne od X
+      const waveY = Math.sin(baseX * waveFrequency + time) * waveAmplitude;
+
+      // Perspektywa – punkty na dole gęstsze
+      const perspective = 1 - (baseY / h) * 0.5;
+      const x = (baseX) * perspective + w * (1 - perspective) * 0.5 + (Math.random() - 0.5) * jitter;
+      const y = baseY + waveY + (Math.random() - 0.5) * jitter * 0.5;
+
+      // Rozmiar z pulsowaniem (statyczne, oparte na pozycji)
+      const size = 1.0 + 0.6 * Math.sin(baseX * 0.03 + baseY * 0.03);
+
+      particles.push({ x, y, size });
+    }
+  }
+
+  // Glow
+  if (glow) {
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = color;
+  }
+
+  // Rysowanie punktów
+  for (const p of particles) {
+    let alpha = opacity;
+    if (mask) {
+      const factor = 1 - Math.abs(p.y - maskCenter * h) / (maskSpread * h);
+      alpha = Math.max(0, Math.min(1, factor * opacity));
+    }
+    if (alpha < 0.02) continue;
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
 }

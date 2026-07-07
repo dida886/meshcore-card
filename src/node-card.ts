@@ -17,6 +17,8 @@ import {
   getSnrClass,
   filterNeighbors,
   snrDescription,
+  getDisplayState,
+  signalQualityLabel,
   type NeighborInfo,
 } from "./helpers.js";
 import { STYLES } from "./styles.js";
@@ -107,21 +109,38 @@ export class MeshcoreNodeCard extends HTMLElement {
   }
 
   private _renderHubBattery(
-    battPct: string | number,
+    battPct: string | number | null,
     battV: string | number | null,
     battPctId: string | null,
     battVId: string | null,
     t: LocalizeFunc
   ): string {
-    const rawPct = typeof battPct === "number"
-      ? battPct
-      : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
-    const pctNumber = Math.min(100, Math.max(0, Number.isFinite(rawPct) ? rawPct : 0));
-    const dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 120)}, 92%, 56%)`;
-    const pctText = `${pctNumber.toFixed(0)}%`;
-    const voltageText = battV !== null && Number.isFinite(Number(battV)) && Number(battV) >= 0.001
-      ? `${Number(battV).toFixed(3)}V`
-      : null;
+    // Sprawdzenie, czy mamy prawidłową wartość procentową
+    let pctNumber: number | null = null;
+    let pctText = "N/A";
+    let dynamicBatteryColor = "#666";
+
+    if (battPct !== null && battPct !== "unavailable" && battPct !== "unknown") {
+      const rawPct = typeof battPct === "number"
+        ? battPct
+        : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
+      if (Number.isFinite(rawPct)) {
+        pctNumber = Math.min(100, Math.max(0, rawPct));
+        pctText = `${pctNumber.toFixed(0)}%`;
+        dynamicBatteryColor = `hsl(${Math.round((pctNumber / 100) * 110)}, 70%, 45%)`;
+      }
+    }
+
+    let voltageText: string | null = null;
+    if (battV !== null && battV !== "unavailable" && battV !== "unknown") {
+      const v = Number(battV);
+      if (Number.isFinite(v) && v >= 0.001) {
+        voltageText = `${v.toFixed(3)}V`;
+      }
+    }
+
+    // Jeśli nie ma żadnej wartości, nie wyświetlamy panelu
+    if (pctNumber === null && voltageText === null) return "";
 
     return `
       <div class="hub-battery-panel" style="--hub-battery-color:${dynamicBatteryColor};">
@@ -132,7 +151,7 @@ export class MeshcoreNodeCard extends HTMLElement {
         </div>
         <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
           <div class="hub-battery-fill-wrap">
-            <div class="hub-battery-fill" style="width:${pctNumber}%;"></div>
+            <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
           </div>
           <span class="hub-battery-tip"></span>
         </div>
@@ -237,29 +256,7 @@ export class MeshcoreNodeCard extends HTMLElement {
     return clamp(normalized * 100, 0, 100);
   }
 
-  private _signalQualityLabel(value: number | null, variant: "rssi" | "snr" | "noise"): string {
-    if (value === null) return "Unknown";
-    if (variant === "rssi") {
-      if (value >= -70) return "Excellent";
-      if (value >= -90) return "Strong";
-      if (value >= -110) return "Medium";
-      if (value >= -125) return "Low";
-      return "Very Low";
-    }
-    if (variant === "snr") {
-      if (value >= 10) return "Excellent";
-      if (value >= 5) return "Strong";
-      if (value >= 0) return "Medium";
-      if (value >= -10) return "Low";
-      if (value >= -20) return "Very Low";
-      return "No Link";
-    }
-    if (value <= -105) return "Low";
-    if (value <= -95) return "Medium";
-    if (value <= -85) return "High";
-    return "Very High";
-  }
-
+  
   private _renderSignalSparkline(series: number[], variant: "rssi" | "snr" | "noise"): string {
     if (series.length < 2) return "";
     const min = Math.min(...series);
@@ -283,13 +280,17 @@ export class MeshcoreNodeCard extends HTMLElement {
     value: string | number | null,
     unit: string,
     entityId: string | null,
-    variant: "rssi" | "snr" | "noise"
+    variant: "rssi" | "snr" | "noise",
+    t: LocalizeFunc
   ): string {
-    if (value === null) return "";
-    const numeric = this._parseNumericMetric(value);
-    const gaugePct = Math.max(0, Math.min(100, this._signalGaugePct(numeric ?? 0, variant)));
-    const valueText = `${value}`;
-    const qualityText = this._signalQualityLabel(numeric, variant);
+    // Jeśli brak encji lub wartość niedostępna – pomijamy
+    if (!entityId) return "";
+    const displayVal = getDisplayState(this._hass, entityId);
+    if (displayVal === "N/A") return "";
+
+    const numeric = this._parseNumericMetric(displayVal);
+    const gaugePct = numeric !== null ? Math.max(0, Math.min(100, this._signalGaugePct(numeric, variant))) : 0;
+    const qualityText = signalQualityLabel(numeric, variant, makeLocalize(this._hass?.language ?? this._hass?.locale?.language ?? "en"));
     const series = numeric !== null
       ? [0.94, 0.97, 1, 0.99, 1.02, 1.01, 1.03].map((m) => numeric * m)
       : [];
@@ -304,8 +305,8 @@ export class MeshcoreNodeCard extends HTMLElement {
             <path class="signal-gauge-track" pathLength="100" d="M14,50 A36,36 0 0 1 86,50"></path>
             <path class="signal-gauge-progress" pathLength="100" style="stroke-dasharray:${gaugePct} 100" d="M14,50 A36,36 0 0 1 86,50"></path>
           </svg>
-          <div class="signal-gauge-value clickable" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}>
-            <span class="signal-gauge-number">${escapeHtml(valueText)}</span>
+          <div class="signal-gauge-value clickable" data-entity="${escapeHtml(entityId)}">
+            <span class="signal-gauge-number">${escapeHtml(displayVal)}</span>
             <span class="signal-gauge-unit">${escapeHtml(unit)}</span>
           </div>
         </div>
@@ -317,8 +318,13 @@ export class MeshcoreNodeCard extends HTMLElement {
 
   private _renderLocationPanel(lat: unknown, lon: unknown, entityId: string | null, t: LocalizeFunc): string {
     if (!entityId) return "";
-    const latF = parseFloat(String(lat)).toFixed(5);
-    const lonF = parseFloat(String(lon)).toFixed(5);
+    // Sprawdzenie, czy współrzędne są prawidłowe
+    const latNum = parseFloat(String(lat));
+    const lonNum = parseFloat(String(lon));
+    if (isNaN(latNum) || isNaN(lonNum) || (latNum === 0 && lonNum === 0)) return "";
+
+    const latF = latNum.toFixed(5);
+    const lonF = lonNum.toFixed(5);
     const url = `https://analyzer.letsmesh.net/map?lat=${latF}&long=${lonF}&zoom=10`;
     return `<div class="hub-location-panel">
       <div class="hub-location-info">
@@ -340,21 +346,23 @@ export class MeshcoreNodeCard extends HTMLElement {
   }
 
   private _renderTechItem(label: string, value: string | number | null, unit: string = "", entityId: string | null = null): string {
-    if (value === null || value === "") return "";
-    const valueText = unit ? `${value} ${unit}` : `${value}`;
-    return `<div class="hub-tech-item${entityId ? " clickable" : ""}" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(valueText)}</span></div><div class="hub-tech-label">${escapeHtml(label)}</div></div>`;
-  }
+      // Używamy helpera do pobrania czytelnej wartości
+      const displayVal = entityId ? getDisplayState(this._hass, entityId) : (value != null ? String(value) : null);
+      if (!displayVal || displayVal === "N/A") return "";
+      const valueText = unit ? `${displayVal} ${unit}` : displayVal;
+      return `<div class="hub-tech-item${entityId ? " clickable" : ""}" ${entityId ? `data-entity="${escapeHtml(entityId)}"` : ""}><div class="hub-tech-main"><span class="hub-tech-value">${escapeHtml(valueText)}</span></div><div class="hub-tech-label">${escapeHtml(label)}</div></div>`;
+    }
 
-  // ── Node rendering ─────────────────────────────────────────────────────────
+    // ── Node rendering ─────────────────────────────────────────────────────────
 
-  private _renderNode(node: NodeInfo, t: LocalizeFunc): string {
+    private _renderNode(node: NodeInfo, t: LocalizeFunc): string {
     const { name, deviceId, ePrefix, eSuffix } = node;
     const p = (m: string) => findEntityByDevice(this._hass, deviceId, m, ePrefix, eSuffix);
 
     // ✅ Sprawdź, czy węzeł jest na liście do ukrycia
     const hiddenNodes = this._config?.hidden_nodes || [];
     if (hiddenNodes.includes(name)) {
-      return ""; // pomijamy
+      return "";
     }
 
     // ✅ Filtr po typie
@@ -371,7 +379,6 @@ export class MeshcoreNodeCard extends HTMLElement {
     })();
     const isSensor = !isRepeater && !!(p("temperature") || p("humidity") || p("illuminance"));
 
-    // ✅ Sprawdź, czy to "room" – pobieramy z kontaktu
     let isRoom = false;
     const contactId = this._contactEntity(name);
     if (contactId) {
@@ -383,13 +390,11 @@ export class MeshcoreNodeCard extends HTMLElement {
 
     const nodeType = isRepeater ? "repeater" : isRoom ? "room" : isSensor ? "sensor" : "client";
 
-    // Filtrowanie po typie
     if (nodeTypeFilter !== "all" && nodeType !== nodeTypeFilter) {
-      return ""; // pomijamy
+      return "";
     }
 
     // ── Pobieranie encji ─────────────────────────────────────────────────────
-
     const statusId = p("online") ?? p("status");
     const successId = p("request_successes");
     const rssiId = p("last_rssi");
@@ -425,19 +430,18 @@ export class MeshcoreNodeCard extends HTMLElement {
     const txRateId = [p("tx_per_minute"), p("tx_rate"), p("messages_per_minute")].find((id) => entityExists(this._hass, id)) ?? null;
     const rxRateId = [p("rx_per_minute"), p("rx_rate")].find((id) => entityExists(this._hass, id)) ?? null;
     const tempId = p("ch1_temperature") ?? p("temperature");
-    const tempVal = tempId ? getEntityState(this._hass, tempId) : null;
+    const tempVal = tempId ? getDisplayState(this._hass, tempId) : null;
 
     // ── Pobieranie wartości ─────────────────────────────────────────────────
-
     const status = getEntityState(this._hass, statusId);
-    const rssi = getEntityState(this._hass, rssiId);
-    const snr = getEntityState(this._hass, snrId);
-    const noise = getEntityState(this._hass, noiseId);
-    const pathLen = getEntityState(this._hass, pathId);
-    const route = getEntityState(this._hass, routeId);
+    const rssi = rssiId ? getDisplayState(this._hass, rssiId) : null;
+    const snr = snrId ? getDisplayState(this._hass, snrId) : null;
+    const noise = noiseId ? getDisplayState(this._hass, noiseId) : null;
+    const pathLen = pathId ? getDisplayState(this._hass, pathId) : null;
+    const route = routeId ? getDisplayState(this._hass, routeId) : null;
     const lastAdv = getEntityState(this._hass, advertId);
-    const battPct = getEntityState(this._hass, battPctId);
-    const battV = getEntityState(this._hass, battVId);
+    const battPct = battPctId ? getEntityState(this._hass, battPctId) : null;
+    const battV = battVId ? getEntityState(this._hass, battVId) : null;
     const rawLat = contactId ? getEntityAttribute(this._hass, contactId, "adv_lat") ?? getEntityAttribute(this._hass, contactId, "latitude")
                   : getEntityState(this._hass, latId);
     const rawLon = contactId ? getEntityAttribute(this._hass, contactId, "adv_lon") ?? getEntityAttribute(this._hass, contactId, "longitude")
@@ -446,11 +450,10 @@ export class MeshcoreNodeCard extends HTMLElement {
     const lon = rawLon != null && parseFloat(String(rawLon)) !== 0 ? rawLon : null;
     const locId = contactId ?? latId;
 
-    const successes = getEntityState(this._hass, successId);
+    const successes = successId ? getDisplayState(this._hass, successId) : null;
     const lastSeen = formatLastSeen(lastAdv, t);
 
     // ── Status online ────────────────────────────────────────────────────────
-
     const uptimeState = uptimeId ? this._hass?.states[uptimeId] : null;
     let online: boolean;
     if (uptimeState) {
@@ -461,13 +464,13 @@ export class MeshcoreNodeCard extends HTMLElement {
         online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
       }
     } else {
-      online = successes !== null ? Number(successes) > 0 : isOnlineState(status);
+      online = successes !== null && successes !== "N/A" ? Number(successes) > 0 : isOnlineState(status);
     }
 
     const uptimeRaw = getEntityState(this._hass, uptimeId);
     const uptime = formatUptime(uptimeRaw);
-    const txRate = txRateId ? getEntityState(this._hass, txRateId) : null;
-    const rxRate = rxRateId ? getEntityState(this._hass, rxRateId) : null;
+    const txRate = txRateId ? getDisplayState(this._hass, txRateId) : null;
+    const rxRate = rxRateId ? getDisplayState(this._hass, rxRateId) : null;
     const nodeTypeLabel = isRepeater
       ? (t("card.type_repeater") || "Repeater")
       : isRoom
@@ -476,48 +479,54 @@ export class MeshcoreNodeCard extends HTMLElement {
           ? (t("card.type_sensor") || "Sensor")
           : (t("card.type_client") || "Client");
 
-    // ── Badges ────────────────────────────────────────────────────────────────
-
+    // ── Badges (techniczne) ──────────────────────────────────────────────
     const sfEntity = p("spreading_factor");
     const freqEntity = p("frequency");
     const txPowerEntity = p("tx_power");
-    const sfVal = sfEntity ? getEntityState(this._hass, sfEntity) : null;
-    const freqVal = freqEntity ? getEntityState(this._hass, freqEntity) : null;
-    const txPowerVal = txPowerEntity ? getEntityState(this._hass, txPowerEntity) : null;
+    const sfVal = sfEntity ? getDisplayState(this._hass, sfEntity) : null;
+    const freqVal = freqEntity ? getDisplayState(this._hass, freqEntity) : null;
+    const txPowerVal = txPowerEntity ? getDisplayState(this._hass, txPowerEntity) : null;
     const techItems = [
-      freqVal ? this._renderTechItem("Frequency", parseFloat(freqVal).toFixed(3), "MHz", freqEntity) : "",
-      sfVal ? this._renderTechItem("Spreading factor", `SF${sfVal}`, "", sfEntity) : "",
-      txPowerVal ? this._renderTechItem("TX power", txPowerVal, "dBm", txPowerEntity) : "",
-      pathLen !== null ? this._renderTechItem("Path", pathLen, "", pathId) : "",
+      freqVal && freqVal !== "N/A" ? this._renderTechItem("Frequency", freqVal, "MHz", freqEntity) : "",
+      sfVal && sfVal !== "N/A" ? this._renderTechItem("Spreading factor", `SF${sfVal}`, "", sfEntity) : "",
+      txPowerVal && txPowerVal !== "N/A" ? this._renderTechItem("TX power", txPowerVal, "dBm", txPowerEntity) : "",
+      pathLen && pathLen !== "N/A" ? this._renderTechItem("Path", pathLen, "", pathId) : "",
     ].filter(Boolean).join("");
+
+    // ── Traffic bottom chips ──────────────────────────────────────────────
     const trafficBottom: string[] = [];
     if (entityExists(this._hass, relayedId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(relayedId)}">↺ Relayed: ${escapeHtml(getEntityState(this._hass, relayedId) ?? "N/A")}</span>`);
+      const val = getDisplayState(this._hass, relayedId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(relayedId)}">↺ Relayed: ${escapeHtml(val)}</span>`);
     }
     if (entityExists(this._hass, canceledId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(canceledId)}">✗ Canceled: ${escapeHtml(getEntityState(this._hass, canceledId) ?? "N/A")}</span>`);
+      const val = getDisplayState(this._hass, canceledId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(canceledId)}">✗ Canceled: ${escapeHtml(val)}</span>`);
     }
     if (entityExists(this._hass, dupId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(dupId)}">↻ Duplicate: ${escapeHtml(getEntityState(this._hass, dupId) ?? "N/A")}</span>`);
+      const val = getDisplayState(this._hass, dupId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(dupId)}">↻ Duplicate: ${escapeHtml(val)}</span>`);
     }
     if (isRepeater && entityExists(this._hass, airtimeId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(airtimeId)}">↓ TX air: ${escapeHtml(getEntityState(this._hass, airtimeId) ?? "N/A")}%</span>`);
+      const val = getDisplayState(this._hass, airtimeId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(airtimeId)}">↓ TX air: ${escapeHtml(val)}%</span>`);
     }
     if (isRepeater && entityExists(this._hass, rxAirtimeId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">↑ RX air: ${escapeHtml(getEntityState(this._hass, rxAirtimeId) ?? "N/A")}%</span>`);
+      const val = getDisplayState(this._hass, rxAirtimeId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxAirtimeId)}">↑ RX air: ${escapeHtml(val)}%</span>`);
     }
     if (isRepeater && entityExists(this._hass, queueId)) {
-      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(queueId)}">Queue: ${escapeHtml(getEntityState(this._hass, queueId) ?? "N/A")}</span>`);
+      const val = getDisplayState(this._hass, queueId);
+      trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(queueId)}">Queue: ${escapeHtml(val)}</span>`);
     }
-    if (txRate) {
+    if (txRate && txRate !== "N/A") {
       trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(txRateId)}">TX/min: ${escapeHtml(txRate)}</span>`);
     }
-    if (rxRate) {
+    if (rxRate && rxRate !== "N/A") {
       trafficBottom.push(`<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(rxRateId)}">RX/min: ${escapeHtml(rxRate)}</span>`);
     }
 
     // ── Node key ─────────────────────────────────────────────────────────────
-
     let nodeKey = "";
     if (contactId) {
       const advId = getEntityAttribute(this._hass, contactId, "adv_id");
@@ -530,7 +539,6 @@ export class MeshcoreNodeCard extends HTMLElement {
     if (!nodeKey && deviceId) nodeKey = deviceId.slice(-6);
 
     // ── Display name ─────────────────────────────────────────────────────────
-
     let displayName = name.replace(/_/g, " ");
     if (displayName.toLowerCase().startsWith("meshcore ")) {
       displayName = displayName.substring(9);
@@ -542,11 +550,19 @@ export class MeshcoreNodeCard extends HTMLElement {
       displayName = displayName.substring(colonIndex + 2);
     }
 
-    // ── BUILD HTML ──────────────────────────────────────────────────────────
+    // ===================== GENEROWANIE HTML ==========================
 
+    // Podstawowa część – zawsze widoczna
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
-        <div class="hub-hero">
+        <div class="hub-hero" style="position:relative; overflow:hidden;">
+          ${online ? `
+            <!-- Dekoracje tylko dla online -->
+            <div class="background-grid"></div>
+           <svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none">
+            <path d="M0 30 C60 10 120 50 180 30 S300 10 400 30"/>
+          </svg>
+          ` : ""}
           <div class="node-card-hero-left">
             <div class="node-card-top-row">
               <div class="node-card-top-left">
@@ -557,7 +573,7 @@ export class MeshcoreNodeCard extends HTMLElement {
                 ${uptime ? `<span class="hub-uptime-pill">${escapeHtml(uptime)}</span>` : ""}
               </div>
               <div class="node-card-top-right">
-                ${tempVal !== null && tempId ? `<span class="node-card-meta-pill node-card-temp-pill clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
+                ${tempVal && tempVal !== "N/A" ? `<span class="node-card-meta-pill node-card-temp-pill clickable" data-entity="${escapeHtml(tempId)}">${escapeHtml(tempVal)}°C</span>` : ""}
                 <span class="node-card-type-pill">${escapeHtml(nodeTypeLabel.toUpperCase())}</span>
               </div>
             </div>
@@ -570,56 +586,96 @@ export class MeshcoreNodeCard extends HTMLElement {
             ${lastSeen ? `<div class="node-card-meta-row"><span class="node-card-meta-pill">${escapeHtml(lastSeen)}</span></div>` : ""}
           </div>
         </div>
+    `;
 
-        ${battPct !== null && Number(battPct) !== 0 ? this._renderHubBattery(battPct, battV, battPctId, battVId, t) : ""}
-
-        ${(rssi !== null || snr !== null || noise !== null) ? `
-          <div class="section-header hub-section-header">Signal</div>
-          <div class="signal-row hub-signal-row">
-            ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi")}
-            ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr")}
-            ${this._renderSignalMetric("Noise", noise, "dBm", noiseId, "noise")}
-          </div>` : ""}
-
-        ${techItems ? `
-          <div class="section-header hub-section-header hub-tech-header">
-            <ha-icon icon="mdi:cog-outline"></ha-icon>
-            <span>${escapeHtml(t("card.technical_section"))}</span>
+    // Jeśli węzeł jest offline – dodajemy tylko komunikat o offline i kończymy
+    if (!online) {
+      html += `
+          <div style="display: flex; text-align: center; justify-content: center; padding: 20px 0; color: var(--error-color, #f44336); font-weight: 700; font-size: 1.2rem; letter-spacing: 0.05em;">
+            ${escapeHtml(t("card.offline_message") || "NODE OFFLINE")}
           </div>
-          <div class="hub-tech-row">
-            ${techItems}
-          </div>` : ""}
+        </div>
+      `;
+      return html;
+    }
 
-        ${(entityExists(this._hass, sentId) || entityExists(this._hass, receivedId)) ? `
-          <div class="section-header hub-section-header">↕ ${escapeHtml(t("card.traffic_section"))}</div>
-          <div class="hub-traffic-panel">
-            <div class="hub-traffic-top-row">
-              <div class="hub-traffic-stat sent">
-                <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-                <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(getEntityState(this._hass, sentId) ?? "N/A")}</span>
-              </div>
-              <div class="hub-traffic-center" aria-hidden="true">
-                <span class="hub-traffic-center-ring"></span>
-                <div class="hub-traffic-center-arrows">
-                  <ha-icon class="hub-traffic-center-arrow left" icon="mdi:arrow-up-bold"></ha-icon>
-                  <ha-icon class="hub-traffic-center-arrow right" icon="mdi:arrow-down-bold"></ha-icon>
-                </div>
-              </div>
-              <div class="hub-traffic-stat recv">
-                <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-                <span class="hub-traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getEntityState(this._hass, receivedId) ?? "N/A")}</span>
+    // ====== Dla online – dodajemy wszystkie sekcje ======
+
+    // Bateria
+    if (battPct !== null) {
+      html += this._renderHubBattery(battPct, battV, battPctId, battVId, t);
+    }
+
+    // Signal
+    if (rssi !== null || snr !== null || noise !== null) {
+      html += `
+        <div class="section-header hub-section-header">Signal</div>
+        <div class="signal-row hub-signal-row">
+          ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi", t)}
+          ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr", t)}
+          ${this._renderSignalMetric(t("card.noise_label"), noise, "dBm", noiseId, "noise", t)}
+        </div>
+      `;
+    }
+
+    // Technical items
+    if (techItems) {
+      html += `
+        <div class="section-header hub-section-header hub-tech-header">
+          <span>${escapeHtml(t("card.technical_section"))}</span>
+        </div>
+        <div class="hub-tech-row">
+          ${techItems}
+        </div>
+      `;
+    }
+
+    // Traffic
+    if (entityExists(this._hass, sentId) || entityExists(this._hass, receivedId)) {
+      html += `
+        <div class="section-header hub-section-header">${escapeHtml(t("card.traffic_section"))}</div>
+        <div class="hub-traffic-panel">
+          <div class="hub-traffic-top-row">
+            <div class="hub-traffic-stat sent">
+              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(getDisplayState(this._hass, sentId))}</span>
+            </div>
+            <div class="hub-traffic-center" aria-hidden="true">
+              <span class="hub-traffic-center-ring"></span>
+              <div class="hub-traffic-center-arrows">
+                <ha-icon class="hub-traffic-center-arrow left" icon="mdi:arrow-up-bold"></ha-icon>
+                <ha-icon class="hub-traffic-center-arrow right" icon="mdi:arrow-down-bold"></ha-icon>
               </div>
             </div>
-            ${trafficBottom.length ? `<div class="node-card-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
-          </div>` : ""}
+            <div class="hub-traffic-stat recv">
+              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getDisplayState(this._hass, receivedId))}</span>
+            </div>
+          </div>
+          ${trafficBottom.length ? `<div class="node-card-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
+        </div>
+      `;
+    }
 
-        ${lat !== null && lon !== null ? `
-          <div class="section-header hub-section-header">${escapeHtml(t("card.location_section"))}</div>
-          ${this._renderLocationPanel(lat, lon, locId, t)}` : ""}
-        ${route && !["unknown", "unavailable"].includes(route) ? `<div class="hub-traffic-delivery${routeId ? " clickable" : ""}" ${routeId ? `data-entity="${escapeHtml(routeId)}"` : ""}>↝ ${escapeHtml(route)}</div>` : ""}
-        ${this._renderNeighbors(node, t)}
-      </div>
-    `;
+    // Location
+    if (lat !== null && lon !== null) {
+      html += `
+        <div class="section-header hub-section-header">${escapeHtml(t("card.location_section"))}</div>
+        ${this._renderLocationPanel(lat, lon, locId, t)}
+      `;
+    }
+
+    // Route
+    if (route && route !== "N/A") {
+      html += `<div class="hub-traffic-delivery${routeId ? " clickable" : ""}" ${routeId ? `data-entity="${escapeHtml(routeId)}"` : ""}>↝ ${escapeHtml(route)}</div>`;
+    }
+
+    // Neighbors
+    html += this._renderNeighbors(node, t);
+
+    // Zamknięcie node-block
+    html += `</div>`;
+
     return html;
   }
 
@@ -766,7 +822,6 @@ export class MeshcoreNodeCard extends HTMLElement {
   }
 }
 
-// ===================== EDITOR =====================
 // ===================== EDITOR =====================
 export class MeshcoreNodeCardEditor extends HTMLElement {
   private _config?: MeshcoreNodeCardConfig;

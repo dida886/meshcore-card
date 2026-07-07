@@ -137,7 +137,7 @@ export class MeshcoreQuickRepeaterCard extends HTMLElement {
     if (uptimeShort.length > 8) {
       const parts = uptimeShort.split(" ");
       if (parts.length >= 2) {
-        uptimeShort = `${parts[0]} ${parts[1]}`;
+        uptimeShort = `${parts[0]}${parts[1]}`;
       }
     }
 

@@ -6,8 +6,9 @@
     "hub_name": "Hub: {name}",
     "nodes_count": "◈ {n} Nodes",
     "empty_hubs": "No MeshCore hubs found.<br>Check the MeshCore integration is installed.",
+    "empty_nodes": "No MeshCore nodes found.<br>Check the MeshCore integration is installed.",
     "empty_contacts": "No MeshCore contact nodes found.<br>Check the MeshCore integration is installed.",
-    "map_link": "Map ↗",
+    "map_link": "Map",
     "unknown_location": "Unknown Location",
     "mqtt_label": "MQTT",
     "battery_label": "🔋 Battery",
@@ -15,6 +16,8 @@
     "rx_airtime_label": "📡 RX Airtime",
     "type_repeater": "Repeater",
     "type_sensor": "Sensor",
+    "type_room": "Room Server",
+    "type_client": "Client",
     "rssi_badge": "RSSI {value} dBm",
     "snr_badge": "SNR {value} dB",
     "chip_ch1": "Ch1 ",
@@ -47,10 +50,10 @@
     "telemetry_section": "Telemetry",
     "rssi_label": "RSSI",
     "snr_label": "SNR",
-    "snr_excellent": "excellent",
-    "snr_good": "good",
-    "snr_fair": "fair",
-    "snr_poor": "poor",
+    "snr_excellent": "Excellent",
+    "snr_good": "Good",
+    "snr_fair": "Fair",
+    "snr_poor": "Poor",
     "neighbor_last_seen": "Last seen",
     "neighbor_contacts": "Connections (48h)",
     "filter_state_label": "State:",
@@ -71,8 +74,17 @@
     "last_message_delivery": "Last delivery",
     "advert_sent": "Advert sent",
     "advert_flood_sent": "Advert Flood sent",
-    "advert_error": "Advert failed"
-                        
+    "advert_error": "Advert failed",
+    "signal_excellent": "Excellent",
+    "signal_strong": "Strong",
+    "signal_medium": "Medium",
+    "signal_low": "Low",
+    "signal_very_low": "Very Low",
+    "signal_no_link": "No Link",
+    "no_data": "N/A",
+    "noise_label": "Noise",
+    "offline_message": "Node is currently offline. No data available."
+
   },
   "time": {
     "s_ago": "{n}s ago",
@@ -102,7 +114,6 @@
     "no_hubs_detected": "No MeshCore hubs detected yet. Add the card, then edit to configure.",
     "node_order_label": "Node Display Order",
     "contact_filter_label": "Default contact filter",
-    "node_type_filter_label": "Default node type filter" ,
     "sort_by": "Sort by",
     "sort_by_snr": "SNR (best)",
     "sort_by_name": "Name",
@@ -110,13 +121,12 @@
     "max_neighbors": "Maximum number of neighbors",
     "filter_all": "All",
     "filter_repeater": "Repeater",
-    "filter_room": "Room Server", 
+    "filter_room": "Room Server",
     "filter_sensor": "Sensor",
     "filter_client": "Client",
     "show_hide_nodes": "Show/Hide nodes",
-    "node_type_filter": "Default node type filter"
-
-
+    "node_type_filter": "Default node type filter",
+    "node_type_filter_label": "Node type filter"
   },
   "message-card": {
     "send_message": "SEND MESHCORE MESSAGE",
