@@ -237,6 +237,9 @@ export const STYLES: string = `
     align-items: center;
     gap: 14px;
   }
+  .hub-battery-right  {
+    display: grid;
+  }
   .hub-battery-info {
     display: flex;
     flex-direction: column;
@@ -250,7 +253,7 @@ export const STYLES: string = `
     text-align: left;
   }
   .hub-battery-percent {
-    font-size: 38px;
+    font-size: 28px;
     line-height: 1;
     font-weight: 800;
     color: var(--hub-battery-color);

@@ -108,22 +108,28 @@ export class MeshcoreNodeCard extends HTMLElement {
     return `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${color}"></div></div>`;
   }
 
-  private _renderHubBattery(
+    private _renderHubBattery(
     battPct: string | number | null,
     battV: string | number | null,
     battPctId: string | null,
     battVId: string | null,
     t: LocalizeFunc
   ): string {
-    // Sprawdzenie, czy mamy prawidłową wartość procentową
+    // Używamy getDisplayState do odczytu stanu
+    const pctDisplay = battPctId ? getDisplayState(this._hass, battPctId) : null;
+    const vDisplay = battVId ? getDisplayState(this._hass, battVId) : null;
+
+    // Jeśli obie wartości są null lub undefined, nie wyświetlamy panelu
+    if (!pctDisplay && !vDisplay) return "";
+
     let pctNumber: number | null = null;
     let pctText = "N/A";
     let dynamicBatteryColor = "#666";
 
-    if (battPct !== null && battPct !== "unavailable" && battPct !== "unknown") {
-      const rawPct = typeof battPct === "number"
-        ? battPct
-        : parseFloat(String(battPct).replace(",", ".").replace(/[^\d.-]/g, ""));
+    if (pctDisplay) {
+      const rawPct = typeof pctDisplay === "number"
+        ? pctDisplay
+        : parseFloat(String(pctDisplay).replace(",", ".").replace(/[^\d.-]/g, ""));
       if (Number.isFinite(rawPct)) {
         pctNumber = Math.min(100, Math.max(0, rawPct));
         pctText = `${pctNumber.toFixed(0)}%`;
@@ -132,28 +138,32 @@ export class MeshcoreNodeCard extends HTMLElement {
     }
 
     let voltageText: string | null = null;
-    if (battV !== null && battV !== "unavailable" && battV !== "unknown") {
-      const v = Number(battV);
+    if (vDisplay) {
+      const v = typeof vDisplay === "number" ? vDisplay : parseFloat(String(vDisplay));
       if (Number.isFinite(v) && v >= 0.001) {
         voltageText = `${v.toFixed(3)}V`;
       }
     }
 
-    // Jeśli nie ma żadnej wartości, nie wyświetlamy panelu
+    // Jeśli nadal nie ma żadnej wartości, nie wyświetlamy
     if (pctNumber === null && voltageText === null) return "";
 
     return `
       <div class="hub-battery-panel" style="--hub-battery-color:${dynamicBatteryColor};">
+        <!-- Lewa kolumna: etykieta i procent -->
         <div class="hub-battery-info">
           <span class="hub-battery-label">${escapeHtml(t("card.battery_label"))}</span>
           <span class="hub-battery-percent clickable" ${battPctId ? `data-entity="${escapeHtml(battPctId)}"` : ""}>${escapeHtml(pctText)}</span>
-          ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
         </div>
-        <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
-          <div class="hub-battery-fill-wrap">
-            <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
+        <!-- Prawa kolumna: animacja baterii i voltage pod nią -->
+        <div class="hub-battery-right">
+          <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
+            <div class="hub-battery-fill-wrap">
+              <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
+            </div>
+            <span class="hub-battery-tip"></span>
           </div>
-          <span class="hub-battery-tip"></span>
+          ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
         </div>
       </div>
     `;

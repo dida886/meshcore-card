@@ -27,6 +27,7 @@ export class MeshcoreHubCard extends HTMLElement {
   private _signalHistory = new Map<string, number[]>();
   private _signalHistoryFetchedAt = new Map<string, number>();
   private _signalHistoryLoading = new Set<string>();
+  private _debounceTimers?: Map<string, ReturnType<typeof setTimeout>>;
 
   constructor() {
     super();
@@ -41,6 +42,23 @@ export class MeshcoreHubCard extends HTMLElement {
         this.dispatchEvent(event);
       }
     });
+  }
+
+  disconnectedCallback() {
+    if (this._renderTimer) {
+      clearTimeout(this._renderTimer);
+      this._renderTimer = null;
+    }
+    if (this._trimTimer) {
+      cancelAnimationFrame(this._trimTimer);
+      this._trimTimer = null;
+    }
+    if (this._debounceTimers) {
+      for (const timer of this._debounceTimers.values()) {
+        clearTimeout(timer);
+      }
+      this._debounceTimers.clear();
+    }
   }
 
   setConfig(config: MeshcoreCardConfig): void {
@@ -104,20 +122,20 @@ export class MeshcoreHubCard extends HTMLElement {
     t: LocalizeFunc
   ): string {
     // Używamy getDisplayState do odczytu stanu
-    const pctDisplay = battPctId ? getDisplayState(this._hass, battPctId) : "N/A";
-    const vDisplay = battVId ? getDisplayState(this._hass, battVId) : "N/A";
+    const pctDisplay = battPctId ? getDisplayState(this._hass, battPctId) : null;
+    const vDisplay = battVId ? getDisplayState(this._hass, battVId) : null;
 
-    // Jeśli obie wartości to "N/A", nie wyświetlamy panelu
-    if (pctDisplay === "N/A" && vDisplay === "N/A") return "";
+    // Jeśli obie wartości są null lub undefined, nie wyświetlamy panelu
+    if (!pctDisplay && !vDisplay) return "";
 
     let pctNumber: number | null = null;
     let pctText = "N/A";
     let dynamicBatteryColor = "#666";
 
-    if (pctDisplay !== "N/A") {
-      const rawPct = typeof battPct === "number"
-        ? battPct
-        : parseFloat(pctDisplay.replace(",", ".").replace(/[^\d.-]/g, ""));
+    if (pctDisplay) {
+      const rawPct = typeof pctDisplay === "number"
+        ? pctDisplay
+        : parseFloat(String(pctDisplay).replace(",", ".").replace(/[^\d.-]/g, ""));
       if (Number.isFinite(rawPct)) {
         pctNumber = Math.min(100, Math.max(0, rawPct));
         pctText = `${pctNumber.toFixed(0)}%`;
@@ -126,8 +144,8 @@ export class MeshcoreHubCard extends HTMLElement {
     }
 
     let voltageText: string | null = null;
-    if (vDisplay !== "N/A") {
-      const v = Number(vDisplay);
+    if (vDisplay) {
+      const v = typeof vDisplay === "number" ? vDisplay : parseFloat(String(vDisplay));
       if (Number.isFinite(v) && v >= 0.001) {
         voltageText = `${v.toFixed(3)}V`;
       }
@@ -138,21 +156,24 @@ export class MeshcoreHubCard extends HTMLElement {
 
     return `
       <div class="hub-battery-panel" style="--hub-battery-color:${dynamicBatteryColor};">
+        <!-- Lewa kolumna: etykieta i procent -->
         <div class="hub-battery-info">
           <span class="hub-battery-label">${escapeHtml(t("card.battery_label"))}</span>
           <span class="hub-battery-percent clickable" ${battPctId ? `data-entity="${escapeHtml(battPctId)}"` : ""}>${escapeHtml(pctText)}</span>
-          ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
         </div>
-        <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
-          <div class="hub-battery-fill-wrap">
-            <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
+        <!-- Prawa kolumna: animacja baterii i voltage pod nią -->
+        <div class="hub-battery-right">
+          <div class="hub-battery-shell" role="img" aria-label="Battery ${escapeHtml(pctText)}">
+            <div class="hub-battery-fill-wrap">
+              <div class="hub-battery-fill" style="width:${pctNumber !== null ? pctNumber : 0}%;"></div>
+            </div>
+            <span class="hub-battery-tip"></span>
           </div>
-          <span class="hub-battery-tip"></span>
+          ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
         </div>
       </div>
     `;
   }
-
   private _parseNumericMetric(value: unknown): number | null {
     const text = String(value ?? "").replace(",", ".");
     const match = text.match(/-?\d+(?:\.\d+)?/);
@@ -210,7 +231,7 @@ export class MeshcoreHubCard extends HTMLElement {
     // Jeśli brak encji lub wartość niedostępna – pomijamy
     if (!entityId) return "";
     const displayVal = getDisplayState(this._hass, entityId);
-    if (displayVal === "N/A") return "";
+    if (!displayVal) return "";
 
     const numeric = this._parseNumericMetric(displayVal);
     const gaugePct = numeric !== null ? Math.max(0, Math.min(100, this._signalGaugePct(numeric, variant))) : 0;
@@ -245,7 +266,6 @@ export class MeshcoreHubCard extends HTMLElement {
       </div>
     `;
   }
-
 
   private _extractNumericSeriesFromLogbook(entries: unknown[]): number[] {
     const values: number[] = [];
@@ -283,12 +303,30 @@ export class MeshcoreHubCard extends HTMLElement {
   private _ensureSignalHistory(entityId: string): void {
     if (!this._hass) return;
     if (this._signalHistoryLoading.has(entityId)) return;
+    
     const now = Date.now();
     const fetchedAt = this._signalHistoryFetchedAt.get(entityId) ?? 0;
     const ttlMs = 5 * 60 * 1000;
     if (now - fetchedAt < ttlMs) return;
 
+    // Użyj debounce dla wielu zapytań
+    const debounceKey = `history_${entityId}`;
+    if (this._debounceTimers?.has(debounceKey)) {
+      clearTimeout(this._debounceTimers.get(debounceKey));
+    }
+    
+    if (!this._debounceTimers) this._debounceTimers = new Map();
+    
+    this._debounceTimers.set(debounceKey, setTimeout(() => {
+      this._debounceTimers?.delete(debounceKey);
+      this._fetchSignalHistory(entityId);
+    }, 500));
+  }
+
+  private _fetchSignalHistory(entityId: string): void {
+    if (!this._hass) return;
     this._signalHistoryLoading.add(entityId);
+    const now = Date.now();
     const startIso = new Date(now - 6 * 3600 * 1000).toISOString();
     const endIso = new Date(now).toISOString();
     const logbookPath = `logbook/${startIso}?entity=${encodeURIComponent(entityId)}&end_time=${encodeURIComponent(endIso)}`;
@@ -429,9 +467,9 @@ export class MeshcoreHubCard extends HTMLElement {
     const txPow = getDisplayState(this._hass, txPowId);
     const lat = getEntityState(this._hass, latId);
     const lon = getEntityState(this._hass, lonId);
-    const rssi = rssiId ? getDisplayState(this._hass, rssiId) : "N/A";
-    const snr = snrId ? getDisplayState(this._hass, snrId) : "N/A";
-    const noise = noiseId ? getDisplayState(this._hass, noiseId) : "N/A";
+    const rssi = rssiId ? getDisplayState(this._hass, rssiId) : null;
+    const snr = snrId ? getDisplayState(this._hass, snrId) : null;
+    const noise = noiseId ? getDisplayState(this._hass, noiseId) : null;
     const sent = getDisplayState(this._hass, sentId);
     const recv = getDisplayState(this._hass, recvId);
     const recvErr = getDisplayState(this._hass, recvErrId);
@@ -481,7 +519,7 @@ export class MeshcoreHubCard extends HTMLElement {
         ${battPct !== null ? this._renderHubBattery(battPct, battV, battPctId, battVId, t) : ""}
     `;
 
-    if (showSignal && (rssi !== "N/A" || snr !== "N/A" || noise !== "N/A")) {
+    if (showSignal && (rssi || snr || noise)) {
       html += `
         <div class="section-header hub-section-header">Signal</div>
         <div class="signal-row hub-signal-row">
@@ -504,14 +542,14 @@ export class MeshcoreHubCard extends HTMLElement {
         </div>`;
     }
 
-    if (showTraffic && (sent !== "N/A" || recv !== "N/A")) {
+    if (showTraffic && (sent || recv)) {
       html += `
         <div class="section-header hub-section-header">${escapeHtml(t("card.traffic_section"))}</div>
         <div class="hub-traffic-panel">
           <div class="hub-traffic-top-row">
             <div class="hub-traffic-stat sent">
               <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(sent !== "N/A" ? sent : "N/A")}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(sent && sent !== "N/A" ? sent : "N/A")}</span>
             </div>
             <div class="hub-traffic-center" aria-hidden="true">
               <span class="hub-traffic-center-ring"></span>
@@ -522,7 +560,7 @@ export class MeshcoreHubCard extends HTMLElement {
             </div>
             <div class="hub-traffic-stat recv">
               <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(recvId)}">${escapeHtml(recv !== "N/A" ? recv : "N/A")}</span>
+              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(recvId)}">${escapeHtml(recv && recv !== "N/A" ? recv : "N/A")}</span>
             </div>
           </div>
           <div class="hub-traffic-bottom-row">
@@ -587,26 +625,32 @@ export class MeshcoreHubCard extends HTMLElement {
     html += `</div>`;
     return html;
   }
+  
   // ── Main render ────────────────────────────────────────────────────────────
 
   private _render(): void {
-    if (!this._hass || !this._config) return;
-    const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
+    try {
+      if (!this._hass || !this._config) return;
+      const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
 
-    const allHubs = discoverHubs(this._hass);
-    if (!allHubs.length) {
-      this._setBody(`<div class="empty">${t("card.empty_hubs")}</div>`);
-      return;
+      const allHubs = discoverHubs(this._hass);
+      if (!allHubs.length) {
+        this._setBody(`<div class="empty">${t("card.empty_hubs")}</div>`);
+        return;
+      }
+
+      const visibleHubs = allHubs.filter((h) => this._hubCfg(h.pubkey).enabled !== false);
+
+      const hubsHtml = visibleHubs.length
+        ? `<div class="section-label">${t("card.section_hubs")}</div>` +
+          visibleHubs.map((hub) => this._renderHub(hub, t)).join("")
+        : "";
+
+      this._setBody(hubsHtml || `<div class="empty">All hubs are hidden.</div>`);
+    } catch (error) {
+      console.error("MeshCore Hub Card render error:", error);
+      this._setBody(`<div class="empty">Error rendering card: ${error}</div>`);
     }
-
-    const visibleHubs = allHubs.filter((h) => this._hubCfg(h.pubkey).enabled !== false);
-
-    const hubsHtml = visibleHubs.length
-      ? `<div class="section-label">${t("card.section_hubs")}</div>` +
-        visibleHubs.map((hub) => this._renderHub(hub, t)).join("")
-      : "";
-
-    this._setBody(hubsHtml || `<div class="empty">All hubs are hidden.</div>`);
   }
 
   private _setBody(body: string): void {
@@ -627,14 +671,13 @@ export class MeshcoreHubCard extends HTMLElement {
     this._drawParticles();
   }
 
-
   private _drawParticles(): void {
     const canvases = this.shadowRoot?.querySelectorAll('.particle-canvas');
     if (!canvases || canvases.length === 0) return;
 
-  requestAnimationFrame(() => {
-    canvases.forEach((canvas) => {
-      drawParticles(canvas as HTMLCanvasElement, {
+    requestAnimationFrame(() => {
+      canvases.forEach((canvas) => {
+        drawParticles(canvas as HTMLCanvasElement, {
           count: [3, 5],                
           color: '#00ff9d',
           lineWidth: [0.2, 0.8],
@@ -652,9 +695,9 @@ export class MeshcoreHubCard extends HTMLElement {
           pulse: true,
           glow: true,
           glowStrength: 5,                   
+        });
       });
     });
-  });
   }
 
   private _scheduleTrim(rowSelector: string): void {
@@ -682,7 +725,15 @@ export class MeshcoreHubCard extends HTMLElement {
   }
 
   static getStubConfig(): MeshcoreCardConfig {
-    return {};
+    return {
+      show_hub_technical: true,
+      show_hub_signal: true,
+      show_hub_traffic: true,
+      show_hub_advanced: true,
+      show_hub_location: true,
+      show_hub_mqtt: true,
+      show_hub_advert_buttons: true,
+    };
   }
 }
 
