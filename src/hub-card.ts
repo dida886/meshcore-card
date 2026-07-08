@@ -635,21 +635,23 @@ export class MeshcoreHubCard extends HTMLElement {
   requestAnimationFrame(() => {
     canvases.forEach((canvas) => {
       drawParticles(canvas as HTMLCanvasElement, {
-          count: [4, 7],                
+          count: [3, 5],                
           color: '#00ff9d',
-          lineWidth: [0.4, 2.0],
+          lineWidth: [0.2, 0.8],
           heightFromBottom: 0,
-          maxHeight: 45,
-          waveLength: [50, 400],
-          waveAmplitude: [2, 10],
-          waveFrequency: [0.012, 0.065],
+          maxHeight: 35,
+          waveLength: [70, 400],
+          waveAmplitude: [1, 5],
+          waveFrequency: [0.01, 0.055],
           animate: true,
-          speed: 0.040,
+          speed: 0.015,
           floatingDots: true,           
-          floatingDotsCount: 50,
+          floatingDotsCount: 30,
+          floatingDotSize: [0.5, 2],
+          floatingSpeed: [0.05, 0.1],
           pulse: true,
           glow: true,
-          glowStrength: 15,                   
+          glowStrength: 5,                   
       });
     });
   });

@@ -247,18 +247,21 @@ export const STYLES: string = `
     font-size: 12px;
     color: var(--primary-text-color);
     letter-spacing: 0.02em;
+    text-align: left;
   }
   .hub-battery-percent {
-    font-size: 34px;
+    font-size: 38px;
     line-height: 1;
     font-weight: 800;
     color: var(--hub-battery-color);
     text-shadow: 0 0 10px rgba(56, 239, 125, 0.6);
+    text-align: center;
   }
   .hub-battery-voltage {
     font-size: 12px;
     font-family: var(--paper-font-code1_-_font-family, monospace);
     color: var(--primary-text-color);
+    text-align: center;
   }
   .hub-battery-shell {
     position: relative;

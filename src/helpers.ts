@@ -505,9 +505,10 @@ export function drawParticles(
     speed?: number;
     animate?: boolean;
 
-    // Efekty
-    floatingDots?: boolean;           // ← osobny parametr dla unoszących się kropek
+    floatingDots?: boolean;
     floatingDotsCount?: number;
+    floatingDotSize?: [number, number];
+    floatingSpeed?: [number, number];     // ← nowy parametr: prędkość unoszenia
     pulse?: boolean;
     glow?: boolean;
     glowStrength?: number;
@@ -537,14 +538,16 @@ export function drawParticles(
     lineWidth = [1.2, 2.3],
     heightFromBottom = 5,
     maxHeight = 52,
-    waveAmplitude = [4, 13],
+    waveAmplitude = [2, 8],
     waveFrequency = [0.013, 0.027],
     waveLength = [150, 380],
     speed = 0.034,
     animate = true,
 
-    floatingDots = true,              // domyślnie włączone
+    floatingDots = true,
     floatingDotsCount = 50,
+    floatingDotSize = [0.5, 1.5],
+    floatingSpeed = [0.08, 0.22],        // wolne unoszenie
     pulse = true,
     glow = true,
     glowStrength = 14,
@@ -563,12 +566,12 @@ export function drawParticles(
     lineWidth: lineWidth[0] + Math.random() * (lineWidth[1] - lineWidth[0]),
   }));
 
-  // Unoszące się kropki
+  // Unoszące się kropki na całym ekranie
   const floating = floatingDots ? Array.from({ length: floatingDotsCount }, () => ({
     x: Math.random() * rect.width,
-    y: rect.height - Math.random() * maxHeight * 1.4,
-    size: 0.6 + Math.random() * 0.7,
-    speed: 0.1 + Math.random() * 0.5,
+    y: Math.random() * rect.height,           // na całym ekranie
+    size: floatingDotSize[0] + Math.random() * (floatingDotSize[1] - floatingDotSize[0]),
+    speed: floatingSpeed[0] + Math.random() * (floatingSpeed[1] - floatingSpeed[0]),
   })) : [];
 
   let time = 0;
@@ -609,20 +612,22 @@ export function drawParticles(
       ctx.stroke();
     }
 
-    // LATAJĄCE KROPKI
+    // LATAJĄCE KROPKI na całym ekranie
     if (floatingDots && floating.length > 0) {
-      ctx.shadowBlur = 9;
+      ctx.shadowBlur = 8;
       ctx.shadowColor = color;
       ctx.fillStyle = color;
 
       for (const dot of floating) {
         dot.y -= dot.speed;
-        if (dot.y < 30) {
-          dot.y = rect.height - 20;
+
+        // Reset gdy dojdzie do góry
+        if (dot.y < 20) {
+          dot.y = rect.height + 10;
           dot.x = Math.random() * rect.width;
         }
 
-        ctx.globalAlpha = 0.4 + Math.sin(time * 3.5 + dot.x) * 0.3;
+        ctx.globalAlpha = 0.35 + Math.sin(time * 3.2 + dot.x) * 0.3;
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
         ctx.fill();
