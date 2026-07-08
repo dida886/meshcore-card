@@ -561,7 +561,6 @@ export class MeshcoreMessageCard extends HTMLElement {
       if (pathElement) {
         targetElement = pathElement;
       } else {
-        // Dla wiadomości jako cel podświetlenia wybieramy dymek, a nie cały message-item
         targetElement = messageItem.querySelector(".message-bubble") as HTMLElement || messageItem;
       }
       
@@ -597,7 +596,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     const fullText = textElement.textContent?.trim() || "";
     const t = this._getTranslations();
 
-    // Overlay na dymku (tak jak path robi na swoim elemencie)
     const overlay = document.createElement("div");
     overlay.textContent = t("message-card.copied");
     overlay.style.cssText = `
@@ -618,7 +616,7 @@ export class MeshcoreMessageCard extends HTMLElement {
       opacity: 0;
       transition: opacity 0.2s;
     `;
-    textElement.style.position = "relative";   // ← konieczne dla absolutnego overlay
+    textElement.style.position = "relative";
     textElement.appendChild(overlay);
 
     requestAnimationFrame(() => {

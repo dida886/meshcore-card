@@ -267,14 +267,12 @@ export function snrDescription(
   if (snr >= 0) return t("card.snr_fair");
   return t("card.snr_poor");
 }
+
 // ── Filter neighbors ──────────────────────────────────────────
 
 export interface FilteredNeighborOptions {
-  /** Pomijaj sąsiadów z "unavailable network" (domyślnie true) */
   skipUnavailable?: boolean;
-  /** Pomijaj sąsiadów bez SNR (domyślnie true) */
   skipNoSnr?: boolean;
-  /** Maksymalna liczba sąsiadów do zwrócenia (domyślnie brak limitu) */
   maxNeighbors?: number;
 }
 
@@ -282,19 +280,11 @@ export function filterNeighbors(
   neighbors: NeighborInfo[],
   options: FilteredNeighborOptions = {}
 ): NeighborInfo[] {
-  const {
-    skipUnavailable = true,
-    skipNoSnr = true,
-    maxNeighbors,
-  } = options;
+  const { skipUnavailable = true, skipNoSnr = true, maxNeighbors } = options;
 
   let filtered = neighbors.filter((n) => {
-    if (skipUnavailable && n.name === "unavailable network") {
-      return false;
-    }
-    if (skipNoSnr && (n.snr === null || isNaN(Number(n.snr)))) {
-      return false;
-    }
+    if (skipUnavailable && n.name === "unavailable network") return false;
+    if (skipNoSnr && (n.snr === null || isNaN(Number(n.snr)))) return false;
     return true;
   });
 
@@ -336,6 +326,7 @@ export interface RepeaterData {
     temp?: string | null;
   };
 }
+
 export function getDisplayState(
   hass: HomeAssistant | undefined,
   entityId: string | null,
@@ -376,6 +367,61 @@ export function signalQualityLabel(
   if (value <= -95) return t("card.signal_medium") || "Medium";
   if (value <= -85) return t("card.signal_high") || "High";
   return t("card.signal_very_high") || "Very High";
+}
+
+// ============================================
+// NOWE FUNKCJE PRZENIESIONE Z KART (eliminacja duplikatów)
+// ============================================
+
+export function parseNumericMetric(value: unknown): number | null {
+  const text = String(value ?? "").replace(",", ".");
+  const match = text.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const n = Number(match[0]);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function sampleSeries(values: number[]): number[] {
+  if (values.length <= 24) return values;
+  const step = Math.ceil(values.length / 24);
+  return values.filter((_, idx) => idx % step === 0).slice(-24);
+}
+
+export function extractNumericSeriesFromLogbook(entries: unknown[]): number[] {
+  const values: number[] = [];
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as Record<string, unknown>;
+    const candidates = [
+      e["state"],
+      e["message"],
+      e["name"],
+      e["context_state"],
+      e["display_message"],
+    ];
+    for (const candidate of candidates) {
+      const parsed = parseNumericMetric(candidate);
+      if (parsed !== null) {
+        values.push(parsed);
+        break;
+      }
+    }
+  }
+  return values;
+}
+
+export function signalGaugePct(value: number, variant: "rssi" | "snr" | "noise"): number {
+  const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
+  if (variant === "rssi") {
+    const normalized = (value - (-140)) / 110;
+    return clamp(normalized * 100, 0, 100);
+  }
+  if (variant === "snr") {
+    const normalized = (value - (-20)) / 40;
+    return clamp(normalized * 100, 0, 100);
+  }
+  const normalized = ((-85) - value) / 35;
+  return clamp(normalized * 100, 0, 100);
 }
 
 export function discoverRepeaters(
@@ -486,6 +532,7 @@ export function discoverRepeaters(
 
   return result;
 }
+
 // ============================================
 // PARTICLE GENERATOR – STATYCZNA FALA
 // ============================================
@@ -508,7 +555,7 @@ export function drawParticles(
     floatingDots?: boolean;
     floatingDotsCount?: number;
     floatingDotSize?: [number, number];
-    floatingSpeed?: [number, number];     // ← nowy parametr: prędkość unoszenia
+    floatingSpeed?: [number, number];
     pulse?: boolean;
     glow?: boolean;
     glowStrength?: number;
@@ -547,7 +594,7 @@ export function drawParticles(
     floatingDots = true,
     floatingDotsCount = 50,
     floatingDotSize = [0.5, 1.5],
-    floatingSpeed = [0.08, 0.22],        // wolne unoszenie
+    floatingSpeed = [0.08, 0.22],
     pulse = true,
     glow = true,
     glowStrength = 14,
@@ -566,10 +613,9 @@ export function drawParticles(
     lineWidth: lineWidth[0] + Math.random() * (lineWidth[1] - lineWidth[0]),
   }));
 
-  // Unoszące się kropki na całym ekranie
   const floating = floatingDots ? Array.from({ length: floatingDotsCount }, () => ({
     x: Math.random() * rect.width,
-    y: Math.random() * rect.height,           // na całym ekranie
+    y: Math.random() * rect.height,
     size: floatingDotSize[0] + Math.random() * (floatingDotSize[1] - floatingDotSize[0]),
     speed: floatingSpeed[0] + Math.random() * (floatingSpeed[1] - floatingSpeed[0]),
   })) : [];
@@ -581,7 +627,6 @@ export function drawParticles(
 
     const pulseFactor = pulse ? (Math.sin(time * 1.8) * 0.08 + 1) : 1;
 
-    // Linie fal przy prawej stronie
     for (const wave of waves) {
       if (glow) {
         ctx.shadowBlur = glowStrength;
@@ -612,7 +657,6 @@ export function drawParticles(
       ctx.stroke();
     }
 
-    // LATAJĄCE KROPKI na całym ekranie
     if (floatingDots && floating.length > 0) {
       ctx.shadowBlur = 8;
       ctx.shadowColor = color;
@@ -620,8 +664,6 @@ export function drawParticles(
 
       for (const dot of floating) {
         dot.y -= dot.speed;
-
-        // Reset gdy dojdzie do góry
         if (dot.y < 20) {
           dot.y = rect.height + 10;
           dot.x = Math.random() * rect.width;

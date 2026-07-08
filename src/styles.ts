@@ -66,7 +66,6 @@ export const STYLES: string = `
     position: relative;
     z-index: 1;
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.28));
-    animation: hub-levitate-b 4.2s ease-in-out infinite;
     text-transform: none;
   }
 
@@ -179,8 +178,7 @@ export const STYLES: string = `
   }
   .status-text.offline {
     color: var(--error-color, #f44336) !important;
-    font-weight: 800;
-    font-size: 1.1rem;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
   }
 
   /* Progress bars */
@@ -689,6 +687,19 @@ export const STYLES: string = `
     padding: 6px 12px;
     background: rgba(13, 37, 29, 0.65);
     border: 1px solid rgba(70, 245, 138, 0.22);
+    box-shadow:
+      0 10px 24px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  }
+  .hub-offline-pill {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: rgba(13, 37, 29, 0.65);
+    border: 1px solid rgba(248, 113, 113, 0.22);
     box-shadow:
       0 10px 24px rgba(0, 0, 0, 0.18),
       0 0 0 1px rgba(255, 255, 255, 0.02) inset;

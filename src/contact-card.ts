@@ -1,7 +1,11 @@
-import type { HomeAssistant, MeshcoreContactCardConfig, HaFormElement } from "./types.js";
-import { formatLastSeen, escapeHtml } from "./helpers.js";
-import { STYLES } from "./styles.js";
+import type {
+  HomeAssistant,
+  MeshcoreContactCardConfig,
+  HaFormElement,
+} from "./types.js";
+import { formatLastSeen, escapeHtml, getEntityState } from "./helpers.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
+import { MeshcoreBaseCard } from "./base-card.js";
 
 // ===================== STYLES =====================
 const CONTACT_STYLES: string = `
@@ -298,36 +302,14 @@ interface ContactEntry {
 const DEFAULT_MAX_AGE_DAYS = 7;
 
 // ===================== MAIN CLASS =====================
-export class MeshcoreContactCard extends HTMLElement {
-  private _hass?: HomeAssistant;
-  private _config?: MeshcoreContactCardConfig;
-  private _fp: string | null = null;
-  private _lastRender = 0;
-  private _renderTimer: ReturnType<typeof setTimeout> | null = null;
-  private _trimTimer: ReturnType<typeof requestAnimationFrame> | null = null;
+export class MeshcoreContactCard extends MeshcoreBaseCard {
+  protected _config?: MeshcoreContactCardConfig;
   private _currentStateFilter: "all" | "discovered" | "fresh" | "stale" = "all";
   private _currentTypeFilter: "all" | "repeater" | "room" | "sensor" | "client" = "all";
-
-  // Dictionary for preserving online state during operations
   private _pendingStateUpdates: Record<string, { online: boolean; timestamp: number }> = {};
 
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    this.shadowRoot!.addEventListener("click", (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.closest(".action-btn")) return;
-      if (target.closest(".filter-btn")) return;
-
-      const el = target.closest("[data-entity]") as HTMLElement | null;
-      if (el?.dataset["entity"]) {
-        const event = new Event("hass-more-info", { bubbles: true, composed: true });
-        (event as Event & { detail: { entityId: string } }).detail = {
-          entityId: el.dataset["entity"],
-        };
-        this.dispatchEvent(event);
-      }
-    });
+  protected _additionalStyles(): string {
+    return CONTACT_STYLES;
   }
 
   setConfig(config: MeshcoreContactCardConfig): void {
@@ -338,29 +320,14 @@ export class MeshcoreContactCard extends HTMLElement {
     this._render();
   }
 
-  set hass(hass: HomeAssistant) {
-    this._hass = hass;
-    const fp = Object.entries(hass.states)
+  protected _computeFingerprint(): string {
+    if (!this._hass) return "";
+    return Object.entries(this._hass.states)
       .filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id))
       .map(([id, s]) => `${id}=${s.state}@${s.last_changed}`)
       .join("|");
-    if (fp === this._fp) return;
-    this._fp = fp;
-    const now = Date.now();
-    if (now - this._lastRender >= 10000) {
-      this._lastRender = now;
-      this._render();
-    } else if (!this._renderTimer) {
-      const delay = 10000 - (now - this._lastRender);
-      this._renderTimer = setTimeout(() => {
-        this._renderTimer = null;
-        this._lastRender = Date.now();
-        this._render();
-      }, delay);
-    }
   }
 
-  // ---------- Helper: get online status for a prefix ----------
   private _getContactOnline(prefix: string): boolean {
     if (!this._hass) return false;
     for (const [entityId, state] of Object.entries(this._hass.states)) {
@@ -379,7 +346,6 @@ export class MeshcoreContactCard extends HTMLElement {
     return false;
   }
 
-  // ---------- Discover contacts with filters ----------
   private _discoverContacts(t: LocalizeFunc): ContactEntry[] {
     if (!this._hass) return [];
     const maxAgeDays = this._config?.max_contact_age_days ?? DEFAULT_MAX_AGE_DAYS;
@@ -395,7 +361,9 @@ export class MeshcoreContactCard extends HTMLElement {
         const rawAdvert = Number(a["last_advert"] ?? 0);
         const lastAdvert = rawAdvert > 0 && rawAdvert <= now
           ? rawAdvert
-          : state.last_updated ? new Date(state.last_updated).getTime() / 1000 : 0;
+          : state.last_updated
+          ? new Date(state.last_updated).getTime() / 1000
+          : 0;
         const rawLat = a["adv_lat"] ?? a["latitude"];
         const rawLon = a["adv_lon"] ?? a["longitude"];
         const lat = rawLat != null && rawLat !== "" ? parseFloat(String(rawLat)) : null;
@@ -413,12 +381,10 @@ export class MeshcoreContactCard extends HTMLElement {
           if (match) pubkeyPrefix = match[1];
         }
 
-        // If adv_name is empty and state is fresh/stale, contact was removed - change to discovered
         if (!advName && (contactState === "fresh" || contactState === "stale")) {
           contactState = "discovered";
         }
 
-        // Calculate online status, checking pending updates
         let online = !["stale", "off", "unavailable", "unknown"].includes(state.state);
         if (pubkeyPrefix && this._pendingStateUpdates[pubkeyPrefix]) {
           const pending = this._pendingStateUpdates[pubkeyPrefix];
@@ -439,7 +405,10 @@ export class MeshcoreContactCard extends HTMLElement {
           picture: a["entity_picture"] ? String(a["entity_picture"]) : null,
           lat,
           lon,
-          unknownLocation: rawLat != null && rawLon != null && (parseFloat(String(rawLat)) === 0 || parseFloat(String(rawLon)) === 0),
+          unknownLocation:
+            rawLat != null &&
+            rawLon != null &&
+            (parseFloat(String(rawLat)) === 0 || parseFloat(String(rawLon)) === 0),
           online,
           contactState,
           pubkeyPrefix,
@@ -447,63 +416,68 @@ export class MeshcoreContactCard extends HTMLElement {
       })
       .filter((c) => {
         if (c.lastAdvert < cutoff) return false;
-        // If no real name and not discovered - skip
         if ((!c.advName || c.advName === c.entityId) && c.contactState !== "discovered") {
           return false;
         }
-
         if (stateFilter !== "all" && c.contactState !== stateFilter) return false;
         if (typeFilter !== "all") {
-        let matches = false;
-        if (typeFilter === "room") {
-          // "room" filter should also match "room server"
-          matches = c.nodeType === "room" || c.nodeType === "room server";
-        } else {
-          matches = c.nodeType === typeFilter;
+          let matches = false;
+          if (typeFilter === "room") {
+            matches = c.nodeType === "room" || c.nodeType === "room server";
+          } else {
+            matches = c.nodeType === typeFilter;
+          }
+          if (!matches) return false;
         }
-        if (!matches) return false;
-      }
         return true;
       })
       .sort((a, b) => b.lastAdvert - a.lastAdvert);
   }
 
-  // ---------- Render row ----------
   private _renderRow(c: ContactEntry, t: LocalizeFunc): string {
-    const mapUrl = c.lat !== null && c.lon !== null
-      ? `https://analyzer.letsmesh.net/map?lat=${c.lat.toFixed(5)}&long=${c.lon!.toFixed(5)}&zoom=10`
-      : null;
+    const mapUrl =
+      c.lat !== null && c.lon !== null
+        ? `https://analyzer.letsmesh.net/map?lat=${c.lat.toFixed(5)}&long=${c.lon!.toFixed(5)}&zoom=10`
+        : null;
 
-    const safePicture = c.picture && /^(?:https?:\/\/|\/)/i.test(c.picture) ? c.picture : null;
+    const safePicture =
+      c.picture && /^(?:https?:\/\/|\/)/i.test(c.picture) ? c.picture : null;
     const safeIcon = /^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(c.icon) ? c.icon : "mdi:account";
 
     let actionButton = "";
     if (c.pubkeyPrefix) {
       if (c.contactState === "discovered") {
         actionButton = `
-          <button class="action-btn add-btn" data-prefix="${escapeHtml(c.pubkeyPrefix)}" data-action="add" title="${t("card.add_contact")}">
+          <button class="action-btn add-btn" data-prefix="${escapeHtml(
+            c.pubkeyPrefix
+          )}" data-action="add" title="${t("card.add_contact")}">
             <ha-icon icon="mdi:plus-circle"></ha-icon>
           </button>
         `;
       } else if (c.contactState === "fresh" || c.contactState === "stale") {
         actionButton = `
-          <button class="action-btn remove-btn" data-prefix="${escapeHtml(c.pubkeyPrefix)}" data-action="remove" title="${t("card.remove_contact")}">
+          <button class="action-btn remove-btn" data-prefix="${escapeHtml(
+            c.pubkeyPrefix
+          )}" data-action="remove" title="${t("card.remove_contact")}">
             <ha-icon icon="mdi:minus-circle"></ha-icon>
           </button>
         `;
       }
     }
 
-    const typeBadge = c.nodeType && c.nodeType !== "unknown" && c.nodeType !== ""
-      ? `<span class="type-badge">${escapeHtml(c.nodeType)}</span>`
-      : "";
+    const typeBadge =
+      c.nodeType && c.nodeType !== "unknown" && c.nodeType !== ""
+        ? `<span class="type-badge">${escapeHtml(c.nodeType)}</span>`
+        : "";
 
     return `
       <div class="contact-row" data-entity="${escapeHtml(c.entityId)}">
         <div class="contact-icon">
-          ${safePicture
-            ? `<img src="${escapeHtml(safePicture)}" alt="">`
-            : `<ha-icon icon="${escapeHtml(safeIcon)}"></ha-icon>`}
+          ${
+            safePicture
+              ? `<img src="${escapeHtml(safePicture)}" alt="">`
+              : `<ha-icon icon="${escapeHtml(safeIcon)}"></ha-icon>`
+          }
         </div>
         <div class="contact-info">
           <div class="contact-header">
@@ -511,7 +485,15 @@ export class MeshcoreContactCard extends HTMLElement {
           </div>
           <div class="contact-meta">
             ${c.timeSince ? `<span>${escapeHtml(c.timeSince)}</span>` : ""}
-            ${mapUrl ? `<a class="meta-loc" href="${mapUrl}" target="_blank" rel="noopener">📍 ${c.lat!.toFixed(5)}, ${c.lon!.toFixed(5)}</a>` : c.unknownLocation ? `<span class="dim">${escapeHtml(t("card.unknown_location"))}</span>` : ""}
+            ${
+              mapUrl
+                ? `<a class="meta-loc" href="${mapUrl}" target="_blank" rel="noopener">📍 ${c.lat!.toFixed(
+                    5
+                  )}, ${c.lon!.toFixed(5)}</a>`
+                : c.unknownLocation
+                ? `<span class="dim">${escapeHtml(t("card.unknown_location"))}</span>`
+                : ""
+            }
           </div>
         </div>
         <div class="contact-right">
@@ -522,7 +504,6 @@ export class MeshcoreContactCard extends HTMLElement {
     `;
   }
 
-  // ---------- Instant button toggle ----------
   private _toggleButton(btn: HTMLElement): void {
     const action = btn.dataset["action"];
     const prefix = btn.dataset["prefix"];
@@ -541,14 +522,19 @@ export class MeshcoreContactCard extends HTMLElement {
     }
   }
 
-  // ---------- Main render ----------
-  private _render(): void {
+  protected _render(): void {
     if (!this._hass || !this._config) return;
     const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
     const contacts = this._discoverContacts(t);
 
-    const stateFilterOptions = ["all", ...["discovered", "fresh", "stale"].sort((a, b) => a.localeCompare(b))];
-    const typeFilterOptions = ["all", ...["repeater", "room", "sensor", "client"].sort((a, b) => a.localeCompare(b))];
+    const stateFilterOptions = [
+      "all",
+      ...["discovered", "fresh", "stale"].sort((a, b) => a.localeCompare(b)),
+    ];
+    const typeFilterOptions = [
+      "all",
+      ...["repeater", "room", "sensor", "client"].sort((a, b) => a.localeCompare(b)),
+    ];
 
     const filterBar = `
       <div class="filter-bar">
@@ -556,22 +542,32 @@ export class MeshcoreContactCard extends HTMLElement {
           <ha-icon icon="mdi:filter"></ha-icon>
           ${t("card.filter_state_label")}
           <select id="contact-state-filter-select">
-            ${stateFilterOptions.map(opt => `
-              <option value="${opt}" ${this._currentStateFilter === opt ? "selected" : ""}>
+            ${stateFilterOptions
+              .map(
+                (opt) => `
+              <option value="${opt}" ${
+                  this._currentStateFilter === opt ? "selected" : ""
+                }>
                 ${t(`card.filter_${opt}`)}
-              </option>
-            `).join("")}
+              </option>`
+              )
+              .join("")}
           </select>
         </label>
         <label>
           <ha-icon icon="mdi:server-network"></ha-icon>
           ${t("card.filter_type_label")}
           <select id="contact-type-filter-select">
-            ${typeFilterOptions.map(opt => `
-              <option value="${opt}" ${this._currentTypeFilter === opt ? "selected" : ""}>
+            ${typeFilterOptions
+              .map(
+                (opt) => `
+              <option value="${opt}" ${
+                  this._currentTypeFilter === opt ? "selected" : ""
+                }>
                 ${t(`card.filter_type_${opt}`)}
-              </option>
-            `).join("")}
+              </option>`
+              )
+              .join("")}
           </select>
         </label>
       </div>
@@ -583,16 +579,20 @@ export class MeshcoreContactCard extends HTMLElement {
     } else {
       body +=
         `<div class="section-label">` +
-          `<span>${t("card.section_contacts")}</span>` +
-          `<span class="contact-count">(${contacts.length})</span>` +
+        `<span>${t("card.section_contacts")}</span>` +
+        `<span class="contact-count">(${contacts.length})</span>` +
         `</div>` +
-        `<div class="contact-list">${contacts.map((c) => this._renderRow(c, t)).join("")}</div>`;
+        `<div class="contact-list">${contacts
+          .map((c) => this._renderRow(c, t))
+          .join("")}</div>`;
     }
 
-    this._setBody(body);
+    this._setBody(body, ".contact-row");
 
-    // Event listener for state filter select
-    const stateSelect = this.shadowRoot?.querySelector("#contact-state-filter-select") as HTMLSelectElement | null;
+    // Podpięcie listenerów filtrów
+    const stateSelect = this.shadowRoot?.querySelector(
+      "#contact-state-filter-select"
+    ) as HTMLSelectElement | null;
     if (stateSelect) {
       stateSelect.addEventListener("change", (e) => {
         const newFilter = (e.target as HTMLSelectElement).value as typeof this._currentStateFilter;
@@ -603,8 +603,9 @@ export class MeshcoreContactCard extends HTMLElement {
       });
     }
 
-    // Event listener for type filter select
-    const typeSelect = this.shadowRoot?.querySelector("#contact-type-filter-select") as HTMLSelectElement | null;
+    const typeSelect = this.shadowRoot?.querySelector(
+      "#contact-type-filter-select"
+    ) as HTMLSelectElement | null;
     if (typeSelect) {
       typeSelect.addEventListener("change", (e) => {
         const newFilter = (e.target as HTMLSelectElement).value as typeof this._currentTypeFilter;
@@ -617,43 +618,13 @@ export class MeshcoreContactCard extends HTMLElement {
 
     this._setupActionListeners();
 
-    // Clean up expired pending entries
     for (const key of Object.keys(this._pendingStateUpdates)) {
       if (Date.now() - this._pendingStateUpdates[key].timestamp > 3000) {
         delete this._pendingStateUpdates[key];
       }
     }
-
-    if (!!this._config?.grid_options?.rows) {
-      this._scheduleTrim(".contact-row");
-    }
   }
 
-  // ---------- Set body content ----------
-  private _setBody(body: string): void {
-    const constrained = !!this._config?.grid_options?.rows;
-    const cls = constrained ? " class=\"grid-rows\"" : "";
-    this.shadowRoot!.innerHTML = `<style>${STYLES}${CONTACT_STYLES}</style><ha-card${cls}>${body}</ha-card>`;
-  }
-
-  // ---------- Trim for grid ----------
-  private _scheduleTrim(rowSelector: string): void {
-    if (this._trimTimer !== null) cancelAnimationFrame(this._trimTimer);
-    this.style.opacity = "0";
-    this._trimTimer = requestAnimationFrame(() => {
-      this._trimTimer = null;
-      const card = this.shadowRoot!.querySelector("ha-card") as HTMLElement | null;
-      const h = card?.clientHeight ?? 0;
-      if (card && h) {
-        for (const el of Array.from(card.querySelectorAll<HTMLElement>(rowSelector))) {
-          el.style.visibility = el.offsetTop + el.offsetHeight > h ? "hidden" : "";
-        }
-      }
-      this.style.opacity = "";
-    });
-  }
-
-  // ---------- Handle add/remove buttons ----------
   private _setupActionListeners(): void {
     const card = this.shadowRoot?.querySelector("ha-card");
     if (!card) return;
@@ -671,11 +642,8 @@ export class MeshcoreContactCard extends HTMLElement {
 
       const prefix = btn.dataset["prefix"];
       const action = btn.dataset["action"];
-      if (!prefix || !action) {
-        return;
-      }
+      if (!prefix || !action) return;
 
-      // Instant visual button toggle
       this._toggleButton(btn);
 
       try {
@@ -684,11 +652,9 @@ export class MeshcoreContactCard extends HTMLElement {
         } else if (action === "remove") {
           await this._removeContact(prefix);
         }
-        // Refresh list after operation
         this._fp = null;
         this._render();
       } catch (error) {
-        // Restore button state on error
         this._toggleButton(btn);
         if (this._hass) {
           (this._hass as any).callService("persistent_notification", "create", {
@@ -703,7 +669,6 @@ export class MeshcoreContactCard extends HTMLElement {
     (card as any)._actionListener = actionListener;
   }
 
-  // ---------- Execute MeshCore commands ----------
   private async _addContact(prefix: string): Promise<void> {
     const currentOnline = this._getContactOnline(prefix);
     this._pendingStateUpdates[prefix] = { online: currentOnline, timestamp: Date.now() };
@@ -711,10 +676,8 @@ export class MeshcoreContactCard extends HTMLElement {
     const hass = this._hass as any;
     const command = `add_contact ${prefix}`;
     try {
-      await hass.callService("meshcore", "execute_command", {
-        command: command,
-      });
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await hass.callService("meshcore", "execute_command", { command });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (e) {
       throw e;
     } finally {
@@ -729,10 +692,8 @@ export class MeshcoreContactCard extends HTMLElement {
     const hass = this._hass as any;
     const command = `remove_contact ${prefix}`;
     try {
-      await hass.callService("meshcore", "execute_command", {
-        command: command,
-      });
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await hass.callService("meshcore", "execute_command", { command });
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     } catch (e) {
       throw e;
     } finally {
@@ -740,7 +701,6 @@ export class MeshcoreContactCard extends HTMLElement {
     }
   }
 
-  // ---------- Static methods ----------
   getCardSize(): number {
     return 4;
   }
@@ -786,7 +746,15 @@ export class MeshcoreContactCardEditor extends HTMLElement {
       {
         name: "max_contact_age_days",
         label: t("editor.max_contact_age"),
-        selector: { number: { min: 1, max: 365, step: 1, unit_of_measurement: "days", mode: "box" } } as never,
+        selector: {
+          number: {
+            min: 1,
+            max: 365,
+            step: 1,
+            unit_of_measurement: "days",
+            mode: "box",
+          },
+        } as never,
       },
       {
         name: "contact_filter",
@@ -832,10 +800,21 @@ export class MeshcoreContactCardEditor extends HTMLElement {
       this._config = {
         ...this._config,
         max_contact_age_days: Number(value["max_contact_age_days"]),
-        contact_filter: value["contact_filter"] as "all" | "discovered" | "fresh" | "stale",
-        node_type_filter: value["node_type_filter"] as "all" | "repeater" | "room" | "sensor" | "client",
+        contact_filter: value["contact_filter"] as
+          | "all"
+          | "discovered"
+          | "fresh"
+          | "stale",
+        node_type_filter: value["node_type_filter"] as
+          | "all"
+          | "repeater"
+          | "room"
+          | "sensor"
+          | "client",
       };
-      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
+      this.dispatchEvent(
+        new CustomEvent("config-changed", { detail: { config: this._config } })
+      );
     });
 
     this.appendChild(form);

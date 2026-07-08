@@ -21,51 +21,17 @@ import {
   type NeighborInfo,
   type RepeaterData,
 } from "./helpers.js";
-import { STYLES } from "./styles.js";
 import { QUICK_REPEATER_STYLES } from "./quick-repeater-styles.js";
-import { discoverNodes } from "./discovery.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
-
-// ===================== INTERFACES =====================
-
-
-
+import { MeshcoreBaseCard } from "./base-card.js";
 
 // ===================== MAIN CLASS =====================
-export class MeshcoreQuickRepeaterCard extends HTMLElement {
-  private _hass?: HomeAssistant;
-  private _config?: MeshcoreQuickRepeaterConfig;
-  private _fp: string | null = null;
-  private _lastRender = 0;
-  private _renderTimer: ReturnType<typeof setTimeout> | null = null;
-  private _trimTimer: ReturnType<typeof requestAnimationFrame> | null = null;
+export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
+  protected _config?: MeshcoreQuickRepeaterConfig;
   private _expanded: Set<string> = new Set();
 
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    this.shadowRoot!.addEventListener("click", (e: Event) => {
-      const target = e.target as HTMLElement;
-      const neighborsHeader = target.closest(".qr-neighbors-header") as HTMLElement;
-      if (neighborsHeader) {
-        const repeaterName = neighborsHeader.dataset["repeater"];
-        if (repeaterName) {
-          this._toggleNeighbors(repeaterName);
-          return;
-        }
-      }
-      const el = target.closest("[data-entity]") as HTMLElement | null;
-      if (el?.dataset["entity"]) {
-        const event = new Event("hass-more-info", {
-          bubbles: true,
-          composed: true,
-        });
-        (event as Event & { detail: { entityId: string } }).detail = {
-          entityId: el.dataset["entity"],
-        };
-        this.dispatchEvent(event);
-      }
-    });
+  protected _additionalStyles(): string {
+    return QUICK_REPEATER_STYLES;
   }
 
   setConfig(config: MeshcoreQuickRepeaterConfig): void {
@@ -74,30 +40,15 @@ export class MeshcoreQuickRepeaterCard extends HTMLElement {
     this._render();
   }
 
-  set hass(hass: HomeAssistant) {
-    this._hass = hass;
-    const fp = Object.entries(hass.states)
+  protected _computeFingerprint(): string {
+    if (!this._hass) return "";
+    return Object.entries(this._hass.states)
       .filter(([id]) =>
         /^sensor\.meshcore.*_(battery_percentage|last_rssi|last_snr|noise_floor|uptime|ch1_temperature)$/.test(id)
       )
       .map(([id, s]) => `${id}=${s.state}@${s.last_changed}`)
       .join("|");
-    if (fp === this._fp) return;
-    this._fp = fp;
-    const now = Date.now();
-    if (now - this._lastRender >= 10000) {
-      this._lastRender = now;
-      this._render();
-    } else if (!this._renderTimer) {
-      const delay = 10000 - (now - this._lastRender);
-      this._renderTimer = setTimeout(() => {
-        this._renderTimer = null;
-        this._lastRender = Date.now();
-        this._render();
-      }, delay);
-    }
   }
-
 
   // ── Toggle rozwinięcia sąsiadów ───────────────────────────────────────────
 
@@ -284,11 +235,10 @@ export class MeshcoreQuickRepeaterCard extends HTMLElement {
 
   // ── Główny render ──────────────────────────────────────────────────────────
 
-  private _render(): void {
+  protected _render(): void {
     if (!this._hass || !this._config) return;
     const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
     const repeaters = discoverRepeaters(this._hass, { sort_by: this._config?.sort_by });
-
 
     if (!repeaters.length) {
       this._setBody(`<div class="qr-empty">${t("card.empty_repeaters") || "Brak repeaterów"}</div>`);
@@ -299,33 +249,7 @@ export class MeshcoreQuickRepeaterCard extends HTMLElement {
     this._setBody(`
       <div class="section-label">${t("card.section_nodes")}</div>
       <div class="qr-repeater-list">${listHtml}</div>
-    `);
-  }
-
-  private _setBody(body: string): void {
-    const constrained = !!this._config?.grid_options?.rows;
-    const cls = constrained ? ' class="grid-rows"' : "";
-    this.shadowRoot!.innerHTML = `
-      <style>${STYLES}${QUICK_REPEATER_STYLES}</style>
-      <ha-card${cls}>${body}</ha-card>
-    `;
-    if (constrained) this._scheduleTrim(".qr-repeater-card");
-  }
-
-  private _scheduleTrim(rowSelector: string): void {
-    if (this._trimTimer !== null) cancelAnimationFrame(this._trimTimer);
-    this.style.opacity = "0";
-    this._trimTimer = requestAnimationFrame(() => {
-      this._trimTimer = null;
-      const card = this.shadowRoot!.querySelector("ha-card") as HTMLElement | null;
-      const h = card?.clientHeight ?? 0;
-      if (card && h) {
-        for (const el of Array.from(card.querySelectorAll<HTMLElement>(rowSelector))) {
-          el.style.visibility = el.offsetTop + el.offsetHeight > h ? "hidden" : "";
-        }
-      }
-      this.style.opacity = "";
-    });
+    `, ".qr-repeater-card");
   }
 
   getCardSize(): number {
