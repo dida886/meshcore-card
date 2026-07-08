@@ -1,5 +1,6 @@
-import { escapeHtml, getDisplayState } from "./helpers.js";
+import { escapeHtml, getDisplayState, signalQualityLabel } from "./helpers.js";
 import type { HomeAssistant } from "./types.js";
+import type { LocalizeFunc } from "./localize.js";
 
 export function isValid(value: unknown): boolean {
   if (value === null || value === undefined) return false;
@@ -44,7 +45,6 @@ export function renderChip(
   return `<span class="hub-traffic-chip clickable" data-entity="${escapeHtml(entityId)}">${icon}${escapeHtml(label)}: ${escapeHtml(val)}</span>`;
 }
 
-/** Panel baterii – używany zarówno w HubCard jak i NodeCard. */
 export function renderBatteryPanel(
   pctDisplay: string | number | null,
   vDisplay: string | number | null,
@@ -94,6 +94,99 @@ export function renderBatteryPanel(
         </div>
         ${voltageText ? `<span class="hub-battery-voltage clickable" ${battVId ? `data-entity="${escapeHtml(battVId)}"` : ""}>${escapeHtml(voltageText)}</span>` : ""}
       </div>
+    </div>
+  `;
+}
+
+// ============================================
+// SYGNAŁ – FUNKCJE PRZENIESIONE Z KART
+// ============================================
+
+function parseNumericMetric(value: unknown): number | null {
+  const text = String(value ?? "").replace(",", ".");
+  const match = text.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const n = Number(match[0]);
+  return Number.isFinite(n) ? n : null;
+}
+
+function signalGaugePct(value: number, variant: "rssi" | "snr" | "noise"): number {
+  const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(max, v));
+  if (variant === "rssi") {
+    const normalized = (value - (-140)) / 110;
+    return clamp(normalized * 100, 0, 100);
+  }
+  if (variant === "snr") {
+    const normalized = (value - (-20)) / 40;
+    return clamp(normalized * 100, 0, 100);
+  }
+  const normalized = ((-85) - value) / 35;
+  return clamp(normalized * 100, 0, 100);
+}
+
+function renderSignalSparkline(series: number[], variant: "rssi" | "snr" | "noise"): string {
+  if (series.length < 2) return "";
+  const min = Math.min(...series);
+  const max = Math.max(...series);
+  const span = max - min || 1;
+  const points: string[] = [];
+  for (let i = 0; i < series.length; i++) {
+    const x = (i * 100) / Math.max(1, series.length - 1);
+    const y = 20 - ((series[i] - min) / span) * 16;
+    points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+  }
+  return `
+    <svg class="signal-sparkline ${variant}" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points="${points.join(" ")}"></polyline>
+    </svg>
+  `;
+}
+
+export function renderSignalCard(
+  hass: HomeAssistant | undefined,
+  label: string,
+  unit: string,
+  entityId: string | null,
+  variant: "rssi" | "snr" | "noise",
+  t: LocalizeFunc,
+  series?: number[]
+): string {
+  if (!entityId) return "";
+  const displayVal = getDisplayState(hass, entityId);
+  if (!displayVal || displayVal === "N/A") return "";
+
+  const numeric = parseNumericMetric(displayVal);
+  const gaugePct = numeric !== null ? Math.max(0, Math.min(100, signalGaugePct(numeric, variant))) : 0;
+  const qualityText = signalQualityLabel(numeric, variant, t);
+
+  if (!series || series.length < 2) {
+    series = numeric !== null
+      ? [0.94, 0.97, 1, 0.99, 1.02, 1.01, 1.03].map((m) => numeric * m)
+      : [];
+  }
+
+  const icon = variant === "rssi" ? "mdi:wifi" 
+             : variant === "snr"  ? "mdi:signal" 
+             : "mdi:speaker";
+
+  return `
+    <div class="signal-card ${variant}">
+      <div class="signal-card-head">
+        <span class="signal-label">${escapeHtml(label)}</span>
+        <ha-icon class="signal-head-icon" icon="${icon}"></ha-icon>
+      </div>
+      <div class="signal-gauge-wrap">
+        <svg class="signal-gauge ${variant}" viewBox="0 0 100 62" aria-hidden="true">
+          <path class="signal-gauge-track" pathLength="100" d="M14,50 A36,36 0 0 1 86,50"></path>
+          <path class="signal-gauge-progress" pathLength="100" style="stroke-dasharray:${gaugePct} 100" d="M14,50 A36,36 0 0 1 86,50"></path>
+        </svg>
+        <div class="signal-gauge-value clickable" data-entity="${escapeHtml(entityId)}">
+          <span class="signal-gauge-number">${escapeHtml(displayVal)}</span>
+          <span class="signal-gauge-unit">${escapeHtml(unit)}</span>
+        </div>
+      </div>
+      ${renderSignalSparkline(series, variant)}
+      <div class="signal-quality ${variant}">${escapeHtml(qualityText)}</div>
     </div>
   `;
 }

@@ -82,8 +82,9 @@
     "signal_very_low": "Bardzo niski",
     "signal_no_link": "Brak linku",
     "no_data": "brak danych",
-    "noise_label": "Hałas",
-    "offline_message": "Węzeł jest aktualnie offline. Brak dostępnych danych."
+    "noise_label": "Szum",
+    "offline_message": "Węzeł jest aktualnie offline. Brak dostępnych danych.",
+    "signal_high": "Wysoki"
   },
   "time": {
     "s_ago": "{n} s temu",

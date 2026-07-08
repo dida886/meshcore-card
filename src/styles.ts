@@ -401,7 +401,6 @@ export const STYLES: string = `
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
-    border-bottom: 1px solid rgba(120, 150, 220, 0.14);
     margin-top: 6px;
     padding: 2px 0 4px;
     background: transparent;
@@ -419,12 +418,10 @@ export const STYLES: string = `
     display: flex;
     flex-direction: column;
     gap: 2px;
-    background: transparent;A
+    background: transparent;
     border-radius: 12px;
     border: 1px solid rgba(120, 150, 220, 0.14);
-    box-shadow:
-      2px 4px 8px rgba(0, 0, 0, 0.12),
-      0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     transform: translateY(0);
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
   }
@@ -503,14 +500,12 @@ export const STYLES: string = `
     transform: translateY(-1px);
   }
   .mqtt-pill.ok.clickable {
-    box-shadow:
-      0 10px 24px rgba(0, 0, 0, 0.14),
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-    background: rgba(18, 28, 21, 0.5);
+    background: transparent;
   }
   .mqtt-pill.ok {
     color: var(--mesh-green);
     border-color: rgba(74, 222, 128, 0.4);
+    backdrop-filter: none;
   }
   .mqtt-pill.err {
     color: var(--mesh-red);
@@ -536,7 +531,7 @@ export const STYLES: string = `
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--hub-section-text);
-    margin: 8px 0 8px 0;
+    margin: 6px 0 6px 0;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--glass-border);
     opacity: 0.88;
@@ -1096,8 +1091,8 @@ export const STYLES: string = `
     opacity: 0.9;
   }
   .hub-traffic-value {
-    font-size: 38px;
-    font-weight: 700;
+    font-size: 30px;
+    font-weight: 600;
     line-height: 1;
     font-family: var(--paper-font-code1_-_font-family, monospace);
   }
@@ -1460,7 +1455,7 @@ export const STYLES: string = `
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--hub-section-text);
-    margin: 8px 0 6px 0;
+    margin: 4px 0 6px 0;
     padding-bottom: 6px;
     border-bottom: none;
     opacity: 0.88;
@@ -1675,7 +1670,8 @@ export const STYLES: string = `
     transition: background 0.2s, color 0.2s;
     flex: 1;
     min-width: 0;
-    max-width: 180px;
+    max-width: 190px;
+    height: 36px;
     position: relative;
     z-index: 1;
     box-shadow:
@@ -2296,5 +2292,29 @@ export const STYLES: string = `
   z-index: 0;
   opacity: 0.85;
   will-change: transform;
+}
+  .signal-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.signal-head-icon {
+  --mdc-icon-size: 16px;
+  margin-left: auto;
+}
+
+/* Kolory ikon dopasowane do wariantów */
+.signal-card.rssi .signal-head-icon {
+  color: #35e27d;
+}
+
+.signal-card.snr .signal-head-icon {
+  color: #2dd4ff;
+}
+
+.signal-card.noise .signal-head-icon {
+  color: #8b5cf6;
 }
 `;

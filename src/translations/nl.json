@@ -83,7 +83,8 @@
     "signal_no_link": "Geen link",
     "no_data": "n.v.t.",
     "noise_label": "Geluid",
-    "offline_message": "Het knooppunt is momenteel offline. Er zijn geen gegevens beschikbaar."
+    "offline_message": "Het knooppunt is momenteel offline. Er zijn geen gegevens beschikbaar.",
+    "signal_high": "Hoog"
   },
   "time": {
     "s_ago": "{n}s geleden",

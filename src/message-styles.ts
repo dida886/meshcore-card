@@ -81,7 +81,7 @@ export const MESSAGE_STYLES: string = `
     width: 100%;
     padding: 10px 14px;
     border-radius: 16px;
-    border: 1px solid var(--glass-border);
+    border: 2px solid var(--glass-border);
     background: transparent;
     color: var(--primary-text-color);
     font-family: inherit;
@@ -128,12 +128,8 @@ export const MESSAGE_STYLES: string = `
   .status {
     font-size: 12px;
     text-align: center;
-    padding: 8px;
     border-radius: 20px;
     background: transparent;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    margin: 12px 0 8px;
   }
 
   .messages-section {
@@ -213,12 +209,12 @@ export const MESSAGE_STYLES: string = `
     background: transparent;
     border-radius: 22px;
     padding: 10px 10px 10px;
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    border: 2px solid var(--glass-border);
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.18);
     transition: all 0.2s ease;
   }
   .message-card:hover {
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.24);
     border-color: rgba(120, 150, 220, 0.22);
   }
 

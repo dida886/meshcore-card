@@ -83,7 +83,8 @@
     "signal_no_link": "Kein Link",
     "no_data": "k. A.",
     "noise_label": "Lärm",
-    "offline_message": "Der Knoten ist derzeit offline. Es liegen keine Daten vor."
+    "offline_message": "Der Knoten ist derzeit offline. Es liegen keine Daten vor.",
+    "signal_high": "Hoch"
   },
   "time": {
     "s_ago": "vor {n}s",

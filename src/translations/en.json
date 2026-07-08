@@ -76,6 +76,7 @@
     "advert_flood_sent": "Advert Flood sent",
     "advert_error": "Advert failed",
     "signal_excellent": "Excellent",
+    "signal_high": "High",
     "signal_strong": "Strong",
     "signal_medium": "Medium",
     "signal_low": "Low",

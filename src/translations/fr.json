@@ -83,7 +83,8 @@
     "signal_no_link": "Pas de lien",
     "no_data": "N/A",
     "noise_label": "Bruit",
-    "offline_message": "Le nœud est actuellement hors ligne. Aucune donnée n'est disponible."
+    "offline_message": "Le nœud est actuellement hors ligne. Aucune donnée n'est disponible.",
+    "signal_high": "Élevé"
   },
   "time": {
     "s_ago": "il y a {n}s",

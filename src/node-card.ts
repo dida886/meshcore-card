@@ -35,6 +35,7 @@ import {
   renderTechItem,
   renderChip,
   renderBatteryPanel,
+  renderSignalCard,
 } from "./ui-helpers.js";
 
 export class MeshcoreNodeCard extends MeshcoreBaseCard {
@@ -156,46 +157,6 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       <svg class="signal-sparkline ${variant}" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true">
         <polyline points="${points.join(" ")}"></polyline>
       </svg>
-    `;
-  }
-
-  private _renderSignalMetric(
-    label: string,
-    value: string | number | null,
-    unit: string,
-    entityId: string | null,
-    variant: "rssi" | "snr" | "noise",
-    t: LocalizeFunc
-  ): string {
-    if (!entityId) return "";
-    const displayVal = getDisplayState(this._hass, entityId);
-    if (displayVal === "N/A") return "";
-
-    const numeric = parseNumericMetric(displayVal);
-    const gaugePct = numeric !== null ? Math.max(0, Math.min(100, signalGaugePct(numeric, variant))) : 0;
-    const qualityText = signalQualityLabel(numeric, variant, makeLocalize(this._hass?.language ?? this._hass?.locale?.language ?? "en"));
-    const series = numeric !== null
-      ? [0.94, 0.97, 1, 0.99, 1.02, 1.01, 1.03].map((m) => numeric * m)
-      : [];
-
-    return `
-      <div class="signal-card ${variant}">
-        <div class="signal-card-head">
-          <span class="signal-label">${escapeHtml(label)}</span>
-        </div>
-        <div class="signal-gauge-wrap">
-          <svg class="signal-gauge ${variant}" viewBox="0 0 100 62" aria-hidden="true">
-            <path class="signal-gauge-track" pathLength="100" d="M14,50 A36,36 0 0 1 86,50"></path>
-            <path class="signal-gauge-progress" pathLength="100" style="stroke-dasharray:${gaugePct} 100" d="M14,50 A36,36 0 0 1 86,50"></path>
-          </svg>
-          <div class="signal-gauge-value clickable" data-entity="${escapeHtml(entityId)}">
-            <span class="signal-gauge-number">${escapeHtml(displayVal)}</span>
-            <span class="signal-gauge-unit">${escapeHtml(unit)}</span>
-          </div>
-        </div>
-        ${this._renderSignalSparkline(series, variant)}
-        <div class="signal-quality ${variant}">${escapeHtml(qualityText)}</div>
-      </div>
     `;
   }
 
@@ -449,9 +410,9 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       html += `
         ${sectionHeader("Signal")}
         <div class="signal-row hub-signal-row">
-          ${this._renderSignalMetric(t("card.rssi_label"), rssi, "dBm", rssiId, "rssi", t)}
-          ${this._renderSignalMetric(t("card.snr_label"), snr, "dB", snrId, "snr", t)}
-          ${this._renderSignalMetric(t("card.noise_label"), noise, "dBm", noiseId, "noise", t)}
+          ${renderSignalCard(this._hass, t("card.rssi_label"), "dBm", rssiId, "rssi", t)}
+          ${renderSignalCard(this._hass, t("card.snr_label"), "dB", snrId, "snr", t)}
+          ${renderSignalCard(this._hass, t("card.noise_label"), "dBm", noiseId, "noise", t)}
         </div>
       `;
     }
