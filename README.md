@@ -32,6 +32,16 @@ If you find this project useful and would like to support future development:
 Your support helps fund development, testing, bug fixes, and new features.
 
 ---
+## 🎉 What's New in 1.5.0
+
+- **Complete UI Overhaul** – All cards have been redesigned with a unified, modern look. Shared components are now extracted into a common base, reducing code duplication and improving performance.
+- **Dynamic Theming** – Hub card particles now automatically adapt to your Home Assistant theme (light/dark) for a seamless visual experience.
+- **Signal Icons** – Each signal card (RSSI, SNR, Noise) now displays an icon with matching color, improving at-a-glance readability.
+- **Expandable Neighbors in Node Card** – Neighbors can now be expanded/collapsed, just like in the Quick Repeater card. Use `neighbors_expanded_default` to control the default state.
+- **Offline Status Pill** – The Node card now clearly distinguishes offline nodes with a dedicated offline pill (red background).
+- **Improved Quick Repeater Card** – Offline repeaters now show a clear "Node Offline" message, just like the Node card.
+- **Better Maintainability** – The entire codebase has been refactored, making future enhancements easier and faster.
+
 
 ## 🌟 Enhanced Edition
 
@@ -39,29 +49,22 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 
 ### Key Enhancements
 
-* Full MeshCore messaging support
-* Message history viewer
-* **NEW in 1.3.0: Transmission route visualization (RSSI, SNR, hop path)**
-* **NEW in 1.3.0: Bubble-style message layout**
-* **NEW in 1.3.3: Display repeater names in path** – optionally show friendly names instead of hex IDs
-* **NEW in 1.3.4: Advert buttons on Hub card** – send Advert/Advert Flood with one click
-* **NEW in 1.4.0: Quick Repeater Card** – dedicated dashboard for monitoring all repeaters at a glance
-* URL detection and copy-to-clipboard
-* Long-press message copying
-* Mobile-friendly interaction model
-* Improved user experience
-* Additional translations
-* Continuous community-driven development
+- Full MeshCore messaging support
+- Message history viewer
+- **Transmission route visualization (RSSI, SNR, hop path)**
+- **Bubble-style message layout**
+- **Display repeater names in path** – optionally show friendly names instead of hex IDs
+- **Advert buttons on Hub card** – send Advert/Advert Flood with one click
+- **Quick Repeater Card** – dedicated dashboard for monitoring all repeaters at a glance
+- URL detection and copy-to-clipboard
+- Long-press message copying
+- Mobile-friendly interaction model
+- Multi-language support (EN, FR, NL, DE, PL)
+- **New in 1.5.0: Dynamic theme-aware particles, signal icons, expandable neighbors**
 
 ---
 
 ## 📸 Screenshots
-### **NEW Quick Repeater Card (v1.4.0)**
-```yaml
-type: custom:meshcore-quick-repeater-card
-```
-![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card.png)
-![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card2.png)
 
 ### Hub Card
 ```yaml
@@ -80,6 +83,12 @@ custom:meshcore-node-card
 custom:meshcore-message-card
 ```
 ![MeshCore Messages](images/message-card-screenshot.png)
+
+### Quick Repeater Card
+```yaml
+type: custom:meshcore-quick-repeater-card
+```
+![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card.png)
 
 ### Contacts Card
 ```yaml
@@ -313,10 +322,10 @@ grid_options:
 show_hub_technical: true
 show_hub_signal: true
 show_hub_traffic: true
-show_hub_advanced: true
 show_hub_location: true
 show_hub_mqtt: true
 show_hub_advert_buttons: true
+disabled_animations: false,
 ```
 ---
 
@@ -355,6 +364,8 @@ type: custom:meshcore-node-card
 
 # Optional: Filter by node type
 node_type_filter: all  # Options: all, repeater, room, sensor, client
+# Expand neighbor lists by default (optional, default: true)
+neighbors_expanded_default: true
 
 # Optional: Hide specific nodes (can also be configured via editor checkboxes)
 hidden_nodes:

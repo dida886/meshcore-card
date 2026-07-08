@@ -111,7 +111,6 @@
     "show_hub_technical": "Afficher la section « Technique »",
     "show_hub_signal": "Afficher la section « Signal »",
     "show_hub_traffic": "Afficher la rubrique « Circulation »",
-    "show_hub_advanced": "Afficher les statistiques avancées",
     "show_hub_location": "Afficher la section « Emplacement »",
     "show_hub_mqtt": "Afficher la section MQTT",
     "sort_by": "Trier par",
@@ -126,7 +125,8 @@
     "filter_sensor": "Capteur",
     "filter_client": "Client",
     "show_hide_nodes": "Afficher/Masquer les nœuds",
-    "node_type_filter": "Filtre de type de nœud par défaut"
+    "node_type_filter": "Filtre de type de nœud par défaut",
+    "disabled_animations": "Désactiver les animations"
   },
   "message-card": {
     "send_message": "ENVOYER UN MESSAGE MESHCORE",

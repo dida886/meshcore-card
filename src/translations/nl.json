@@ -111,7 +111,6 @@
     "show_hub_technical": "Technisch gedeelte weergeven",
     "show_hub_signal": "Sectie ‘Signaal’ weergeven",
     "show_hub_traffic": "Het gedeelte ‘Verkeer’ weergeven",
-    "show_hub_advanced": "Geavanceerde statistieken weergeven",
     "show_hub_location": "Het gedeelte ‘Locatie’ weergeven",
     "show_hub_mqtt": "MQTT-sectie weergeven",
     "sort_by": "Sorteren op",
@@ -126,7 +125,8 @@
     "filter_sensor": "Sensor",
     "filter_client": "Klant",
     "show_hide_nodes": "Knooppunten weergeven/verbergen",
-    "node_type_filter": "Standaardfilter voor knooppunttypen"
+    "node_type_filter": "Standaardfilter voor knooppunttypen",
+    "disabled_animations": "Animaties uitschakelen"
   },
   "message-card": {
     "send_message": "MESHCORE-BERICHT VERSTUREN",

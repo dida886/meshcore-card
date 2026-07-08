@@ -403,4 +403,8 @@ export const QUICK_REPEATER_STYLES = `
       font-size: 9px;
     }
   }
+  .qr-repeater-card.offline {
+    opacity: 0.5;
+    filter: grayscale(0.2);
+  }
 `;

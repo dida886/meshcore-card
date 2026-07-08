@@ -459,8 +459,29 @@ export function discoverRepeaters(
     const p = (m: string) => findEntityByDevice(hass, deviceId, m, ePrefix, eSuffix);
 
     const statusId = p("online") ?? p("status");
-    const status = statusId ? hass.states[statusId]?.state : null;
-    const online = status ? isOnlineState(status) : false;
+    const successId = p("request_successes");
+    const uptimeId = p("uptime");
+    const status = statusId ? getEntityState(hass, statusId) : null;
+    const successes = successId ? getEntityState(hass, successId) : null;
+
+    let online = false;
+
+    // Główna logika – taka sama jak w node‑card
+    if (uptimeId) {
+      const uptimeState = hass.states[uptimeId];
+      if (uptimeState && !["unavailable", "unknown"].includes(uptimeState.state)) {
+        const ts = new Date(uptimeState.last_updated).getTime();
+        online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
+      } else {
+        online = false;  // unavailable lub unknown → offline
+      }
+    } else {
+      // Brak encji uptime – sprawdź status i successes
+      online = status ? isOnlineState(status) : false;
+      if (!online && successes !== null && successes !== "N/A" && Number(successes) > 0) {
+        online = true;
+      }
+    }
 
     const batteryId = p("battery_percentage") ?? p("battery_level") ?? p("battery");
     let battVId = p("battery_voltage");
@@ -477,7 +498,6 @@ export function discoverRepeaters(
     const rssiId = p("last_rssi");
     const snrId = p("last_snr");
     const noiseId = p("noise_floor");
-    const uptimeId = p("uptime");
     const tempId = p("ch1_temperature") ?? p("temperature");
 
     const battery = batteryId ? getEntityState(hass, batteryId) : null;
@@ -663,10 +683,12 @@ export function drawParticles(
       ctx.fillStyle = color;
 
       for (const dot of floating) {
-        dot.y -= dot.speed;
-        if (dot.y < 20) {
-          dot.y = rect.height + 10;
-          dot.x = Math.random() * rect.width;
+        if (animate) {
+          dot.y -= dot.speed;
+          if (dot.y < 20) {
+            dot.y = rect.height + 10;
+            dot.x = Math.random() * rect.width;
+          }
         }
 
         ctx.globalAlpha = 0.35 + Math.sin(time * 3.2 + dot.x) * 0.3;

@@ -43,9 +43,10 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
   private _neighborSnrHistory = new Map<string, number[]>();
   private _neighborSnrHistoryFetchedAt = new Map<string, number>();
   private _neighborSnrHistoryLoading = new Set<string>();
+  private _expandedNodes: Set<string> = new Set();
 
   protected _additionalStyles(): string {
-    return ""; // korzysta tylko z bazowych styli
+    return "";
   }
 
   setConfig(config: MeshcoreNodeCardConfig): void {
@@ -60,6 +61,30 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       .filter(([id]) => id.includes("meshcore") && !id.includes("node_count"))
       .map(([id, s]) => `${id}=${s.state}@${s.last_changed}`)
       .join("|");
+  }
+
+  // ── Obsługa kliknięć – rozwijanie sąsiadów ────────────────────────────────
+
+  protected handleClick(e: Event): void {
+    const target = e.target as HTMLElement;
+    const neighborsHeader = target.closest(".neighbors-toggle-header") as HTMLElement;
+    if (neighborsHeader) {
+      const nodeName = neighborsHeader.dataset["nodeName"];
+      if (nodeName) {
+        this._toggleNeighbors(nodeName);
+      }
+      return;
+    }
+    super.handleClick(e);
+  }
+
+  private _toggleNeighbors(nodeName: string): void {
+    if (this._expandedNodes.has(nodeName)) {
+      this._expandedNodes.delete(nodeName);
+    } else {
+      this._expandedNodes.add(nodeName);
+    }
+    this._render();
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -90,11 +115,6 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
     const w = Math.min(100, Math.max(0, Number(pct) || 0));
     return `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${color}"></div></div>`;
   }
-
-
-
-
-
 
   private _fetchHistoryFromRecorder(entityId: string, startIso: string, endIso: string): Promise<number[]> {
     const path = `history/period/${startIso}?filter_entity_id=${encodeURIComponent(entityId)}&end_time=${encodeURIComponent(endIso)}&minimal_response&no_attributes`;
@@ -392,7 +412,7 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
 
     if (!online) {
       html += `
-          <div style="display: flex; text-align: center; justify-content: center; padding: 20px 0; color: var(--error-color, #f44336); font-weight: 700; font-size: 1.2rem; letter-spacing: 0.05em;">
+          <div style="display: flex; text-align: center; justify-content: center; padding: 5px 0; color: var(--error-color, #f44336); font-weight: 700; font-size: 1.2rem; letter-spacing: 0.05em;">
             ${escapeHtml(t("card.offline_message") || "NODE OFFLINE")}
           </div>
         </div>
@@ -485,12 +505,19 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       skipNoSnr: true,
     });
 
+    const nodeName = node.name;
+    const defaultExpanded = this._config?.neighbors_expanded_default ?? true;
+    const isExpanded = this._expandedNodes.has(nodeName)
+      ? this._expandedNodes.has(nodeName)
+      : defaultExpanded;
+
     if (filteredNeighbors.length === 0) {
       return `
         <div class="neighbors-section">
-          <div class="neighbors-header">
+          <div class="neighbors-toggle-header" data-node-name="${escapeHtml(nodeName)}" style="cursor:default;opacity:0.6;">
+            <span class="qr-toggle-icon">▶</span>
             <span>${escapeHtml(t("card.neighbors_label") || "Neighbors")}</span>
-            <span class="count-badge">${filteredNeighbors.length}</span>
+            <span class="count-badge">0</span>
           </div>
           <div style="font-size: 11px; color: var(--secondary-text-color); text-align: center; padding: 8px;">
             ${escapeHtml(t("card.no_neighbors_info") || "No information about neighbors")}
@@ -502,11 +529,8 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
     const neighborRows = filteredNeighbors.map((n: NeighborInfo) => {
       const snrVal = parseFloat(String(n.snr));
       const snrClass = getSnrClass(snrVal);
-      const shouldRenderSnrHistory = !!n.snrId;
-      if (shouldRenderSnrHistory && n.snrId) this._ensureNeighborSnrHistory(n.snrId);
-      const snrSeries = shouldRenderSnrHistory && n.snrId
-        ? (this._neighborSnrHistory.get(n.snrId) ?? [])
-        : [];
+      if (n.snrId) this._ensureNeighborSnrHistory(n.snrId);
+      const snrSeries = n.snrId ? (this._neighborSnrHistory.get(n.snrId) ?? []) : [];
       const timeString = formatNeighborLastSeen(n.lastSeen);
       const rawSeen = n.rawSeen || null;
       const lastSeenLabel = t("card.neighbor_last_seen") || "Last seen";
@@ -536,11 +560,12 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
 
     return `
       <div class="neighbors-section">
-        <div class="neighbors-header">
+        <div class="neighbors-toggle-header" data-node-name="${escapeHtml(nodeName)}">
+          <span class="qr-toggle-icon ${isExpanded ? "expanded" : ""}">▶</span>
           <span>${escapeHtml(t("card.neighbors_label") || "Neighbors")}</span>
-          <span class="count-badge" style="font-size:10px">${filteredNeighbors.length}</span>
+          <span class="count-badge">${filteredNeighbors.length}</span>
         </div>
-        <div class="neighbors-list">
+        <div class="neighbors-list ${isExpanded ? "expanded" : ""}">
           ${neighborRows}
         </div>
       </div>
@@ -633,23 +658,29 @@ export class MeshcoreNodeCardEditor extends HTMLElement {
     form.schema = [
       {
         name: "node_type_filter",
-        label: t("editor.node_type_filter") || "Typ węzła",
+        label: t("editor.node_type_filter") || "Node type filter",
         selector: {
           select: {
             options: [
-              { value: "all", label: t("editor.filter_all") || "Wszystkie" },
+              { value: "all", label: t("editor.filter_all") || "All" },
               { value: "repeater", label: t("editor.filter_repeater") || "Repeater" },
               { value: "room", label: t("editor.filter_room") || "Room" },
               { value: "sensor", label: t("editor.filter_sensor") || "Sensor" },
-              { value: "client", label: t("editor.filter_client") || "Klient" },
+              { value: "client", label: t("editor.filter_client") || "Client" },
             ],
           },
         },
+      },
+      {
+        name: "neighbors_expanded_default",
+        label: t("editor.neighbors_expanded_default") || "Default neighbors expanded",
+        selector: { boolean: {} },
       },
     ];
 
     form.data = {
       node_type_filter: this._config.node_type_filter || "all",
+      neighbors_expanded_default: this._config.neighbors_expanded_default ?? true,
     };
 
     form.computeLabel = (s: any) => s.label || s.name;
@@ -659,6 +690,7 @@ export class MeshcoreNodeCardEditor extends HTMLElement {
       this._config = {
         ...this._config,
         node_type_filter: value["node_type_filter"],
+        neighbors_expanded_default: value["neighbors_expanded_default"],
       };
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
     });
@@ -672,13 +704,13 @@ export class MeshcoreNodeCardEditor extends HTMLElement {
 
     const label = document.createElement("div");
     label.style.cssText = "font-size: 13px; font-weight: 500; color: var(--secondary-text-color); margin-bottom: 8px;";
-    label.textContent = t("editor.show_hide_nodes") || "Pokaż/ukryj węzły:";
+    label.textContent = t("editor.show_hide_nodes") || "Show/Hide nodes:";
     listContainer.appendChild(label);
 
     if (nodes.length === 0) {
       const empty = document.createElement("div");
       empty.style.cssText = "font-size: 12px; color: var(--secondary-text-color); opacity: 0.7;";
-      empty.textContent = t("editor.no_nodes_detected") || "Nie wykryto węzłów";
+      empty.textContent = t("editor.no_nodes_detected") || "No nodes detected";
       listContainer.appendChild(empty);
     } else {
       const sortedNodes = [...nodes].sort((a, b) => a.name.localeCompare(b.name));

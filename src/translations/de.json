@@ -111,7 +111,6 @@
     "show_hub_technical": "Technischen Abschnitt anzeigen",
     "show_hub_signal": "Abschnitt „Signal“ anzeigen",
     "show_hub_traffic": "Abschnitt „Verkehr“ anzeigen",
-    "show_hub_advanced": "Erweiterte Statistiken anzeigen",
     "show_hub_location": "Abschnitt „Standort anzeigen“",
     "show_hub_mqtt": "MQTT-Abschnitt anzeigen",
     "sort_by": "Sortieren nach",
@@ -126,7 +125,8 @@
     "filter_sensor": "Sensor",
     "filter_client": "Kunde",
     "show_hide_nodes": "Knoten anzeigen/ausblenden",
-    "node_type_filter": "Standardfilter für Knotentypen"
+    "node_type_filter": "Standardfilter für Knotentypen",
+    "disabled_animations": "Animationen deaktivieren"
   },
   "message-card": {
     "send_message": "MESHCORE-NACHRICHT SENDEN",

@@ -1595,6 +1595,50 @@ export const STYLES: string = `
     opacity: 0.7;
   }
 
+  .neighbors-toggle-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--hub-section-text);
+    margin: 8px 0 6px 0;
+    padding-bottom: 6px;
+    border-bottom: none;
+    opacity: 0.88;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    cursor: pointer;
+    text-shadow: 0 0 0 black;
+  }
+  .neighbors-toggle-header::after {
+    content: "";
+    flex: 1 1 auto;
+    min-width: 16px;
+    height: 1px;
+    background: var(--hub-section-line);
+  }
+  .neighbors-toggle-header .qr-toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 10px;
+  }
+  .neighbors-toggle-header .qr-toggle-icon.expanded {
+    transform: rotate(90deg);
+  }
+
+  /* Lista sąsiadów – domyślnie ukryta */
+  .neighbors-list {
+    display: none;
+  }
+  .neighbors-list.expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
   /* Node title row */
   .node-title-row {
     display: flex;

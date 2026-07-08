@@ -234,7 +234,6 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
     const showTech = this._config?.show_hub_technical ?? true;
     const showSignal = this._config?.show_hub_signal ?? true;
     const showTraffic = this._config?.show_hub_traffic ?? true;
-    const showAdvanced = this._config?.show_hub_advanced ?? true;
     const showLocation = this._config?.show_hub_location ?? true;
     const showMqtt = this._config?.show_hub_mqtt ?? true;
     const showAdvertButtons = this._config?.show_hub_advert_buttons ?? true;
@@ -379,15 +378,15 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
         </div>`;
     }
 
-    if (showAdvanced) {
-      const chips: string[] = [];
-      if (queue && queue !== "N/A") {
-        chips.push(`<span class="advanced-chip clickable" data-entity="${escapeHtml(queueId)}">📥 Queue: ${escapeHtml(queue)}</span>`);
-      }
-      if (chips.length > 0) {
-        html += `<div class="advanced-chips">${chips.join("")}</div>`;
-      }
+   
+    const chips: string[] = [];
+    if (queue && queue !== "N/A") {
+      chips.push(`<span class="advanced-chip clickable" data-entity="${escapeHtml(queueId)}">📥 Queue: ${escapeHtml(queue)}</span>`);
     }
+    if (chips.length > 0) {
+      html += `<div class="advanced-chips">${chips.join("")}</div>`;
+    }
+    
 
     if (showLocation && lat !== null && lon !== null) {
       html += `
@@ -491,7 +490,7 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
           waveLength: [70, 400],
           waveAmplitude: [1, 5],
           waveFrequency: [0.01, 0.055],
-          animate: true,
+          animate: !this._config?.disabled_animations,
           speed: 0.015,
           floatingDots: true,
           floatingDotsCount: 30,
@@ -518,10 +517,10 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
       show_hub_technical: true,
       show_hub_signal: true,
       show_hub_traffic: true,
-      show_hub_advanced: true,
       show_hub_location: true,
       show_hub_mqtt: true,
       show_hub_advert_buttons: true,
+      disabled_animations: false,
     };
   }
 }
@@ -567,11 +566,6 @@ export class MeshcoreHubCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
-        name: "show_hub_advanced",
-        label: t("editor.show_hub_advanced") || "Show advanced section",
-        selector: { boolean: {} },
-      },
-      {
         name: "show_hub_location",
         label: t("editor.show_hub_location") || "Show location section",
         selector: { boolean: {} },
@@ -586,16 +580,21 @@ export class MeshcoreHubCardEditor extends HTMLElement {
         label: t("editor.show_hub_advert_buttons") || "Show Advert buttons",
         selector: { boolean: {} },
       },
+      {
+        name: "disabled_animations",
+        label: t("editor.disabled_animations") || "Disable animations",
+        selector: { boolean: {} },
+      }
     ];
 
     form.data = {
       show_hub_technical: this._config.show_hub_technical ?? true,
       show_hub_signal: this._config.show_hub_signal ?? true,
       show_hub_traffic: this._config.show_hub_traffic ?? true,
-      show_hub_advanced: this._config.show_hub_advanced ?? true,
       show_hub_location: this._config.show_hub_location ?? true,
       show_hub_mqtt: this._config.show_hub_mqtt ?? true,
       show_hub_advert_buttons: this._config.show_hub_advert_buttons ?? true,
+      disabled_animations: this._config.disabled_animations ?? false,
     };
 
     form.computeLabel = (s: any) => s.label || s.name;
@@ -607,10 +606,10 @@ export class MeshcoreHubCardEditor extends HTMLElement {
         show_hub_technical: value["show_hub_technical"],
         show_hub_signal: value["show_hub_signal"],
         show_hub_traffic: value["show_hub_traffic"],
-        show_hub_advanced: value["show_hub_advanced"],
         show_hub_location: value["show_hub_location"],
         show_hub_mqtt: value["show_hub_mqtt"],
         show_hub_advert_buttons: value["show_hub_advert_buttons"],
+        disabled_animations: value["disabled_animations"],
       };
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
     });

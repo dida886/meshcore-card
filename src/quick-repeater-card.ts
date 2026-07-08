@@ -25,7 +25,6 @@ import { QUICK_REPEATER_STYLES } from "./quick-repeater-styles.js";
 import { makeLocalize, type LocalizeFunc } from "./localize.js";
 import { MeshcoreBaseCard } from "./base-card.js";
 
-// ===================== MAIN CLASS =====================
 export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
   protected _config?: MeshcoreQuickRepeaterConfig;
   private _expanded: Set<string> = new Set();
@@ -50,8 +49,22 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       .join("|");
   }
 
-  // ── Toggle rozwinięcia sąsiadów ───────────────────────────────────────────
+  // ── Obsługa kliknięć (nadpisanie metody z klasy bazowej) ─────────────────
+  protected handleClick(e: Event): void {
+    const target = e.target as HTMLElement;
+    const neighborsHeader = target.closest(".qr-neighbors-header") as HTMLElement;
+    if (neighborsHeader) {
+      const repeaterName = neighborsHeader.dataset["repeater"];
+      if (repeaterName) {
+        this._toggleNeighbors(repeaterName);
+      }
+      return; // nie przekazuj dalej
+    }
+    // dla pozostałych kliknięć użyj standardowej obsługi (data-entity)
+    super.handleClick(e);
+  }
 
+  // ── Toggle rozwinięcia sąsiadów ─────────────────────────────────────────
   private _toggleNeighbors(repeaterName: string): void {
     if (this._expanded.has(repeaterName)) {
       this._expanded.delete(repeaterName);
@@ -60,8 +73,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
     }
     this._render();
   }
-
-  // ── Renderowanie pojedynczego repeatera ────────────────────────────────────
 
   private _renderRepeater(r: RepeaterData, t: LocalizeFunc): string {
     const { name, online, battery, rssi, snr, noise, uptime, temp, neighbors, entityIds } = r;
@@ -75,7 +86,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       displayName = displayName.substring(19);
     }
 
-    // Status dot
     let dotClass = "offline";
     if (online) {
       dotClass = "online";
@@ -83,7 +93,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       dotClass = "warning";
     }
 
-    // Uptime - skrócony
     let uptimeShort = uptime || "";
     if (uptimeShort.length > 8) {
       const parts = uptimeShort.split(" ");
@@ -94,9 +103,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
 
     const batteryColorStyle = battery ? batteryColor(battery) : "";
 
-    // ============================================================
-    // HEADER – bateria klikalna
-    // ============================================================
     const headerRightHtml = `
       <div class="qr-header-right">
         ${battery && entityIds.battery ? `
@@ -114,9 +120,25 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       </div>
     `;
 
-    // ============================================================
-    // METRYKI LEWE – SNR, RSSI, Noise – wszystkie klikalne
-    // ============================================================
+    const mainEntityId = entityIds.status || entityIds.snr || "";
+
+    // Offline – tylko nagłówek i komunikat
+    if (!online) {
+      return `
+        <div class="qr-repeater-card offline">
+          <div class="qr-repeater-header" data-entity="${escapeHtml(mainEntityId)}">
+            <span class="qr-status-dot ${dotClass}"></span>
+            <span class="qr-repeater-name">${escapeHtml(displayName)}</span>
+            ${headerRightHtml}
+          </div>
+          <div style="display: flex; text-align: center; justify-content: center; padding: 5px 0; color: var(--error-color, #f44336); font-weight: 700; font-size: 1.2rem; letter-spacing: 0.05em;">
+            ${escapeHtml(t("card.offline_message") || "This repeater is currently offline. No data available.")}
+          </div>
+        </div>
+      `;
+    }
+
+    // Online – metryki i sąsiedzi
     let metricsLeftHtml = "";
     if (snr && entityIds.snr) {
       metricsLeftHtml += `<span class="qr-metric clickable" data-entity="${escapeHtml(entityIds.snr)}"><ha-icon icon="mdi:signal"></ha-icon><span class="qr-metric-value">${escapeHtml(snr)} dB</span></span>`;
@@ -136,9 +158,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       metricsLeftHtml += `<span class="qr-metric"><ha-icon icon="mdi:speaker"></ha-icon><span class="qr-metric-value">${escapeHtml(noise)} dBm</span></span>`;
     }
 
-    // ============================================================
-    // METRYKI PRAWE – Temperatura (klikalna)
-    // ============================================================
     let metricsRightHtml = "";
     if (temp !== null && temp !== "unknown" && temp !== "unavailable" && entityIds.temp) {
       metricsRightHtml += `
@@ -156,9 +175,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       </div>
     `;
 
-    // ============================================================
-    // SĄSIEDZI – z filtrowaniem i klikalnymi elementami
-    // ============================================================
     let neighborsHtml = "";
     const filteredNeighbors = filterNeighbors(neighbors, {
       skipUnavailable: true,
@@ -216,10 +232,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
       `;
     }
 
-    // ============================================================
-    // GŁÓWNY KONTENER REPEATERA
-    // ============================================================
-    const mainEntityId = entityIds.status || entityIds.snr || "";
     return `
       <div class="qr-repeater-card">
         <div class="qr-repeater-header" data-entity="${escapeHtml(mainEntityId)}">
@@ -233,8 +245,7 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
     `;
   }
 
-  // ── Główny render ──────────────────────────────────────────────────────────
-
+  // ── Główny render ──────────────────────────────────────────────────────
   protected _render(): void {
     if (!this._hass || !this._config) return;
     const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
@@ -268,7 +279,6 @@ export class MeshcoreQuickRepeaterCard extends MeshcoreBaseCard {
   }
 }
 
-// ===================== EDITOR =====================
 export class MeshcoreQuickRepeaterCardEditor extends HTMLElement {
   private _config?: MeshcoreQuickRepeaterConfig;
   private _hass?: HomeAssistant;

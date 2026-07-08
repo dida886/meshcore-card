@@ -176,9 +176,17 @@ export const MESSAGE_STYLES: string = `
   }
 
   /* ---------- Mention highlight ---------- */
-  .mention {
+  .mention-dark {
     background: rgba(255, 215, 0, 0.2);
     color: #ffd700;
+    padding: 1px 6px;
+    border-radius: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .mention-white {
+    background: rgba(255, 215, 0, 0.2);
+    color: #f06b23;
     padding: 1px 6px;
     border-radius: 12px;
     font-weight: 500;

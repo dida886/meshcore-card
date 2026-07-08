@@ -505,7 +505,12 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!text) return "";
     let escaped = escapeHtml(text);
     escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, url => `<a class="message-link" data-url="${escapeHtml(url)}" href="#">${escapeHtml(url)}</a>`);
-    escaped = escaped.replace(/@\[([^\]]+)\]/g, (_, name) => `<span class="mention">${escapeHtml(name.trim())}</span>`);
+    const textColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--primary-text-color')
+    .trim()
+    const isLightTheme = textColor === '#141414' || textColor === 'rgb(20, 20, 20)';
+    const particleColor = isLightTheme ? 'white' : 'dark';
+    escaped = escaped.replace(/@\[([^\]]+)\]/g, (_, name) => `<span class="mention-${particleColor}">${escapeHtml(name.trim())}</span>`);
     return escaped;
   }
 

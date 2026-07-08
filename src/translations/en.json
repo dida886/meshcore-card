@@ -98,11 +98,11 @@
     "show_hub_technical": "Show Technical section",
     "show_hub_signal": "Show Signal section",
     "show_hub_traffic": "Show Traffic section",
-    "show_hub_advanced": "Show Advanced stats",
     "show_hub_location": "Show Location section",
     "show_hub_mqtt": "Show MQTT section",
     "show_this_node": "Show this node",
     "show_hub_advert_buttons": "Show Advert buttons",
+    "disabled_animations": "Disable animations",
     "battery_entity": "Battery % entity (blank = auto-detect)",
     "voltage_entity": "Voltage entity (blank = auto-detect)",
     "location_entity": "Location entity with latitude/longitude attributes (optional)",
@@ -127,7 +127,8 @@
     "filter_client": "Client",
     "show_hide_nodes": "Show/Hide nodes",
     "node_type_filter": "Default node type filter",
-    "node_type_filter_label": "Node type filter"
+    "node_type_filter_label": "Node type filter",
+    "neighbors_expanded_default": "Default neighbors expanded"
   },
   "message-card": {
     "send_message": "SEND MESHCORE MESSAGE",

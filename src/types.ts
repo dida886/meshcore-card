@@ -50,16 +50,17 @@ export interface MeshcoreCardConfig {
   grid_options?: GridOptions;
   show_hub_technical?: boolean;
   show_hub_signal?: boolean;    
-  show_hub_traffic?: boolean;     
-  show_hub_advanced?: boolean;    
+  show_hub_traffic?: boolean;      
   show_hub_location?: boolean;    
   show_hub_mqtt?: boolean;
   show_hub_advert_buttons?: boolean;
+  disabled_animations?: boolean;
 }
 export interface MeshcoreNodeCardConfig {
   node_type_filter?:  "all" | "repeater" | "room" | "sensor" | "client";
   hidden_nodes?: string[];
   grid_options?: GridOptions;
+  neighbors_expanded_default?: boolean;
 }
 
 export interface MeshcoreContactCardConfig {

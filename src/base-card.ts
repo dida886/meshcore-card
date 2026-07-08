@@ -15,16 +15,19 @@ export abstract class MeshcoreBaseCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this.shadowRoot!.addEventListener("click", (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.closest(".action-btn") || target.closest(".filter-btn")) return;
-      const el = target.closest("[data-entity]") as HTMLElement | null;
-      if (el?.dataset["entity"]) {
-        const event = new Event("hass-more-info", { bubbles: true, composed: true });
-        (event as any).detail = { entityId: el.dataset["entity"] };
-        this.dispatchEvent(event);
-      }
-    });
+    this.shadowRoot!.addEventListener("click", (e: Event) => this.handleClick(e));
+  }
+
+  /** Domyślna obsługa kliknięć – otwiera „więcej informacji” po kliknięciu encji */
+  protected handleClick(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (target.closest(".action-btn") || target.closest(".filter-btn")) return;
+    const el = target.closest("[data-entity]") as HTMLElement | null;
+    if (el?.dataset["entity"]) {
+      const event = new Event("hass-more-info", { bubbles: true, composed: true });
+      (event as any).detail = { entityId: el.dataset["entity"] };
+      this.dispatchEvent(event);
+    }
   }
 
   disconnectedCallback() {
