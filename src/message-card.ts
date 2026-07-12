@@ -1,4 +1,4 @@
-import type { HomeAssistant, MeshcoreMessageCardConfig, HubInfo } from "./types.js";
+import type { HomeAssistant, MeshcoreMessageCardConfig } from "./types.js";
 import { escapeHtml } from "./helpers.js";
 import { STYLES } from "./styles.js";
 import { MESSAGE_STYLES } from "./message-styles.js";
@@ -33,11 +33,6 @@ export class MeshcoreMessageCard extends HTMLElement {
   private static _globalChannelsCache: any[] | null = null;
   private static _repeaterNamesMapCache: Map<string, string> | null = null;
   private static _repeaterNamesPrefixCache: Map<string, string> | null = null;
-
-  // Wielo-hubowe
-  private _hubs: HubInfo[] = [];
-  private _selectedHubPubkey: string | null = null;
-
 
   constructor() {
     super();
@@ -286,7 +281,6 @@ export class MeshcoreMessageCard extends HTMLElement {
               const senderName = event.data.sender_name || "Unknown";
               const entityId = event.data.entity_id || "";
               const eventTimestamp = event.data.timestamp || Date.now() / 1000;
-              if (this._selectedHubPubkey && entityId && !entityId.includes(`_${this._selectedHubPubkey}_`)) return;
               if (entityId) {
                 this._indexRxLogEntry(entityId, logData.timestamp, {
                   senderName, rssi: logData.rssi, snr: logData.snr, path: logData.path,
@@ -318,24 +312,26 @@ export class MeshcoreMessageCard extends HTMLElement {
     return null;
   }
 
-  private _getHubs(): HubInfo[] {
-    if (!this._hass) return [];
-    this._hubs = discoverHubs(this._hass);
-    return this._hubs;
-  }
-
   private _getMyHubName(): string {
-    if (!this._hass || !this._selectedHubPubkey) return "Hub";
-    const hub = this._hubs.find(h => h.pubkey === this._selectedHubPubkey);
-    return hub ? hub.name : "Hub";
+    if (!this._hass) return "Hub";
+    const hubs = discoverHubs(this._hass);
+    if (hubs.length > 0) return hubs[0].name;
+    const channelSelect = Object.values(this._hass.states).find(s => s.entity_id === "select.meshcore_channel");
+    if (channelSelect && channelSelect.attributes.friendly_name) {
+      const match = channelSelect.attributes.friendly_name.match(/MeshCore\s+([^\s(]+)/i);
+      if (match) return match[1];
+    }
+    for (const [entityId, state] of Object.entries(this._hass.states)) {
+      if ((entityId.includes("_node_status") || entityId.includes("_status")) && state.attributes?.adv_name)
+        return state.attributes.adv_name;
+    }
+    return "Hub";
   }
 
   private _getChannels(): any[] {
-    if (!this._hass || !this._selectedHubPubkey) return [];
+    if (!this._hass) return [];
     if (MeshcoreMessageCard._globalChannelsCache) return MeshcoreMessageCard._globalChannelsCache;
-    const channelSelect = Object.values(this._hass.states).find(s =>
-      s.entity_id === `select.meshcore_${this._selectedHubPubkey}_channel`
-    );
+    const channelSelect = Object.values(this._hass.states).find(s => s.entity_id === "select.meshcore_channel");
     if (!channelSelect) return [];
     const options = channelSelect.attributes.options || [];
     const channels = options.map((opt: string, idx: number) => {
@@ -353,17 +349,13 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private _getContacts(): any[] {
-    if (!this._hass || !this._selectedHubPubkey) return [];
+    if (!this._hass) return [];
     if (MeshcoreMessageCard._globalContactsCache) return MeshcoreMessageCard._globalContactsCache;
-    const contactSelect = Object.values(this._hass.states).find(s =>
-      s.entity_id === `select.meshcore_${this._selectedHubPubkey}_contact`
-    );
+    const contactSelect = Object.values(this._hass.states).find(s => s.entity_id === "select.meshcore_contact");
     if (!contactSelect) return [];
     const options = contactSelect.attributes.options || [];
     const contacts: any[] = [];
-    const contactSensors = Object.entries(this._hass.states).filter(([id]) =>
-      id.includes(this._selectedHubPubkey!) && /^binary_sensor\.meshcore_.*_contact$/.test(id)
-    );
+    const contactSensors = Object.entries(this._hass.states).filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id));
     for (const option of options) {
       let advId: string | null = null;
       let cleanName = option;
@@ -383,19 +375,18 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private _findMessagesEntity(id: number | string, type: "channel" | "contact"): string | null {
-    if (!this._hass || !this._selectedHubPubkey) return null;
-    const hubPrefix = `meshcore_${this._selectedHubPubkey}`;
+    if (!this._hass) return null;
     if (type === "channel") {
       const channelIdx = id as number;
       for (const [entityId] of Object.entries(this._hass.states)) {
-        if (entityId.includes(hubPrefix) && entityId.includes(`_ch_${channelIdx}_messages`)) return entityId;
+        if (entityId.includes(`_ch_${channelIdx}_messages`) && entityId.startsWith("binary_sensor.meshcore")) return entityId;
       }
       return null;
     } else {
       const pubkey = id as string;
       const shortId = pubkey.substring(0, 6);
       for (const [entityId] of Object.entries(this._hass.states)) {
-        if (entityId.includes(hubPrefix) && entityId.includes(`_${shortId}_messages`)) return entityId;
+        if (entityId.includes(`_${shortId}_messages`) && entityId.startsWith("binary_sensor.meshcore")) return entityId;
       }
       return null;
     }
@@ -495,8 +486,8 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (statusDiv) { statusDiv.textContent = t("message-card.sending"); statusDiv.style.color = "var(--secondary-text-color)"; }
     const hass = this._hass as any;
     const serviceCall = this._messageType === "channel"
-      ? hass.callService("meshcore", "send_channel_message", { channel_idx: parseInt(targetValue), message, hub_pubkey: this._selectedHubPubkey })
-      : hass.callService("meshcore", "send_message", { pubkey_prefix: targetValue, message, hub_pubkey: this._selectedHubPubkey });
+      ? hass.callService("meshcore", "send_channel_message", { channel_idx: parseInt(targetValue), message })
+      : hass.callService("meshcore", "send_message", { pubkey_prefix: targetValue, message });
     serviceCall
       .then(() => {
         if (statusDiv) { statusDiv.textContent = t("message-card.sent", { type: this._messageType === "channel" ? t("message-card.to_channel") : t("message-card.direct") }); statusDiv.style.color = "var(--success-color)"; }
@@ -515,8 +506,8 @@ export class MeshcoreMessageCard extends HTMLElement {
     let escaped = escapeHtml(text);
     escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, url => `<a class="message-link" data-url="${escapeHtml(url)}" href="#">${escapeHtml(url)}</a>`);
     const textColor = getComputedStyle(document.documentElement)
-      .getPropertyValue('--primary-text-color')
-      .trim();
+    .getPropertyValue('--primary-text-color')
+    .trim()
     const isLightTheme = textColor === '#141414' || textColor === 'rgb(20, 20, 20)';
     const particleColor = isLightTheme ? 'white' : 'dark';
     escaped = escaped.replace(/@\[([^\]]+)\]/g, (_, name) => `<span class="mention-${particleColor}">${escapeHtml(name.trim())}</span>`);
@@ -911,13 +902,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!this._hass || !this._config) return;
     if (this._defaultChannel !== null) this._messageType = "channel";
     const t = this._getTranslations();
-
-    // Inicjalizacja hubów
-    this._getHubs();
-    if (!this._selectedHubPubkey && this._hubs.length > 0) {
-      this._selectedHubPubkey = this._hubs[0].pubkey;
-    }
-
     const channels = this._getChannels();
     const contacts = this._getContacts();
 
@@ -930,13 +914,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     this.shadowRoot!.innerHTML = `<style>${STYLES}${MESSAGE_STYLES}</style>
       <ha-card>
         <div class="section-header"><ha-icon icon="mdi:message-text"></ha-icon><span>${t("message-card.send_message")}</span></div>
-        ${this._hubs.length > 1 ? `
-        <div class="input-group">
-          <div class="label"><ha-icon icon="mdi:router-wireless"></ha-icon><span>${t("message-card.select_hub")}</span></div>
-          <select id="hub-select">
-            ${this._hubs.map(hub => `<option value="${hub.pubkey}" ${hub.pubkey === this._selectedHubPubkey ? 'selected' : ''}>${escapeHtml(hub.name)} (${escapeHtml(hub.pubkey)})</option>`).join('')}
-          </select>
-        </div>` : ''}
         <div class="radio-group">
           <label class="radio-option ${this._messageType === "channel" ? "selected" : ""}"><input type="radio" name="message-type" value="channel" ${this._messageType === "channel" ? "checked" : ""}><ha-icon icon="mdi:pound"></ha-icon><span>${t("message-card.channel")}</span></label>
           <label class="radio-option ${this._messageType === "contact" ? "selected" : ""}"><input type="radio" name="message-type" value="contact" ${this._messageType === "contact" ? "checked" : ""}><ha-icon icon="mdi:account"></ha-icon><span>${t("message-card.contact")}</span></label>
@@ -956,18 +933,6 @@ export class MeshcoreMessageCard extends HTMLElement {
     this.shadowRoot!.querySelector("#send-btn")?.addEventListener("click", () => this._sendMessage());
     this.shadowRoot!.querySelector("#refresh-history")?.addEventListener("click", async () => { await this._fetchRxLogFromFile(); this._loadMessages(); });
     this.shadowRoot!.querySelector("#target-select")?.addEventListener("change", () => this._fullUpdate());
-
-    // Listener dla selektora huba
-    this.shadowRoot!.querySelector("#hub-select")?.addEventListener("change", (e) => {
-    this._selectedHubPubkey = (e.target as HTMLSelectElement).value;
-    MeshcoreMessageCard._globalChannelsCache = null;
-    MeshcoreMessageCard._globalContactsCache = null;
-    this._rxLogData.clear();
-    this._initialFileLoadDone = false;
-    this._initFileRefresh();
-    this._updateTargetListOnly();
-    this._fullUpdate();
-  });
 
     const updateRadioStyles = () => {
       const opts = this.shadowRoot!.querySelectorAll(".radio-option");
