@@ -159,6 +159,7 @@
     "contact_unavailable": "Kontakt lub encja jest obecnie N/A.",
     "copied": "Skopiowano!",
     "no_path_data": "Brak danych dotyczących ścieżki",
-    "unknown_repeater": "Nieznany repeater ({id})"
+    "unknown_repeater": "Nieznany repeater ({id})",
+    "select_hub": "Wybierz centrum"
   }
 }

@@ -161,6 +161,7 @@
     "contact_unavailable": "Contact or entity is currently N/A.",
     "copied": "Copied!",
     "no_path_data": "No path data",
-    "unknown_repeater": "Unknown repeater ({id})"
+    "unknown_repeater": "Unknown repeater ({id})",
+    "select_hub": "Select hub"
   }
 }

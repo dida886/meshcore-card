@@ -326,8 +326,11 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
           </div>
         </div>
         ${hwModel || firmware ? `<div class="hw-info">${[hwModel, firmware].filter(Boolean).map((s) => escapeHtml(s)).join(" • ")}</div>` : ""}
-        ${battPct !== null && battV !== null ? renderBatteryPanel(battPct, battV, battPctId, battVId, t) : ""}
-    `;
+        ${battPct &&
+          battV &&
+          parseFloat(battPct.replace(',', '.')) !== 0 &&
+          parseFloat(battV.replace(',', '.')) !== 0 ? renderBatteryPanel(battPct, battV, battPctId, battVId, t) : ""}
+        `;
 
     if (showSignal && (rssi || snr || noise)) {
       html += `

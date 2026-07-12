@@ -160,6 +160,7 @@
     "contact_unavailable": "Contact of entiteit is momenteel N/A.",
     "copied": "Gekopieerd!",
     "no_path_data": "Geen padgegevens",
-    "unknown_repeater": "Onbekend repeater ({id})"
+    "unknown_repeater": "Onbekend repeater ({id})",
+    "select_hub": "Kies een hub"
   }
 }

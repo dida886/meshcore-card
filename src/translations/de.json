@@ -159,6 +159,7 @@
     "contact_unavailable": "Kontakt oder Entität ist derzeit N/A.",
     "copied": "Gespeichert!",
     "no_path_data": "Keine Pfaddaten",
-    "unknown_repeater": "Unbekannter Repeater ({id})"
+    "unknown_repeater": "Unbekannter Repeater ({id})",
+    "select_hub": "Hub auswählen"
   }
 }
