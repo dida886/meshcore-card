@@ -38,6 +38,7 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _hubs: HubInfo[] = [];
   private _selectedHubPubkey: string | null = null;
 
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -958,12 +959,15 @@ export class MeshcoreMessageCard extends HTMLElement {
 
     // Listener dla selektora huba
     this.shadowRoot!.querySelector("#hub-select")?.addEventListener("change", (e) => {
-      this._selectedHubPubkey = (e.target as HTMLSelectElement).value;
-      MeshcoreMessageCard._globalChannelsCache = null;
-      MeshcoreMessageCard._globalContactsCache = null;
-      this._updateTargetListOnly();
-      this._fullUpdate();
-    });
+    this._selectedHubPubkey = (e.target as HTMLSelectElement).value;
+    MeshcoreMessageCard._globalChannelsCache = null;
+    MeshcoreMessageCard._globalContactsCache = null;
+    this._rxLogData.clear();
+    this._initialFileLoadDone = false;
+    this._initFileRefresh();
+    this._updateTargetListOnly();
+    this._fullUpdate();
+  });
 
     const updateRadioStyles = () => {
       const opts = this.shadowRoot!.querySelectorAll(".radio-option");
