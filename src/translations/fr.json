@@ -84,7 +84,8 @@
     "no_data": "N/A",
     "noise_label": "Bruit",
     "offline_message": "Le nœud est actuellement hors ligne. Aucune donnée n'est disponible.",
-    "signal_high": "Élevé"
+    "signal_high": "Élevé",
+    "mains_powered": "Alimenté sur secteur"
   },
   "time": {
     "s_ago": "il y a {n}s",
@@ -126,7 +127,8 @@
     "filter_client": "Client",
     "show_hide_nodes": "Afficher/Masquer les nœuds",
     "node_type_filter": "Filtre de type de nœud par défaut",
-    "disabled_animations": "Désactiver les animations"
+    "disabled_animations": "Désactiver les animations",
+    "neighbors_expanded_default": "Voisins par défaut développés"
   },
   "message-card": {
     "send_message": "ENVOYER UN MESSAGE MESHCORE",

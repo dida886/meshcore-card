@@ -228,7 +228,7 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
   // ── Hub rendering ──────────────────────────────────────────────────────────
 
   private _renderHub(hub: HubInfo, t: LocalizeFunc): string {
-    const { pubkey, name } = hub;
+    const { pubkey, name, swVersion } = hub;
     const e = (m: string) => this._hubEntity(pubkey, name, m);
 
     const showTech = this._config?.show_hub_technical ?? true;
@@ -297,6 +297,7 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
     } else if (displayName.toLowerCase().startsWith("meshcore")) {
       displayName = displayName.substring(8);
     }
+    displayName = displayName.replace(`(${pubkey})`, '');
 
     let html = `
       <div class="node-block ${online ? "" : "node-offline"}">
@@ -311,9 +312,12 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
               <span class="hub-type-pill">HUB</span>
             </div>
             <div class="hub-card-main-row">
-              <div class="hub-card-title-line">
-                <span class="hub-name">${escapeHtml(displayName)}</span>
-                <span class="hub-id-pill clickable" data-entity="${escapeHtml(statusId ?? countId)}">(${escapeHtml(pubkey)})</span>
+              <div style="display: flex; flex-direction: column; min-width: 0;">
+                <div class="hub-card-title-line">
+                  <span class="hub-name">${escapeHtml(displayName)}</span>
+                  <span class="hub-id-pill clickable" data-entity="${escapeHtml(statusId ?? countId)}">(${escapeHtml(pubkey)})</span>
+                </div>
+                ${swVersion ? `<span class="hub-swversion-sub">${escapeHtml(swVersion)}</span>` : ""}
               </div>
               <div class="hub-card-meta-row">
                 ${nodeCount && nodeCount !== "N/A" ? `<span class="hub-meta-pill clickable" data-entity="${escapeHtml(countId)}">${escapeHtml(t("card.nodes_count", { n: nodeCount }))}</span>` : ""}
@@ -322,7 +326,7 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
           </div>
         </div>
         ${hwModel || firmware ? `<div class="hw-info">${[hwModel, firmware].filter(Boolean).map((s) => escapeHtml(s)).join(" • ")}</div>` : ""}
-        ${battPct !== null ? renderBatteryPanel(battPct, battV, battPctId, battVId, t) : ""}
+        ${battPct !== null && battV !== null ? renderBatteryPanel(battPct, battV, battPctId, battVId, t) : ""}
     `;
 
     if (showSignal && (rssi || snr || noise)) {

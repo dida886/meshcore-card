@@ -15,6 +15,7 @@ export interface HassDeviceRegistryEntry {
   id: string;
   name: string | null;
   name_by_user: string | null;
+  sw_version: string | null;
   manufacturer: string | null;
   model: string | null;
   via_device_id?: string | null;
@@ -82,6 +83,7 @@ export interface HubInfo {
   pubkey: string;
   name: string;
   nodeCountEntity: string;
+  swVersion: string;
 }
 
 export interface NodeInfo {

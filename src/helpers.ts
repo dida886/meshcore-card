@@ -302,6 +302,113 @@ export function filterNeighbors(
 }
 
 // ============================================
+// GLOBALNY INDEKS SĄSIADÓW (OPTYMALIZACJA)
+// ============================================
+
+/**
+ * Buduje indeks: deviceId → NeighborInfo[]
+ * Wywołaj raz na render, potem używaj getNeighborsFromIndex.
+ */
+export function buildNeighborsIndex(hass: HomeAssistant): Map<string, NeighborInfo[]> {
+  const result = new Map<string, NeighborInfo[]>();
+
+  if (!hass?.entities) return result;
+
+  // Najpierw zbuduj mapę adv_id → { entityId, name } dla szybkiego wyszukiwania kontaktów
+  const contactByAdvId = new Map<string, { entityId: string; name: string }>();
+  for (const [entityId, state] of Object.entries(hass.states)) {
+    if (!/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) continue;
+    const advId = (state.attributes as Record<string, unknown>)["adv_id"];
+    if (advId) {
+      const name = ((state.attributes as Record<string, unknown>)["adv_name"] as string) || String(advId).substring(0, 8);
+      contactByAdvId.set(String(advId), { entityId, name });
+    }
+  }
+
+  // Grupuj encje po deviceId
+  const entityIdsByDevice = new Map<string, string[]>();
+  for (const [entityId, info] of Object.entries(hass.entities)) {
+    if (!info.device_id) continue;
+    if (!entityIdsByDevice.has(info.device_id)) entityIdsByDevice.set(info.device_id, []);
+    entityIdsByDevice.get(info.device_id)!.push(entityId);
+  }
+
+  // Dla każdego deviceId zbierz sąsiadów
+  for (const [deviceId, entityIds] of entityIdsByDevice) {
+    const neighborMap = new Map<string, {
+      snr?: number; snrId?: string;
+      lastSeen?: number; rawSeen?: string;
+    }>();
+
+    for (const entityId of entityIds) {
+      const seenMatch = entityId.match(/_neighbor_([0-9a-f]+)_seen$/);
+      if (seenMatch) {
+        const nid = seenMatch[1];
+        if (!neighborMap.has(nid)) neighborMap.set(nid, {});
+        const seenVal = getEntityState(hass, entityId);
+        if (seenVal !== null && seenVal !== "unknown" && seenVal !== "unavailable") {
+          neighborMap.get(nid)!.rawSeen = seenVal;
+        }
+        continue;
+      }
+
+      const neighborMatch = entityId.match(/_neighbor_([0-9a-f]+)$/);
+      if (neighborMatch && !entityId.endsWith("_seen")) {
+        const nid = neighborMatch[1];
+        if (!neighborMap.has(nid)) neighborMap.set(nid, {});
+        const val = getEntityState(hass, entityId);
+        const stateObj = hass.states[entityId];
+        let ts: number | null = null;
+        if (stateObj?.last_changed) ts = new Date(stateObj.last_changed).getTime() / 1000;
+        else if (stateObj?.last_updated) ts = new Date(stateObj.last_updated).getTime() / 1000;
+
+        const existing = neighborMap.get(nid)!;
+        if (ts && (!existing.lastSeen || ts < existing.lastSeen)) existing.lastSeen = ts;
+        if (val !== null && val !== "unknown" && val !== "unavailable") {
+          const num = parseFloat(val);
+          if (!isNaN(num)) { existing.snr = num; existing.snrId = entityId; }
+        }
+      }
+    }
+
+    const neighbors: NeighborInfo[] = [];
+    for (const [nid, data] of neighborMap) {
+      const contact = contactByAdvId.get(nid);
+      neighbors.push({
+        id: nid,
+        name: contact?.name ?? nid.substring(0, 8),
+        snr: data.snr ?? null,
+        lastSeen: data.lastSeen ?? null,
+        rawSeen: data.rawSeen ?? null,
+        contactEntityId: contact?.entityId ?? null,
+        snrId: data.snrId ?? null,
+      });
+    }
+
+    neighbors.sort((a, b) => {
+      const aSnr = a.snr !== null ? Number(a.snr) : -100;
+      const bSnr = b.snr !== null ? Number(b.snr) : -100;
+      return bSnr - aSnr;
+    });
+
+    result.set(deviceId, neighbors);
+  }
+
+  return result;
+}
+
+/**
+ * Wyciąga sąsiadów z gotowego indeksu.
+ * Używaj zamiast getNeighbors, gdy indeks został już zbudowany.
+ */
+export function getNeighborsFromIndex(
+  index: Map<string, NeighborInfo[]>,
+  deviceId: string
+): NeighborInfo[] {
+  return index.get(deviceId) ?? [];
+}
+
+// ============================================
 // DISCOVER REPEATERS
 // ============================================
 
@@ -426,7 +533,8 @@ export function signalGaugePct(value: number, variant: "rssi" | "snr" | "noise")
 
 export function discoverRepeaters(
   hass: HomeAssistant | undefined,
-  config?: { sort_by?: "snr" | "name" | "battery" }
+  config?: { sort_by?: "snr" | "name" | "battery" },
+  neighborsIndex?: Map<string, NeighborInfo[]>
 ): RepeaterData[] {
   if (!hass) return [];
   const nodes = discoverNodes(hass);
@@ -508,7 +616,9 @@ export function discoverRepeaters(
     const uptimeRaw = uptimeId ? getEntityState(hass, uptimeId) : null;
     const uptime = uptimeRaw ? formatUptime(uptimeRaw) : null;
 
-    const neighbors = getNeighbors(hass, deviceId);
+    const neighbors = neighborsIndex
+      ? getNeighborsFromIndex(neighborsIndex, deviceId)
+      : getNeighbors(hass, deviceId);
 
     result.push({
       name,

@@ -422,7 +422,7 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
 
     // Bateria
     if (battPct !== null) {
-      html += renderBatteryPanel(battPct, battV, battPctId, battVId, t);
+      html += `${battPct !== null && battV !== null ? renderBatteryPanel(battPct, battV, battPctId, battVId, t) : ""}`;
     }
 
     // Signal

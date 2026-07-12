@@ -1,4 +1,9 @@
 import type { HomeAssistant, HubInfo, NodeInfo } from "./types.js";
+let _cachedHubsFingerprint: string | null = null;
+let _cachedHubs: HubInfo[] | null = null;
+
+let _cachedNodesFingerprint: string | null = null;
+let _cachedNodes: NodeInfo[] | null = null;
 
 // ============================================
 // FUNKCJE POMOCNICZE (przeniesione z helpers.ts)
@@ -15,10 +20,6 @@ function longestCommonSuffix(strs: string[]): string {
   const rev = strs.map((s) => [...s].reverse().join(""));
   return [...longestCommonPrefix(rev)].reverse().join("");
 }
-
-// ============================================
-// GŁÓWNE FUNKCJE DISCOVERY
-// ============================================
 
 function majoritySuffix(strs: string[]): string {
   if (strs.length <= 1) return longestCommonSuffix(strs);
@@ -39,18 +40,65 @@ function majoritySuffix(strs: string[]): string {
 }
 
 export function discoverHubs(hass: HomeAssistant): HubInfo[] {
+  // Szybki fingerprint – zmiana stanu huba = zmiana wyniku
+  const fp = Object.keys(hass.states)
+    .filter(id => id.includes('meshcore') && id.includes('node_count'))
+    .map(id => `${id}=${hass.states[id]?.state}`)
+    .join('|');
+
+  if (fp === _cachedHubsFingerprint && _cachedHubs) {
+    return _cachedHubs;
+  }
+
   const hubs: Record<string, HubInfo> = {};
   const re = /^sensor\.meshcore_([a-f0-9]+)_node_count(?:_(.+))?$/;
   for (const id of Object.keys(hass.states)) {
     const m = id.match(re);
     if (m && !hubs[m[1]]) {
-      hubs[m[1]] = { pubkey: m[1], name: m[2] || m[1], nodeCountEntity: id };
+      let hubName = m[2] || m[1]; // Fallback do object_id
+      const entityInfo = hass.entities[id];
+      if (entityInfo?.device_id) {
+        const device = hass.devices[entityInfo.device_id];
+        let swVersion = device?.sw_version || '';
+        if (device && device.name_by_user) {
+          hubName = device.name_by_user;
+          hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
+        }
+        else {  
+          const state = hass.states[id];
+          const friendlyName = state?.attributes?.friendly_name;
+          if (friendlyName &&typeof friendlyName === 'string') {
+            // Usuń przyrostek " Node Count" z przyjaznej nazwy
+            hubName = friendlyName.replace(/\s*Node Count\s*$/i, '') || hubName;
+            hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
+          }
+          else {
+            hubName = device.name || hubName;
+            hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
+          }
+        }          
+        
+      } 
+      
     }
   }
-  return Object.values(hubs);
+
+  const result = Object.values(hubs);
+  _cachedHubsFingerprint = fp;
+  _cachedHubs = result;
+  return result;
 }
 
 export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
+   const fp = Object.keys(hass.states)
+    .filter(id => id.includes('meshcore'))
+    .map(id => `${id}=${hass.states[id]?.state}`)
+    .join('|');
+
+  if (fp === _cachedNodesFingerprint && _cachedNodes) {
+    return _cachedNodes;
+  }
+
   if (!hass.entities || !hass.devices) return [];
 
   const hubDeviceIds = new Set<string>();

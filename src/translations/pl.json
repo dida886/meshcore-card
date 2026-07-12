@@ -84,7 +84,8 @@
     "no_data": "brak danych",
     "noise_label": "Szum",
     "offline_message": "Węzeł jest aktualnie offline. Brak dostępnych danych.",
-    "signal_high": "Wysoki"
+    "signal_high": "Wysoki",
+    "mains_powered": "Zasilanie z sieci elektrycznej"
   },
   "time": {
     "s_ago": "{n} s temu",
@@ -126,7 +127,8 @@
     "filter_client": "Klient",
     "show_hide_nodes": "Pokaż/Ukryj węzły",
     "node_type_filter": "Domyślny filtr typu węzła",
-    "disabled_animations": "Wyłącz animacje"
+    "disabled_animations": "Wyłącz animacje",
+    "neighbors_expanded_default": "Rozwiń listę sąsiadów domyślnych"
   },
   "message-card": {
     "send_message": "WYŚLIJ WIADOMOŚĆ MESHCORE",

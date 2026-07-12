@@ -84,7 +84,8 @@
     "no_data": "n.v.t.",
     "noise_label": "Geluid",
     "offline_message": "Het knooppunt is momenteel offline. Er zijn geen gegevens beschikbaar.",
-    "signal_high": "Hoog"
+    "signal_high": "Hoog",
+    "mains_powered": "Op netstroom aangesloten"
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -126,7 +127,8 @@
     "filter_client": "Klant",
     "show_hide_nodes": "Knooppunten weergeven/verbergen",
     "node_type_filter": "Standaardfilter voor knooppunttypen",
-    "disabled_animations": "Animaties uitschakelen"
+    "disabled_animations": "Animaties uitschakelen",
+    "neighbors_expanded_default": "Standaardburen zijn uitgevouwen"
   },
   "message-card": {
     "send_message": "MESHCORE-BERICHT VERSTUREN",

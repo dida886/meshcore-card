@@ -84,7 +84,9 @@
     "signal_no_link": "No Link",
     "no_data": "N/A",
     "noise_label": "Noise",
-    "offline_message": "Node is currently offline. No data available."
+    "offline_message": "Node is currently offline. No data available.",
+    "mains_powered": "Mains powered"
+
 
   },
   "time": {

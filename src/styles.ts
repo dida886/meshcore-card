@@ -1746,6 +1746,12 @@ export const STYLES: string = `
     font-weight: 500;
     transition: opacity 0.3s;
   }
+    .hub-swversion-sub {
+    font-size: 12px;
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+    padding-left: 2px;
+  }
 
   /* ============================================ */
   /* RESPONSYWNOŚĆ – EKRANY PONIŻEJ 500px */

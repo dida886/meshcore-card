@@ -84,7 +84,8 @@
     "no_data": "k. A.",
     "noise_label": "Lärm",
     "offline_message": "Der Knoten ist derzeit offline. Es liegen keine Daten vor.",
-    "signal_high": "Hoch"
+    "signal_high": "Hoch",
+    "mains_powered": "Netzbetrieben"
   },
   "time": {
     "s_ago": "vor {n}s",
@@ -126,7 +127,8 @@
     "filter_client": "Kunde",
     "show_hide_nodes": "Knoten anzeigen/ausblenden",
     "node_type_filter": "Standardfilter für Knotentypen",
-    "disabled_animations": "Animationen deaktivieren"
+    "disabled_animations": "Animationen deaktivieren",
+    "neighbors_expanded_default": "Standardnachbarn erweitert"
   },
   "message-card": {
     "send_message": "MESHCORE-NACHRICHT SENDEN",
