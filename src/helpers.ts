@@ -681,6 +681,7 @@ export function drawParticles(
     waveLength?: [number, number];
     speed?: number;
     animate?: boolean;
+    isVisible?: boolean; 
 
     floatingDots?: boolean;
     floatingDotsCount?: number;
@@ -692,6 +693,11 @@ export function drawParticles(
     opacity?: number;
   } = {}
 ): void {
+  if ((canvas as any)._animationId) {
+    cancelAnimationFrame((canvas as any)._animationId);
+    (canvas as any)._animationId = null;
+  }
+
   const parent = canvas.parentElement;
   if (!parent) return;
 
@@ -720,6 +726,7 @@ export function drawParticles(
     waveLength = [150, 380],
     speed = 0.034,
     animate = true,
+    isVisible = true,
 
     floatingDots = true,
     floatingDotsCount = 50,
@@ -751,8 +758,21 @@ export function drawParticles(
   })) : [];
 
   let time = 0;
-
+  let frameCount = 0;
   function drawFrame() {
+    frameCount++;
+    if (frameCount % 2 === 0) {
+      if (animate) {
+        (canvas as any)._animationId = requestAnimationFrame(drawFrame);
+      }
+      return;
+    }
+    if (!isVisible) {
+      if (animate) {
+        (canvas as any)._animationId = requestAnimationFrame(drawFrame);
+      }
+      return;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const pulseFactor = pulse ? (Math.sin(time * 1.8) * 0.08 + 1) : 1;
@@ -812,8 +832,159 @@ export function drawParticles(
     ctx.globalAlpha = 1;
 
     if (animate) time += speed;
-    requestAnimationFrame(drawFrame);
+    if (animate) (canvas as any)._animationId = requestAnimationFrame(drawFrame);
   }
 
   drawFrame();
+}
+export function drawTrafficBars(
+  canvas: HTMLCanvasElement,
+  options: {
+    columnCount?: number;
+    barWidth?: number;
+    barGap?: number;
+    minHeight?: number;
+    maxHeight?: number;
+    speed?: number;
+    color?: string;
+    glowColor?: string;
+    animate?: boolean;
+    borderRadius?: number;
+    isVisible?: boolean;
+  } = {}
+): void {
+  const {
+    columnCount = 30,
+    barWidth = 4,
+    barGap = 3,
+    minHeight = 2,
+    maxHeight = 30,
+    speed = 0.035,
+    color = '#00ff66',
+    glowColor = 'rgba(0, 255, 100, 0.8)',
+    animate = true,
+    borderRadius = 2,
+    isVisible = true,
+  } = options;
+
+  // Zatrzymaj poprzednią animację
+  if ((canvas as any)._animationId) {
+    cancelAnimationFrame((canvas as any)._animationId);
+    (canvas as any)._animationId = null;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(dpr, dpr);
+
+  const targets: number[] = Array.from({ length: columnCount }, (_, i) => {
+    const base = Math.sin(i * 0.3) * 0.5 + 0.5;
+    const noise = (Math.random() - 0.5) * 0.4;
+    return minHeight + Math.max(0, base + noise) * (maxHeight - minHeight);
+  });
+
+  const currentHeights: number[] = Array.from({ length: columnCount }, () => minHeight);
+  const phases: number[] = Array.from({ length: columnCount }, () => Math.random() * Math.PI * 2);
+  const pulseSpeeds: number[] = Array.from({ length: columnCount }, () => 0.01 + Math.random() * 0.03);
+
+  let time = 0;
+  let frameCount = 0;
+
+  function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+
+  function animateFrame() {
+    frameCount++;
+    // Pomijaj co drugą klatkę – zmniejsza obciążenie CPU
+    if (frameCount % 2 === 0) {
+      if (animate) {
+        (canvas as any)._animationId = requestAnimationFrame(animateFrame);
+      }
+      return;
+    }
+
+    if (!isVisible) {
+      if (animate) {
+        (canvas as any)._animationId = requestAnimationFrame(animateFrame);
+      }
+      return;
+    }
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    if (Math.random() < 0.08) {
+      const idx = Math.floor(Math.random() * columnCount);
+      const base = Math.sin(idx * 0.3 + time * 0.1) * 0.5 + 0.5;
+      const noise = (Math.random() - 0.5) * 0.4;
+      targets[idx] = minHeight + Math.max(0, base + noise) * (maxHeight - minHeight);
+    }
+
+    const totalWidth = columnCount * (barWidth + barGap) - barGap;
+    const startX = (rect.width - totalWidth) / 2;
+
+    for (let i = 0; i < columnCount; i++) {
+      currentHeights[i] += (targets[i] - currentHeights[i]) * speed;
+      const height = Math.max(minHeight, currentHeights[i]);
+      const x = startX + i * (barWidth + barGap);
+      const y = rect.height - height;
+
+      const pulse = Math.sin(time * pulseSpeeds[i] * 8 + phases[i]) * 0.1 + 0.95;
+      const alpha = 0.6 + (height / maxHeight) * 0.4;
+
+      const gradient = ctx.createLinearGradient(x, y, x, rect.height);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, color + '80');
+
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = glowColor;
+      ctx.globalAlpha = alpha * pulse;
+
+      if (borderRadius > 0) {
+        const radius = Math.min(borderRadius, barWidth / 2, height / 2);
+        drawRoundedRect(ctx, x, y, barWidth, height, radius);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, height);
+      }
+
+      if (height > 5) {
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#ffffff';
+        const glowHeight = Math.min(2, height * 0.15);
+        ctx.fillRect(x + 1, y, barWidth - 2, glowHeight);
+      }
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    time += 0.016;
+    if (animate) {
+      (canvas as any)._animationId = requestAnimationFrame(animateFrame);
+    }
+  }
+
+  animateFrame();
 }

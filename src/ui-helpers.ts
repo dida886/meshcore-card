@@ -1,4 +1,4 @@
-import { escapeHtml, getDisplayState, signalQualityLabel } from "./helpers.js";
+import { escapeHtml, getDisplayState, signalQualityLabel, drawTrafficBars } from "./helpers.js";
 import type { HomeAssistant } from "./types.js";
 import type { LocalizeFunc } from "./localize.js";
 
@@ -167,7 +167,7 @@ export function renderSignalCard(
 
   const icon = variant === "rssi" ? "mdi:wifi" 
              : variant === "snr"  ? "mdi:signal" 
-             : "mdi:speaker";
+             : "mdi:volume-high";
 
   return `
     <div class="signal-card ${variant}">
@@ -189,4 +189,158 @@ export function renderSignalCard(
       <div class="signal-quality ${variant}">${escapeHtml(qualityText)}</div>
     </div>
   `;
+}
+
+export interface TrafficBarsRendererConfig {
+  disabledAnimations?: boolean;
+}
+
+export function renderTrafficBars(
+  shadowRoot: ShadowRoot | null,
+  config: TrafficBarsRendererConfig = {}
+): void {
+  if (!shadowRoot) return;
+
+  const canvases = shadowRoot.querySelectorAll('.traffic-bars-canvas');
+  if (!canvases || canvases.length === 0) return;
+
+  const textColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--primary-text-color')
+    .trim();
+  const isLightTheme = textColor === '#141414' || textColor === 'rgb(20, 20, 20)';
+
+  canvases.forEach((canvas) => {
+    const parent = (canvas as HTMLElement).parentElement;
+    if (!parent) return;
+
+    const rect = parent.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    // Ustaw wymiary canvasu
+    const c = canvas as HTMLCanvasElement;
+    c.width = rect.width;
+    c.height = rect.height;
+    c.style.width = rect.width + 'px';
+    c.style.height = rect.height + 'px';
+
+    // Wykryj czy to SENT czy RECEIVED
+    let dotColor: string;
+    let dotGlow: string;
+    
+    // Sprawdź klasę rodzica
+    if (parent.classList.contains('sent')) {
+      // SENT - zielony
+      dotColor = isLightTheme ? '#1a7a3a' : '#00ff66';
+      dotGlow = isLightTheme ? 'rgba(26, 122, 58, 0.6)' : 'rgba(0, 255, 100, 0.8)';
+    } else if (parent.classList.contains('recv')) {
+      // RECEIVED - niebieski
+      dotColor = isLightTheme ? '#1a5a8a' : '#00cafd';
+      dotGlow = isLightTheme ? 'rgba(26, 90, 138, 0.6)' : 'rgba(0, 202, 253, 0.8)';
+    } else {
+      // Domyślne
+      dotColor = isLightTheme ? '#1e3a5f' : '#00ff66';
+      dotGlow = isLightTheme ? 'rgba(30, 58, 95, 0.6)' : 'rgba(0, 255, 100, 0.8)';
+    }
+
+    drawTrafficBars(c, {
+      columnCount: 50,
+      barWidth: 2,
+      barGap: 2,
+      minHeight: 2,
+      maxHeight: 35,
+      speed: 0.035,
+      color: dotColor,
+      glowColor: dotGlow,
+      animate: !config.disabledAnimations,
+      borderRadius: 1,
+    });
+  });
+}
+
+export function renderTrafficBarsWithOptions(
+  shadowRoot: ShadowRoot | null,
+  options: {
+    disabledAnimations?: boolean;
+    isVisible?: boolean;
+    columnCount?: number;
+    barWidth?: number;
+    barGap?: number;
+    minHeight?: number;
+    maxHeight?: number;
+    speed?: number;
+    borderRadius?: number;
+  } = {}
+): void {
+  if (!shadowRoot) return;
+
+  const {
+    disabledAnimations = false,
+    isVisible = true,
+    columnCount = 50,
+    barWidth = 2,
+    barGap = 2,
+    minHeight = 2,
+    maxHeight = 35,
+    speed = 0.035,
+    borderRadius = 1,
+  } = options;
+
+  const canvases = shadowRoot.querySelectorAll('.traffic-bars-canvas');
+  if (!canvases.length) return;
+
+  // Zatrzymaj wszystkie istniejące animacje na tych canvasach
+  canvases.forEach((canvas) => {
+    const c = canvas as HTMLCanvasElement;
+    if ((c as any)._animationId) {
+      cancelAnimationFrame((c as any)._animationId);
+      (c as any)._animationId = null;
+    }
+  });
+
+  const textColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--primary-text-color')
+    .trim();
+  const isLightTheme = textColor === '#141414' || textColor === 'rgb(20, 20, 20)';
+
+  canvases.forEach((canvas) => {
+    const parent = (canvas as HTMLElement).parentElement;
+    if (!parent) return;
+
+    const rect = parent.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const c = canvas as HTMLCanvasElement;
+    c.width = rect.width;
+    c.height = rect.height;
+    c.style.width = rect.width + 'px';
+    c.style.height = rect.height + 'px';
+
+    let dotColor: string;
+    let dotGlow: string;
+
+    if (parent.classList.contains('sent')) {
+      dotColor = isLightTheme ? '#1a7a3a' : '#00ff66';
+      dotGlow = isLightTheme ? 'rgba(26, 122, 58, 0.6)' : 'rgba(0, 255, 100, 0.8)';
+    } else if (parent.classList.contains('recv')) {
+      dotColor = isLightTheme ? '#1a5a8a' : '#00cafd';
+      dotGlow = isLightTheme ? 'rgba(26, 90, 138, 0.6)' : 'rgba(0, 202, 253, 0.8)';
+    } else {
+      dotColor = isLightTheme ? '#1e3a5f' : '#00ff66';
+      dotGlow = isLightTheme ? 'rgba(30, 58, 95, 0.6)' : 'rgba(0, 255, 100, 0.8)';
+    }
+
+    drawTrafficBars(c, {
+      columnCount,
+      barWidth,
+      barGap,
+      minHeight,
+      maxHeight,
+      speed,
+      color: dotColor,
+      glowColor: dotGlow,
+      animate: !disabledAnimations,
+      borderRadius,
+      isVisible,
+    });
+  });
 }

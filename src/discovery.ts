@@ -128,6 +128,7 @@ export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
     if (!device) continue;
 
     const hubPubkey = hubDeviceToPubkey.get(device.via_device_id ?? "") ?? null;
+    let swVersion = device?.sw_version || '';
 
     const deviceEntityIds = Object.entries(hass.entities)
       .filter(([, info]) => info.device_id === deviceId)
@@ -140,6 +141,7 @@ export function discoverNodes(hass: HomeAssistant): NodeInfo[] {
       hubPubkey,
       ePrefix,
       eSuffix,
+      swVersion,
     });
   }
   return nodes;

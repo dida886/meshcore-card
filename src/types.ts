@@ -62,6 +62,7 @@ export interface MeshcoreNodeCardConfig {
   hidden_nodes?: string[];
   grid_options?: GridOptions;
   neighbors_expanded_default?: boolean;
+  disabled_animations?: boolean;
 }
 
 export interface MeshcoreContactCardConfig {
@@ -92,6 +93,7 @@ export interface NodeInfo {
   hubPubkey: string | null;
   ePrefix: string;
   eSuffix: string;
+  swVersion: string;
 }
 
 // ── Render helper types ───────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   getDisplayState,
   signalQualityLabel,
   drawParticles,
+  drawTrafficBars,
   parseNumericMetric,
   sampleSeries,
   extractNumericSeriesFromLogbook,
@@ -28,6 +29,8 @@ import {
   renderChip,
   renderBatteryPanel,
   renderSignalCard,
+  renderTrafficBars,
+  renderTrafficBarsWithOptions,
 } from "./ui-helpers.js";
 
 export class MeshcoreHubCard extends MeshcoreBaseCard {
@@ -37,14 +40,59 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
   private _signalHistoryLoading = new Set<string>();
   private _debounceTimers?: Map<string, ReturnType<typeof setTimeout>>;
 
+  // Widoczność karty
+  private _isVisible = true;
+  private _intersectionObserver: IntersectionObserver | null = null;
+
   protected _additionalStyles(): string {
-    return ""; // HubCard korzysta tylko z bazowych styli
+    return "";
   }
 
   setConfig(config: MeshcoreCardConfig): void {
     this._config = config;
     this._fp = null;
     this._render();
+  }
+
+  // ── IntersectionObserver dla widoczności ──────────────────────────────────
+
+  connectedCallback(): void {
+    // MeshcoreBaseCard nie ma connectedCallback, więc nie wołamy super
+    this._setupIntersectionObserver();
+  }
+
+  disconnectedCallback(): void {
+    if (this._intersectionObserver) {
+      this._intersectionObserver.disconnect();
+      this._intersectionObserver = null;
+    }
+    // Zatrzymaj wszystkie animacje canvas
+    const canvases = this.shadowRoot?.querySelectorAll('.traffic-bars-canvas, .particle-canvas');
+    if (canvases) {
+      canvases.forEach((canvas) => {
+        const c = canvas as HTMLCanvasElement;
+        if ((c as any)._animationId) {
+          cancelAnimationFrame((c as any)._animationId);
+          (c as any)._animationId = null;
+        }
+      });
+    }
+    super.disconnectedCallback();
+  }
+
+  private _setupIntersectionObserver(): void {
+    const target = this.shadowRoot?.querySelector('.node-block') || this;
+    if (!target) return;
+
+    this._intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          this._isVisible = entry.isIntersecting;
+        }
+      },
+      { threshold: 0.1 }
+    );
+    this._intersectionObserver.observe(target);
   }
 
   protected _computeFingerprint(): string {
@@ -79,8 +127,6 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
     const w = Math.min(100, Math.max(0, Number(pct) || 0));
     return `<div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${color}"></div></div>`;
   }
-
-
 
   private _renderSignalSparkline(series: number[], variant: "rssi" | "snr" | "noise"): string {
     if (series.length < 2) return "";
@@ -361,27 +407,44 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
         <div class="hub-traffic-panel">
           <div class="hub-traffic-top-row">
             <div class="hub-traffic-stat sent">
-              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(sent && sent !== "N/A" ? sent : "N/A")}</span>
+              <canvas class="traffic-bars-canvas"></canvas>
+              <div class="hub-traffic-label-top-left">
+                ${escapeHtml(t("card.traffic_sent").toUpperCase())}
+                <ha-icon icon="mdi:arrow-up-bold"></ha-icon>
+              </div>
+              <div class="hub-traffic-number clickable" data-entity="${escapeHtml(sentId)}">
+                ${escapeHtml(sent && sent !== "N/A" ? sent.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "0")}
+              </div>
             </div>
-            <div class="hub-traffic-center" aria-hidden="true">
-              <span class="hub-traffic-center-ring"></span>
+            <div class="hub-traffic-center">
+              <div class="hub-traffic-center-ring"></div>
               <div class="hub-traffic-center-arrows">
                 <ha-icon class="hub-traffic-center-arrow left" icon="mdi:arrow-up-bold"></ha-icon>
                 <ha-icon class="hub-traffic-center-arrow right" icon="mdi:arrow-down-bold"></ha-icon>
               </div>
             </div>
             <div class="hub-traffic-stat recv">
-              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(recvId)}">${escapeHtml(recv && recv !== "N/A" ? recv : "N/A")}</span>
+              <canvas class="traffic-bars-canvas"></canvas>
+              <div class="hub-traffic-label-top">
+                <ha-icon icon="mdi:arrow-down-bold"></ha-icon>
+                ${escapeHtml(t("card.traffic_received").toUpperCase())}
+              </div>
+              <div class="hub-traffic-number clickable" data-entity="${escapeHtml(recvId)}">
+                ${escapeHtml(recv && recv !== "N/A" ? recv.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "0")}
+              </div>
             </div>
-          </div>
+          </div> 
+
           <div class="hub-traffic-bottom-row">
             ${renderChip(this._hass, "↓ RX air", rxAirtimeId)}
             ${renderChip(this._hass, "⊗ RX errors", recvErrId)}
             ${renderChip(this._hass, "↑ TX air", txAirtimeId)}
           </div>
-          ${msgDeliv && msgDeliv !== "N/A" && msgDeliv !== "Idle" ? `<div class="hub-traffic-delivery clickable" data-entity="${escapeHtml(msgDelivId)}">📨 ${escapeHtml(t("card.last_message_delivery"))}: ${escapeHtml(msgDeliv)}</div>` : ""}
+
+          ${msgDeliv && msgDeliv !== "N/A" && msgDeliv !== "Idle" ? `
+            <div class="hub-traffic-delivery clickable" data-entity="${escapeHtml(msgDelivId)}">
+              📨 ${escapeHtml(t("card.last_message_delivery"))}: ${escapeHtml(msgDeliv)}
+            </div>` : ""}
         </div>`;
     }
 
@@ -470,11 +533,30 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
           }
         });
       });
-      this._drawParticles();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this._drawParticles();
+          this._drawTrafficBarsWithOptions();
+        });
+      });
     } catch (error) {
       console.error("MeshCore Hub Card render error:", error);
       this._setBody(`<div class="empty">Error rendering card: ${error}</div>`);
     }
+  }
+
+  private _drawTrafficBarsWithOptions(): void {
+    renderTrafficBarsWithOptions(this.shadowRoot, {
+      disabledAnimations: this._config?.disabled_animations ?? false,
+      isVisible: this._isVisible,
+      columnCount: 40,
+      barWidth: 2,
+      barGap: 2,
+      minHeight: 2,
+      maxHeight: 35,
+      speed: 0.035,
+      borderRadius: 1,
+    });
   }
 
   private _drawParticles(): void {
@@ -506,6 +588,7 @@ export class MeshcoreHubCard extends MeshcoreBaseCard {
           pulse: true,
           glow: true,
           glowStrength: 5,
+          isVisible: this._isVisible,
         });
       });
     });

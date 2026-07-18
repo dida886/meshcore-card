@@ -23,6 +23,7 @@ import {
   sampleSeries,
   extractNumericSeriesFromLogbook,
   signalGaugePct,
+  drawTrafficBars,
   type NeighborInfo,
 } from "./helpers.js";
 import { discoverNodes } from "./discovery.js";
@@ -36,6 +37,8 @@ import {
   renderChip,
   renderBatteryPanel,
   renderSignalCard,
+  renderTrafficBars,
+  renderTrafficBarsWithOptions,
 } from "./ui-helpers.js";
 
 export class MeshcoreNodeCard extends MeshcoreBaseCard {
@@ -44,6 +47,8 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
   private _neighborSnrHistoryFetchedAt = new Map<string, number>();
   private _neighborSnrHistoryLoading = new Set<string>();
   private _expandedNodes: Set<string> = new Set();
+  private _isVisible = true;
+  private _intersectionObserver: IntersectionObserver | null = null;
 
   protected _additionalStyles(): string {
     return "";
@@ -57,11 +62,49 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
 
   protected _computeFingerprint(): string {
     if (!this._hass) return "";
-    return Object.entries(this._hass.states)
-      .filter(([id]) => id.includes("meshcore") && !id.includes("node_count"))
-      .map(([id, s]) => `${id}=${s.state}@${s.last_changed}`)
-      .join("|");
+    return JSON.stringify(this._config) + (this._hass.language || "");
   }
+
+  disconnectedCallback(): void {
+    // Zatrzymaj observer
+    if (this._intersectionObserver) {
+      this._intersectionObserver.disconnect();
+      this._intersectionObserver = null;
+    }
+    // Zatrzymaj animacje canvas
+    const canvases = this.shadowRoot?.querySelectorAll('.traffic-bars-canvas');
+    if (canvases) {
+      canvases.forEach((canvas) => {
+        const c = canvas as HTMLCanvasElement;
+        if ((c as any)._animationId) {
+          cancelAnimationFrame((c as any)._animationId);
+          (c as any)._animationId = null;
+        }
+      });
+    }
+    super.disconnectedCallback();
+  }
+
+  private _setupIntersectionObserver(): void {
+  // Usuń poprzedni observer
+  if (this._intersectionObserver) {
+    this._intersectionObserver.disconnect();
+    this._intersectionObserver = null;
+  }
+
+  // Obserwuj cały element karty
+  this._intersectionObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        // ★ KLUCZOWE – aktualizuj _isVisible
+        this._isVisible = entry.isIntersecting;
+        console.log('NodeCard observer: isVisible =', this._isVisible);
+      }
+    },
+    { threshold: 0 }
+  );
+  this._intersectionObserver.observe(this);
+}
 
   // ── Obsługa kliknięć – rozwijanie sąsiadów ────────────────────────────────
 
@@ -211,7 +254,7 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
   // ── Node rendering ─────────────────────────────────────────────────────────
 
   private _renderNode(node: NodeInfo, t: LocalizeFunc): string {
-    const { name, deviceId, ePrefix, eSuffix } = node;
+    const { name, deviceId, ePrefix, eSuffix, swVersion } = node;
     const p = (m: string) => findEntityByDevice(this._hass, deviceId, m, ePrefix, eSuffix);
 
     const hiddenNodes = this._config?.hidden_nodes || [];
@@ -404,6 +447,7 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
                 <span class="node-card-name">${escapeHtml(displayName)}</span>
                 ${nodeKey ? `<span class="node-card-id-pill clickable" data-entity="${escapeHtml(contactId ?? statusId ?? "")}">(${escapeHtml(nodeKey)})</span>` : ""}
               </div>
+              ${swVersion !== undefined && swVersion !== ""  && swVersion !== "Unknown" ? `<span class="node-swversion-sub">${escapeHtml(swVersion)}</span>` : ""}
             </div>
             ${lastSeen ? `<div class="node-card-meta-row"><span class="node-card-meta-pill">${escapeHtml(lastSeen)}</span></div>` : ""}
           </div>
@@ -459,21 +503,33 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       html += `
         ${sectionHeader(t("card.traffic_section"))}
         <div class="hub-traffic-panel">
-          <div class="hub-traffic-top-row">
+        <div class="hub-traffic-top-row">
             <div class="hub-traffic-stat sent">
-              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_sent"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(sentId)}">${escapeHtml(getDisplayState(this._hass, sentId))}</span>
+              <canvas class="traffic-bars-canvas"></canvas>
+              <div class="hub-traffic-label-top-left">
+                ${escapeHtml(t("card.traffic_sent").toUpperCase())}
+                <ha-icon icon="mdi:arrow-up-bold"></ha-icon>
+              </div>
+              <div class="hub-traffic-number clickable" data-entity="${escapeHtml(sentId)}">
+                ${escapeHtml(getDisplayState(this._hass, sentId) || "0")}
+              </div>
             </div>
-            <div class="hub-traffic-center" aria-hidden="true">
-              <span class="hub-traffic-center-ring"></span>
+            <div class="hub-traffic-center">
+              <div class="hub-traffic-center-ring"></div>
               <div class="hub-traffic-center-arrows">
                 <ha-icon class="hub-traffic-center-arrow left" icon="mdi:arrow-up-bold"></ha-icon>
                 <ha-icon class="hub-traffic-center-arrow right" icon="mdi:arrow-down-bold"></ha-icon>
               </div>
             </div>
             <div class="hub-traffic-stat recv">
-              <span class="hub-traffic-label">${escapeHtml(t("card.traffic_received"))}</span>
-              <span class="hub-traffic-value clickable" data-entity="${escapeHtml(receivedId)}">${escapeHtml(getDisplayState(this._hass, receivedId))}</span>
+              <canvas class="traffic-bars-canvas"></canvas>
+              <div class="hub-traffic-label-top">
+                <ha-icon icon="mdi:arrow-down-bold"></ha-icon>
+                ${escapeHtml(t("card.traffic_received").toUpperCase())}
+              </div>
+              <div class="hub-traffic-number clickable" data-entity="${escapeHtml(receivedId)}">
+                ${escapeHtml(getDisplayState(this._hass, receivedId) || "0")}
+              </div>
             </div>
           </div>
           ${trafficBottom.length ? `<div class="node-card-traffic-bottom-row">${trafficBottom.join("")}</div>` : ""}
@@ -577,38 +633,79 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
     `;
   }
 
-  // ── Main render ────────────────────────────────────────────────────────────
+  private _drawTrafficBarsWithOptions(): void {
+    const canvases = this.shadowRoot?.querySelectorAll('.traffic-bars-canvas');
+    if (!canvases || canvases.length === 0) {
+      // Jeśli nie ma canvasów, spróbuj ponownie za 100ms
+      setTimeout(() => {
+        this._drawTrafficBarsWithOptions();
+      }, 100);
+      return;
+    }
+    console.log("Drawing traffic bars with options:", {
+      disabledAnimations: this._config?.disabled_animations ?? false,
+      isVisible: this._isVisible,
+      canvasesCount: canvases.length,
+    });
+    renderTrafficBarsWithOptions(this.shadowRoot, {
+      disabledAnimations: this._config?.disabled_animations ?? false,
+      isVisible: this._isVisible,
+      columnCount: 40,
+      barWidth: 2,
+      barGap: 2,
+      minHeight: 2,
+      maxHeight: 35,
+      speed: 0.035,
+      borderRadius: 1,
+    });
+  }
+
+  // ── Główny render ──────────────────────────────────────────────────────────
 
   protected _render(): void {
-    if (!this._hass || !this._config) return;
-    const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
+    try {
+      if (!this._hass || !this._config) return;
+      const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
 
-    const allNodes = discoverNodes(this._hass);
-    if (!allNodes.length) {
-      this._setBody(`<div class="empty">${t("card.empty_nodes")}</div>`);
-      return;
+      const allNodes = discoverNodes(this._hass);
+      if (!allNodes.length) {
+        this._setBody(`<div class="empty">${t("card.empty_nodes")}</div>`);
+        return;
+      }
+
+      const hiddenNodes = this._config?.hidden_nodes || [];
+      const nodeTypeFilter = this._config?.node_type_filter || "all";
+
+      const nodesHtml = allNodes
+        .filter((node) => !hiddenNodes.includes(node.name))
+        .map((node) => this._renderNode(node, t))
+        .filter(Boolean)
+        .join("");
+
+      if (!nodesHtml) {
+        const filter = nodeTypeFilter === "all" ? "" : ` typu: ${nodeTypeFilter}`;
+        const hiddenMsg = hiddenNodes.length ? " (po uwzględnieniu ukrytych)" : "";
+        this._setBody(`<div class="empty">Brak węzłów${filter}${hiddenMsg}</div>`);
+        return;
+      }
+
+      this._setBody(`
+        <div class="section-label">${t("card.section_nodes")}</div>
+        ${nodesHtml}
+      `, ".node-block");
+
+      setTimeout(() => {
+        this._drawTrafficBarsWithOptions();
+      }, 200);
+
+      // Uruchom animacje po wyrenderowaniu DOM z opóźnieniem, aby upewnić się, że canvasy są w DOM
+      setTimeout(() => {
+        this._drawTrafficBarsWithOptions();
+      }, 50);
+    } catch (error) {
+      console.error("MeshCore Node Card render error:", error);
+      this._setBody(`<div class="empty">Error: ${error}</div>`);
     }
-
-    const hiddenNodes = this._config?.hidden_nodes || [];
-    const nodeTypeFilter = this._config?.node_type_filter || "all";
-
-    const nodesHtml = allNodes
-      .filter((node) => !hiddenNodes.includes(node.name))
-      .map((node) => this._renderNode(node, t))
-      .filter(Boolean)
-      .join("");
-
-    if (!nodesHtml) {
-      const filter = nodeTypeFilter === "all" ? "" : ` typu: ${nodeTypeFilter}`;
-      const hiddenMsg = hiddenNodes.length ? " (po uwzględnieniu ukrytych)" : "";
-      this._setBody(`<div class="empty">Brak węzłów${filter}${hiddenMsg}</div>`);
-      return;
-    }
-
-    this._setBody(`
-      <div class="section-label">${t("card.section_nodes")}</div>
-      ${nodesHtml}
-    `, ".node-block");
   }
 
   getCardSize(): number {
@@ -681,11 +778,17 @@ export class MeshcoreNodeCardEditor extends HTMLElement {
         label: t("editor.neighbors_expanded_default") || "Default neighbors expanded",
         selector: { boolean: {} },
       },
+      {
+        name: "disabled_animations",
+        label: t("editor.disabled_animations") || "Disabled animations",
+        selector: { boolean: {} },
+      },
     ];
 
     form.data = {
       node_type_filter: this._config.node_type_filter || "all",
       neighbors_expanded_default: this._config.neighbors_expanded_default ?? true,
+      disabled_animations: this._config?.disabled_animations ?? false,
     };
 
     form.computeLabel = (s: any) => s.label || s.name;
@@ -696,6 +799,7 @@ export class MeshcoreNodeCardEditor extends HTMLElement {
         ...this._config,
         node_type_filter: value["node_type_filter"],
         neighbors_expanded_default: value["neighbors_expanded_default"],
+        disabled_animations: value["disabled_animations"],
       };
       this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
     });
