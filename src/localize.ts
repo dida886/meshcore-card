@@ -3,8 +3,9 @@ import fr from "./translations/fr.json";
 import nl from "./translations/nl.json";
 import de from "./translations/de.json";
 import pl from "./translations/pl.json";
+import ru from "./translations/ru.json";
 
-const languages: Record<string, unknown> = { en, fr, nl, de, pl };
+const languages: Record<string, unknown> = { en, fr, nl, de, pl, ru};
 
 export type LocalizeFunc = (key: string, vars?: Record<string, string | number>) => string;
 
