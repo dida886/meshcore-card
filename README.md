@@ -59,7 +59,7 @@ While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, con
 - URL detection and copy-to-clipboard
 - Long-press message copying
 - Mobile-friendly interaction model
-- Multi-language support (EN, FR, NL, DE, PL)
+- Multi-language support (EN, FR, NL, DE, PL, RU)
 - **New in 1.5.0: Dynamic theme-aware particles, signal icons, expandable neighbors**
 
 ---
@@ -585,6 +585,7 @@ Supported languages:
 * Dutch
 * German
 * Polish
+* Russian
 
 The active Home Assistant language is detected automatically.
 

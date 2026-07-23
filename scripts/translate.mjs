@@ -24,6 +24,7 @@ const TARGETS = [
   { code: "nl", name: "Dutch" },
   { code: "de", name: "German" },
   { code: "pl", name: "Polish" },
+  { code: "ru", name: "Russian" },
 ];
 
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -126,7 +127,7 @@ ${inputJson}`;
 
 // ── DeepL backend ────────────────────────────────────────────────────────────
 
-const DEEPL_LANG = { fr: "FR", nl: "NL", de: "DE", pl: "PL" };
+const DEEPL_LANG = { fr: "FR", nl: "NL", de: "DE", pl: "PL", ru: "RU" };
 
 async function translateViaDeepL(toTranslate, langCode) {
   const { default: deepl } = await import("deepl-node");
