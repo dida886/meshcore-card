@@ -558,6 +558,7 @@ Supported languages:
 * Dutch
 * German
 * Polish
+* Russian
 
 The active Home Assistant language is detected automatically.
 
