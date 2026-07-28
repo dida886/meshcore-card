@@ -162,5 +162,19 @@
     "no_path_data": "Geen padgegevens",
     "unknown_repeater": "Onbekend repeater ({id})",
     "select_hub": "Kies een hub"
+  },
+  "cli": {
+    "title": "MeshCore CLI",
+    "select_hub": "Kies een hub",
+    "command_placeholder": "Voer een commando in...",
+    "run": "Ren",
+    "clear": "Wissen",
+    "console": "Console",
+    "not_available": "De CLI-opdracht is niet beschikbaar. Controleer de versie van de MeshCore-integratie (>= 2.9.0) en schakel CLI in via de instellingen.",
+    "no_hubs": "Er zijn geen hubs gevonden die CLI ondersteunen. Controleer of CLI is ingeschakeld in de integratie-instellingen van MeshCore.",
+    "error_no_run_button": "Knop 'Uitvoeren' niet gevonden",
+    "error_send": "Fout bij het verzenden van het commando",
+    "editor_show_clear": "Knop ‘Wissen’ weergeven",
+    "editor_info": "Met de CLI-kaart kun je opdrachten naar MeshCore-hubs sturen. Hiervoor is MeshCore-integratie ≥ 2.9.0 vereist en moet CLI in de instellingen zijn ingeschakeld."
   }
 }

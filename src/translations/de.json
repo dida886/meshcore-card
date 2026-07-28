@@ -161,5 +161,19 @@
     "no_path_data": "Keine Pfaddaten",
     "unknown_repeater": "Unbekannter Repeater ({id})",
     "select_hub": "Hub auswählen"
+  },
+  "cli": {
+    "title": "MeshCore-Befehlszeilenschnittstelle",
+    "select_hub": "Hub auswählen",
+    "command_placeholder": "Befehl eingeben...",
+    "run": "Laufen",
+    "clear": "Löschen",
+    "console": "Konsole",
+    "not_available": "Der CLI-Befehl ist nicht verfügbar. Überprüfen Sie die Version der MeshCore-Integration (>= 2.9.0) und aktivieren Sie die CLI in den Einstellungen.",
+    "no_hubs": "Es wurden keine Hubs mit CLI-Unterstützung gefunden. Stellen Sie sicher, dass die CLI in den MeshCore-Integrationseinstellungen aktiviert ist.",
+    "error_no_run_button": "Schaltfläche „Ausführen“ nicht gefunden",
+    "error_send": "Fehler beim Senden des Befehls",
+    "editor_show_clear": "Schaltfläche „Löschen“ anzeigen",
+    "editor_info": "Mit der CLI-Karte können Sie Befehle an MeshCore-Hubs senden. Voraussetzung ist die MeshCore-Integration ab Version 2.9.0 und die Aktivierung der CLI in den Einstellungen."
   }
 }

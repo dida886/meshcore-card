@@ -31,39 +31,6 @@ If you find this project useful and would like to support future development:
 
 Your support helps fund development, testing, bug fixes, and new features.
 
----
-## 🎉 What's New in 1.5.0
-
-- **Complete UI Overhaul** – All cards have been redesigned with a unified, modern look. Shared components are now extracted into a common base, reducing code duplication and improving performance.
-- **Dynamic Theming** – Hub card particles now automatically adapt to your Home Assistant theme (light/dark) for a seamless visual experience.
-- **Signal Icons** – Each signal card (RSSI, SNR, Noise) now displays an icon with matching color, improving at-a-glance readability.
-- **Expandable Neighbors in Node Card** – Neighbors can now be expanded/collapsed, just like in the Quick Repeater card. Use `neighbors_expanded_default` to control the default state.
-- **Offline Status Pill** – The Node card now clearly distinguishes offline nodes with a dedicated offline pill (red background).
-- **Improved Quick Repeater Card** – Offline repeaters now show a clear "Node Offline" message, just like the Node card.
-- **Better Maintainability** – The entire codebase has been refactored, making future enhancements easier and faster.
-
-
-## 🌟 Enhanced Edition
-
-While the original MeshCore Card focuses on monitoring MeshCore hubs, nodes, contacts, and channels, this Enhanced Edition transforms Home Assistant into a complete MeshCore communication dashboard.
-
-### Key Enhancements
-
-- Full MeshCore messaging support
-- Message history viewer
-- **Transmission route visualization (RSSI, SNR, hop path)**
-- **Bubble-style message layout**
-- **Display repeater names in path** – optionally show friendly names instead of hex IDs
-- **Advert buttons on Hub card** – send Advert/Advert Flood with one click
-- **Quick Repeater Card** – dedicated dashboard for monitoring all repeaters at a glance
-- URL detection and copy-to-clipboard
-- Long-press message copying
-- Mobile-friendly interaction model
-- Multi-language support (EN, FR, NL, DE, PL)
-- **New in 1.5.0: Dynamic theme-aware particles, signal icons, expandable neighbors**
-
----
-
 ## 📸 Screenshots
 
 ### Hub Card
@@ -86,7 +53,7 @@ custom:meshcore-message-card
 
 ### Quick Repeater Card
 ```yaml
-type: custom:meshcore-quick-repeater-card
+custom:meshcore-quick-repeater-card
 ```
 ![MeshCore Quickly Remote Nodes](images/meshcore-quick-remote-nodes-card.png)
 
@@ -101,6 +68,12 @@ custom:meshcore-contact-card
 custom:meshcore-channel-card
 ```
 ![MeshCore Channel](images/chanel-card-screenshot.png)
+
+### CLI Card
+```yaml
+custom:meshcore-cli-card
+```
+![MeshCore CLI](images/cli-card-screenshot.png)
 
 
 

@@ -172,6 +172,12 @@ export interface MeshcoreQuickRepeaterConfig {
   };
 }
 
+export interface MeshcoreCliCardConfig {
+  type?: string;
+  show_clear_button?: boolean;
+  grid_options?: GridOptions;
+}
+
 declare global {
   interface Window {
     customCards: CustomCardEntry[];

@@ -163,5 +163,19 @@
     "no_path_data": "No path data",
     "unknown_repeater": "Unknown repeater ({id})",
     "select_hub": "Select hub"
-  }
+  },
+  "cli": {
+  "title": "MeshCore CLI",
+  "select_hub": "Select hub",
+  "command_placeholder": "Enter command...",
+  "run": "Run",
+  "clear": "Clear",
+  "console": "Console",
+  "not_available": "CLI Command is not available. Check MeshCore integration version (>= 2.9.0) and enable CLI in settings.",
+  "no_hubs": "No hubs with CLI support found. Make sure CLI is enabled in MeshCore integration settings.",
+  "error_no_run_button": "Run button not found",
+  "error_send": "Error sending command",
+  "editor_show_clear": "Show clear button",
+  "editor_info": "The CLI card allows you to send commands to MeshCore hubs. Requires MeshCore integration ≥ 2.9.0 and CLI enabled in settings."
+}
 }

@@ -161,5 +161,19 @@
     "no_path_data": "Brak danych dotyczących ścieżki",
     "unknown_repeater": "Nieznany repeater ({id})",
     "select_hub": "Wybierz centrum"
+  },
+  "cli": {
+    "title": "MeshCore CLI",
+    "select_hub": "Wybierz centrum",
+    "command_placeholder": "Wpisz polecenie...",
+    "run": "Uruchom",
+    "clear": "Wyczyść",
+    "console": "Konsola",
+    "not_available": "Polecenie CLI jest niedostępne. Sprawdź wersję integracji MeshCore (>= 2.9.0) i włącz CLI w ustawieniach.",
+    "no_hubs": "Nie znaleziono żadnych koncentratorów obsługujących CLI. Upewnij się, że opcja CLI jest włączona w ustawieniach integracji MeshCore.",
+    "error_no_run_button": "Nie znaleziono przycisku „Uruchom”",
+    "error_send": "Wystąpił błąd podczas wysyłania polecenia",
+    "editor_show_clear": "Pokaż przycisk „Wyczyść”",
+    "editor_info": "Karta CLI umożliwia wysyłanie poleceń do koncentratorów MeshCore. Wymagana jest integracja MeshCore w wersji ≥ 2.9.0 oraz włączenie funkcji CLI w ustawieniach."
   }
 }

@@ -161,5 +161,19 @@
     "no_path_data": "Aucune donnée relative au chemin d'accès",
     "unknown_repeater": "Répéteur inconnu ({id})",
     "select_hub": "Sélectionner un hub"
+  },
+  "cli": {
+    "title": "MeshCore CLI",
+    "select_hub": "Sélectionner un hub",
+    "command_placeholder": "Saisissez la commande...",
+    "run": "Courir",
+    "clear": "Effacer",
+    "console": "Console",
+    "not_available": "La commande CLI n'est pas disponible. Vérifiez la version d'intégration de MeshCore (>= 2.9.0) et activez la CLI dans les paramètres.",
+    "no_hubs": "Aucun hub prenant en charge l'interface CLI n'a été détecté. Assurez-vous que l'interface CLI est activée dans les paramètres d'intégration de MeshCore.",
+    "error_no_run_button": "Le bouton « Exécuter » est introuvable",
+    "error_send": "Erreur lors de l'envoi de la commande",
+    "editor_show_clear": "Afficher le bouton « Effacer »",
+    "editor_info": "La carte CLI vous permet d'envoyer des commandes aux hubs MeshCore. Nécessite l'intégration MeshCore version 2.9.0 ou supérieure et l'activation de la CLI dans les paramètres."
   }
 }

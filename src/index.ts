@@ -7,6 +7,7 @@ import {
   MeshcoreQuickRepeaterCard,
   MeshcoreQuickRepeaterCardEditor,
 } from "./quick-repeater-card.js";
+import { MeshcoreCliCard, MeshcoreCliCardEditor } from "./cli-card.js";
 
 class MeshcoreHubCardAlias extends MeshcoreHubCard {}
 class MeshcoreHubCardEditorAlias extends MeshcoreHubCardEditor {}
@@ -58,6 +59,13 @@ if (!customElements.get("meshcore-quick-repeater-card")) {
 }
 if (!customElements.get("meshcore-quick-repeater-card-editor")) {
   customElements.define("meshcore-quick-repeater-card-editor", MeshcoreQuickRepeaterCardEditor);
+}
+
+if (!customElements.get("meshcore-cli-card")) {
+  customElements.define("meshcore-cli-card", MeshcoreCliCard);
+}
+if (!customElements.get("meshcore-cli-card-editor")) {
+  customElements.define("meshcore-cli-card-editor", MeshcoreCliCardEditor);
 }
 
 window.customCards = window.customCards || [];
@@ -127,6 +135,16 @@ if (!window.customCards.find((c) => c.type === "meshcore-quick-repeater-card")) 
     type: "meshcore-quick-repeater-card",
     name: "MeshCore Quick Repeater Card",
     description: "Quickly view all MeshCore repeaters with key metrics",
+    preview: true,
+    documentationURL: "https://github.com/dida886/meshcore-card",
+  });
+}
+
+if (!window.customCards.find((c) => c.type === "meshcore-cli-card")) {
+  window.customCards.push({
+    type: "meshcore-cli-card",
+    name: "MeshCore CLI Card",
+    description: "Execute CLI commands on MeshCore hubs",
     preview: true,
     documentationURL: "https://github.com/dida886/meshcore-card",
   });
