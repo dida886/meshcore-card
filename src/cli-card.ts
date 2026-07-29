@@ -499,9 +499,6 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
           ` : ""}
         </div>
       </div>
-      <div style="font-size: 11px; color: var(--secondary-text-color); margin-bottom: 8px; opacity: 0.6;">
-        ${escapeHtml(t("cli.hint") || "💡 Type command name, use ↑↓ to navigate, Tab or Enter to select, Ctrl+Enter to send")}
-      </div>
     `;
 
     const transcript = this._getTranscript(selectedPubkey);

@@ -67,13 +67,19 @@ custom:meshcore-contact-card
 ```yaml
 custom:meshcore-channel-card
 ```
-![MeshCore Channel](images/chanel-card-screenshot.png)
+![MeshCore Channel](images/channel-card-screenshot.png)
 
 ### CLI Card
 ```yaml
 custom:meshcore-cli-card
 ```
 ![MeshCore CLI](images/cli-card-screenshot.png)
+
+### Trace Card
+```yaml
+custom:meshcore-trace-card
+```
+![MeshCore CLI](images/trace-card-screenshot.png)
 
 
 
