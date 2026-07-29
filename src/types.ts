@@ -178,6 +178,12 @@ export interface MeshcoreCliCardConfig {
   grid_options?: GridOptions;
 }
 
+export interface MeshcoreTraceCardConfig {
+  type?: string;
+  timeout?: number;          // Default timeout in seconds (default 15)
+  grid_options?: GridOptions;
+}
+
 declare global {
   interface Window {
     customCards: CustomCardEntry[];

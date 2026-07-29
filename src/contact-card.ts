@@ -142,7 +142,7 @@ const CONTACT_STYLES: string = `
     opacity: 0.85;
   }
 
-  /* ---------- Filter (select) ---------- */
+  /* ---------- Filter bar ---------- */
   .filter-bar {
     display: flex;
     align-items: center;
@@ -164,17 +164,79 @@ const CONTACT_STYLES: string = `
     padding: 5px 10px;
     border-radius: 999px;
     border: 1px solid var(--glass-border);
-    background: transparent;
+    background: var(--card-background-color);
     color: var(--primary-text-color);
     font-size: 13px;
     outline: none;
     cursor: pointer;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
+  .filter-bar select option {
+    background: var(--card-background-color);
+    color: var(--primary-text-color);
+  }
   .filter-bar select:hover,
   .filter-bar select:focus {
     border-color: rgba(96, 165, 250, 0.42);
     box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.16);
+  }
+
+  /* ---------- Search input ---------- */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 12px 0;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 12px;
+    flex: 1;
+    min-width: 150px;
+  }
+  .search-bar ha-icon {
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+    --mdc-icon-size: 20px;
+  }
+  .search-bar input {
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--card-background-color);
+    color: var(--primary-text-color);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 100px;
+  }
+  .search-bar input::placeholder {
+    color: var(--secondary-text-color);
+    opacity: 0.5;
+  }
+  .search-bar input:hover,
+  .search-bar input:focus {
+    border-color: rgba(96, 165, 250, 0.42);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.16);
+  }
+  .search-clear {
+    background: transparent;
+    border: none;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .search-clear:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  .search-clear ha-icon {
+    --mdc-icon-size: 18px;
   }
 
   .action-btn {
@@ -279,6 +341,21 @@ const CONTACT_STYLES: string = `
     .contact-right {
       margin-left: 0;
     }
+
+    .filter-bar {
+      gap: 10px;
+    }
+    .filter-bar label {
+      font-size: 12px;
+    }
+    .filter-bar select {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    .search-bar input {
+      font-size: 12px;
+      padding: 4px 10px;
+    }
   }
 `;
 
@@ -306,6 +383,9 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
   protected _config?: MeshcoreContactCardConfig;
   private _currentStateFilter: "all" | "discovered" | "fresh" | "stale" = "all";
   private _currentTypeFilter: "all" | "repeater" | "room" | "sensor" | "client" = "all";
+  private _searchQuery: string = "";
+  private _searchTimeout: number | null = null;
+  private _searchInputFocused: boolean = false;
   private _pendingStateUpdates: Record<string, { online: boolean; timestamp: number }> = {};
 
   protected _additionalStyles(): string {
@@ -352,6 +432,7 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
     const cutoff = Date.now() / 1000 - maxAgeDays * 86400;
     const stateFilter = this._currentStateFilter;
     const typeFilter = this._currentTypeFilter;
+    const searchQuery = this._searchQuery.trim().toLowerCase();
 
     return Object.entries(this._hass.states)
       .filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id))
@@ -428,6 +509,9 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
             matches = c.nodeType === typeFilter;
           }
           if (!matches) return false;
+        }
+        if (searchQuery && !c.advName.toLowerCase().includes(searchQuery)) {
+          return false;
         }
         return true;
       })
@@ -522,8 +606,38 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
     }
   }
 
+  // ---------- Search with debounce ----------
+  private _onSearchInput(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    this._searchQuery = input.value;
+
+    if (this._searchTimeout !== null) {
+      clearTimeout(this._searchTimeout);
+      this._searchTimeout = null;
+    }
+
+    this._searchTimeout = window.setTimeout(() => {
+      this._render();
+      this._searchTimeout = null;
+    }, 300);
+  }
+
+  private _clearSearch(): void {
+    this._searchQuery = "";
+    const input = this.shadowRoot?.querySelector("#contact-search-input") as HTMLInputElement;
+    if (input) input.value = "";
+    if (this._searchTimeout !== null) {
+      clearTimeout(this._searchTimeout);
+      this._searchTimeout = null;
+    }
+    this._render();
+  }
+
   protected _render(): void {
     if (!this._hass || !this._config) return;
+
+    const wasFocused = this._searchInputFocused;
+
     const t = makeLocalize(this._hass.language ?? this._hass.locale?.language ?? "en");
     const contacts = this._discoverContacts(t);
 
@@ -573,7 +687,23 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
       </div>
     `;
 
-    let body = filterBar;
+    const searchBar = `
+      <div class="search-bar">
+        <ha-icon icon="mdi:magnify"></ha-icon>
+        <input id="contact-search-input" type="text" placeholder="${escapeHtml(
+          t("card.search_placeholder") || "Search contacts..."
+        )}" value="${escapeHtml(this._searchQuery)}">
+        ${this._searchQuery ? `
+          <button class="search-clear" id="contact-search-clear" title="${escapeHtml(
+            t("card.clear_search") || "Clear search"
+          )}">
+            <ha-icon icon="mdi:close-circle"></ha-icon>
+          </button>
+        ` : ""}
+      </div>
+    `;
+
+    let body = filterBar + searchBar;
     if (!contacts.length) {
       body += `<div class="empty">${t("card.empty_contacts")}</div>`;
     } else {
@@ -589,7 +719,16 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
 
     this._setBody(body, ".contact-row");
 
-    // Podpięcie listenerów filtrów
+    // ---------- PRZYWRÓC FOKUS Z OPÓŹNIENIEM ----------
+    const newSearchInput = this.shadowRoot?.querySelector("#contact-search-input") as HTMLInputElement | null;
+    if (wasFocused && newSearchInput) {
+      setTimeout(() => {
+        newSearchInput.focus();
+        newSearchInput.setSelectionRange(newSearchInput.value.length, newSearchInput.value.length);
+      }, 50);
+    }
+
+    // ---------- LISTENERS ----------
     const stateSelect = this.shadowRoot?.querySelector(
       "#contact-state-filter-select"
     ) as HTMLSelectElement | null;
@@ -614,6 +753,30 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
           this._render();
         }
       });
+    }
+
+    const searchInput = this.shadowRoot?.querySelector(
+      "#contact-search-input"
+    ) as HTMLInputElement | null;
+    if (searchInput) {
+      searchInput.removeEventListener("input", this._onSearchInput);
+      searchInput.addEventListener("input", (e) => this._onSearchInput(e));
+
+      // Obsługa fokusu
+      const onFocus = () => { this._searchInputFocused = true; };
+      const onBlur = () => { this._searchInputFocused = false; };
+      searchInput.removeEventListener("focus", onFocus);
+      searchInput.removeEventListener("blur", onBlur);
+      searchInput.addEventListener("focus", onFocus);
+      searchInput.addEventListener("blur", onBlur);
+    }
+
+    const clearBtn = this.shadowRoot?.querySelector(
+      "#contact-search-clear"
+    ) as HTMLButtonElement | null;
+    if (clearBtn) {
+      clearBtn.removeEventListener("click", this._clearSearch);
+      clearBtn.addEventListener("click", () => this._clearSearch());
     }
 
     this._setupActionListeners();

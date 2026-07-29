@@ -3,6 +3,7 @@ import { MeshcoreNodeCard, MeshcoreNodeCardEditor } from "./node-card.js";
 import { MeshcoreContactCard, MeshcoreContactCardEditor } from "./contact-card.js";
 import { MeshcoreChannelCard, MeshcoreChannelCardEditor } from "./channel-card.js";
 import { MeshcoreMessageCard, MeshcoreMessageCardEditor } from "./message-card.js";
+import { MeshcoreTraceCard, MeshcoreTraceCardEditor } from "./trace-card.js";
 import {
   MeshcoreQuickRepeaterCard,
   MeshcoreQuickRepeaterCardEditor,
@@ -66,6 +67,13 @@ if (!customElements.get("meshcore-cli-card")) {
 }
 if (!customElements.get("meshcore-cli-card-editor")) {
   customElements.define("meshcore-cli-card-editor", MeshcoreCliCardEditor);
+}
+
+if (!customElements.get("meshcore-trace-card")) {
+  customElements.define("meshcore-trace-card", MeshcoreTraceCard);
+}
+if (!customElements.get("meshcore-trace-card-editor")) {
+  customElements.define("meshcore-trace-card-editor", MeshcoreTraceCardEditor);
 }
 
 window.customCards = window.customCards || [];
@@ -145,6 +153,16 @@ if (!window.customCards.find((c) => c.type === "meshcore-cli-card")) {
     type: "meshcore-cli-card",
     name: "MeshCore CLI Card",
     description: "Execute CLI commands on MeshCore hubs",
+    preview: true,
+    documentationURL: "https://github.com/dida886/meshcore-card",
+  });
+}
+
+if (!window.customCards.find((c) => c.type === "meshcore-trace-card")) {
+  window.customCards.push({
+    type: "meshcore-trace-card",
+    name: "MeshCore Trace Card",
+    description: "Send trace requests to MeshCore contacts",
     preview: true,
     documentationURL: "https://github.com/dida886/meshcore-card",
   });

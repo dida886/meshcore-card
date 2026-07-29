@@ -85,7 +85,9 @@
     "noise_label": "Bruit",
     "offline_message": "Le nœud est actuellement hors ligne. Aucune donnée n'est disponible.",
     "signal_high": "Élevé",
-    "mains_powered": "Alimenté sur secteur"
+    "mains_powered": "Alimenté sur secteur",
+    "search_placeholder": "Rechercher des contacts...",
+    "clear_search": "Effacer la recherche"
   },
   "time": {
     "s_ago": "il y a {n}s",
@@ -175,5 +177,19 @@
     "error_send": "Erreur lors de l'envoi de la commande",
     "editor_show_clear": "Afficher le bouton « Effacer »",
     "editor_info": "La carte CLI vous permet d'envoyer des commandes aux hubs MeshCore. Nécessite l'intégration MeshCore version 2.9.0 ou supérieure et l'activation de la CLI dans les paramètres."
+  },
+  "trace": {
+    "title": "MeshCore Trace",
+    "select_contact": "Sélectionner un contact",
+    "timeout_label": "Délai d'expiration (en secondes)",
+    "trace_button": "Envoyer la trace",
+    "sending": "📡 Envoi de la trace…",
+    "success": "✅ Suivi envoyé avec succès !",
+    "error": "❌ Erreur : « P0 »",
+    "error_no_contact": "❌ Veuillez sélectionner un contact",
+    "no_contacts": "Aucun contact trouvé. Vérifiez que l'intégration MeshCore fonctionne correctement et que les contacts sont bien détectés.",
+    "info": "Envoie une demande de traçage au contact sélectionné avec le délai d'expiration spécifié.",
+    "editor_timeout_label": "Délai d'expiration par défaut (en secondes)",
+    "editor_info": "Cette carte vous permet d'envoyer une demande de localisation à n'importe quel contact MeshCore détecté. Vous pouvez définir le délai d'expiration par défaut dans l'éditeur ou le modifier à chaque utilisation depuis la carte."
   }
 }

@@ -85,7 +85,9 @@
     "no_data": "N/A",
     "noise_label": "Noise",
     "offline_message": "Node is currently offline. No data available.",
-    "mains_powered": "Mains powered"
+    "mains_powered": "Mains powered",
+    "search_placeholder": "Search contacts...",
+    "clear_search": "Clear search"
 
 
   },
@@ -177,5 +179,19 @@
   "error_send": "Error sending command",
   "editor_show_clear": "Show clear button",
   "editor_info": "The CLI card allows you to send commands to MeshCore hubs. Requires MeshCore integration ≥ 2.9.0 and CLI enabled in settings."
+},
+"trace": {
+  "title": "MeshCore Trace",
+  "select_contact": "Select contact",
+  "timeout_label": "Timeout (seconds)",
+  "trace_button": "Send Trace",
+  "sending": "📡 Sending trace...",
+  "success": "✅ Trace sent successfully!",
+  "error": "❌ Error: {error}",
+  "error_no_contact": "❌ Please select a contact",
+  "no_contacts": "No contacts found. Make sure MeshCore integration is working and contacts are discovered.",
+  "info": "Sends a trace request to the selected contact with the specified timeout.",
+  "editor_timeout_label": "Default timeout (seconds)",
+  "editor_info": "This card allows you to send a trace request to any discovered MeshCore contact. You can set the default timeout in the editor or change it per use in the card."
 }
 }

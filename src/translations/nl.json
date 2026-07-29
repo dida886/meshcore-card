@@ -85,7 +85,9 @@
     "noise_label": "Geluid",
     "offline_message": "Het knooppunt is momenteel offline. Er zijn geen gegevens beschikbaar.",
     "signal_high": "Hoog",
-    "mains_powered": "Op netstroom aangesloten"
+    "mains_powered": "Op netstroom aangesloten",
+    "search_placeholder": "Contacten zoeken...",
+    "clear_search": "Zoekresultaten wissen"
   },
   "time": {
     "s_ago": "{n}s geleden",
@@ -176,5 +178,19 @@
     "error_send": "Fout bij het verzenden van het commando",
     "editor_show_clear": "Knop ‘Wissen’ weergeven",
     "editor_info": "Met de CLI-kaart kun je opdrachten naar MeshCore-hubs sturen. Hiervoor is MeshCore-integratie ≥ 2.9.0 vereist en moet CLI in de instellingen zijn ingeschakeld."
+  },
+  "trace": {
+    "title": "MeshCore Trace",
+    "select_contact": "Selecteer contactpersoon",
+    "timeout_label": "Time-out (seconden)",
+    "trace_button": "Trace verzenden",
+    "sending": "📡 Verzendingsstatus wordt weergegeven...",
+    "success": "✅ Traceringsverzoek succesvol verzonden!",
+    "error": "❌ Fout: {error}",
+    "error_no_contact": "❌ Kies een contactpersoon",
+    "no_contacts": "Er zijn geen contacten gevonden. Controleer of de MeshCore-integratie goed werkt en of de contacten worden gedetecteerd.",
+    "info": "Verzendt een traceerverzoek naar de geselecteerde contactpersoon met de opgegeven time-out.",
+    "editor_timeout_label": "Standaard time-out (seconden)",
+    "editor_info": "Met deze kaart kun je een traceerverzoek sturen naar elk gevonden MeshCore-contact. Je kunt de standaard time-out instellen in de editor of deze per gebruik aanpassen in de kaart."
   }
 }

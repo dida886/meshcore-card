@@ -85,7 +85,9 @@
     "noise_label": "Lärm",
     "offline_message": "Der Knoten ist derzeit offline. Es liegen keine Daten vor.",
     "signal_high": "Hoch",
-    "mains_powered": "Netzbetrieben"
+    "mains_powered": "Netzbetrieben",
+    "search_placeholder": "Kontakte suchen...",
+    "clear_search": "Suche löschen"
   },
   "time": {
     "s_ago": "vor {n}s",
@@ -175,5 +177,19 @@
     "error_send": "Fehler beim Senden des Befehls",
     "editor_show_clear": "Schaltfläche „Löschen“ anzeigen",
     "editor_info": "Mit der CLI-Karte können Sie Befehle an MeshCore-Hubs senden. Voraussetzung ist die MeshCore-Integration ab Version 2.9.0 und die Aktivierung der CLI in den Einstellungen."
+  },
+  "trace": {
+    "title": "MeshCore Trace",
+    "select_contact": "Kontakt auswählen",
+    "timeout_label": "Zeitlimit (Sekunden)",
+    "trace_button": "Trace senden",
+    "sending": "📡 Sendeverlauf wird übermittelt...",
+    "success": "✅ Sendungsverfolgung erfolgreich durchgeführt!",
+    "error": "❌ Fehler: „P0“",
+    "error_no_contact": "❌ Bitte wählen Sie einen Ansprechpartner aus",
+    "no_contacts": "Es wurden keine Kontakte gefunden. Stellen Sie sicher, dass die MeshCore-Integration funktioniert und die Kontakte erkannt werden.",
+    "info": "Sendet eine Trace-Anfrage mit dem angegebenen Timeout an den ausgewählten Kontakt.",
+    "editor_timeout_label": "Standard-Zeitlimit (Sekunden)",
+    "editor_info": "Mit dieser Karte können Sie eine Ortungsanfrage an jeden erkannten MeshCore-Kontakt senden. Sie können das Standard-Timeout im Editor festlegen oder es bei jeder Verwendung in der Karte ändern."
   }
 }

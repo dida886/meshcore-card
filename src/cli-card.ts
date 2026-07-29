@@ -35,8 +35,17 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
   private _hubSelect?: HTMLSelectElement;
   private _suggestionsContainer?: HTMLDivElement;
 
+  // Listener dla kliknięć – używamy mousedown
+  private _boundSuggestionMouseDown!: (e: Event) => void;
+
   protected _additionalStyles(): string {
     return "";
+  }
+
+  constructor() {
+    super();
+    this._boundSuggestionMouseDown = this._onSuggestionMouseDown.bind(this);
+    this.shadowRoot?.addEventListener("mousedown", this._boundSuggestionMouseDown);
   }
 
   setConfig(config: MeshcoreCliCardConfig): void {
@@ -112,7 +121,7 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
     }
   }
 
-  // ---------- Autocomplete ----------
+  // ---------- Autocomplete with includes search ----------
   private _updateSuggestions(input: string): void {
     const trimmed = input.trim();
     if (!trimmed) {
@@ -125,7 +134,7 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
 
     const searchTerm = trimmed.toLowerCase();
     this._filteredCommands = CLI_COMMAND_NAMES
-      .filter((name) => name.toLowerCase().startsWith(searchTerm))
+      .filter((name) => name.toLowerCase().includes(searchTerm))
       .map((name) => ({ name, params: CLI_COMMANDS[name] }))
       .slice(0, 10);
 
@@ -314,29 +323,25 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
     }
   }
 
-  private _onSuggestionClick(e: Event): void {
+  // ---------- KLIKNIĘCIE W SUGESTIĘ – używamy mousedown ----------
+  private _onSuggestionMouseDown(e: Event): void {
     const target = e.target as HTMLElement;
     const suggestion = target.closest(".cli-suggestion") as HTMLElement;
     if (!suggestion) return;
+
     const cmdName = suggestion.dataset["command"];
     if (!cmdName) return;
-    const cmd = findCommand(cmdName);
-    if (!cmd) return;
 
-    const formatted = formatCommandWithParams(cmd.name, cmd.params);
-    if (this._commandInput) {
-      this._commandInput.value = formatted;
-      this._commandValue = formatted;
-      const openParen = formatted.indexOf("(");
-      const closeParen = formatted.indexOf(")");
-      if (openParen !== -1 && closeParen !== -1) {
-        this._commandInput.setSelectionRange(openParen + 1, closeParen);
-      }
-      this._commandInput.focus();
-    }
-    this._showSuggestions = false;
-    this._filteredCommands = [];
-    this._renderSuggestions();
+    // Znajdź indeks w _filteredCommands
+    const idx = this._filteredCommands.findIndex(cmd => cmd.name === cmdName);
+    if (idx === -1) return;
+
+    // Zapobiegaj domyślnemu zachowaniu (np. utracie fokusu)
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Wywołaj _selectSuggestion z indeksem
+    this._selectSuggestion(idx);
   }
 
   // ---------- State subscription ----------
@@ -364,6 +369,7 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
   }
 
   disconnectedCallback(): void {
+    this.shadowRoot?.removeEventListener("mousedown", this._boundSuggestionMouseDown);
     if ((this as any)._cliUnsub) {
       (this as any)._cliUnsub();
       (this as any)._cliUnsub = null;
@@ -493,6 +499,9 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
           ` : ""}
         </div>
       </div>
+      <div style="font-size: 11px; color: var(--secondary-text-color); margin-bottom: 8px; opacity: 0.6;">
+        ${escapeHtml(t("cli.hint") || "💡 Type command name, use ↑↓ to navigate, Tab or Enter to select, Ctrl+Enter to send")}
+      </div>
     `;
 
     const transcript = this._getTranscript(selectedPubkey);
@@ -549,10 +558,6 @@ export class MeshcoreCliCard extends MeshcoreBaseCard {
           this._renderSuggestions();
         }, 200);
       });
-    }
-
-    if (this._suggestionsContainer) {
-      this._suggestionsContainer.addEventListener("click", (e) => this._onSuggestionClick(e));
     }
 
     if (this._runButton) {

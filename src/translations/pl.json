@@ -60,7 +60,7 @@
     "filter_fresh": "Świeże",
     "filter_stale": "Nieaktualne",
     "filter_type_all": "Wszystkie",
-    "filter_type_repeater": "Przekaźnik",
+    "filter_type_repeater": "Repeater",
     "filter_type_room": "Serwer pokojowy",
     "filter_type_sensor": "Czujnik",
     "filter_type_client": "Klient",
@@ -85,7 +85,9 @@
     "noise_label": "Szum",
     "offline_message": "Węzeł jest aktualnie offline. Brak dostępnych danych.",
     "signal_high": "Wysoki",
-    "mains_powered": "Zasilanie z sieci elektrycznej"
+    "mains_powered": "Zasilanie z sieci elektrycznej",
+    "search_placeholder": "Wyszukaj kontakty...",
+    "clear_search": "Wyczyść wyniki wyszukiwania"
   },
   "time": {
     "s_ago": "{n} s temu",
@@ -121,7 +123,7 @@
     "max_neighbors": "Maksymalna liczba sąsiadów",
     "show_hub_advert_buttons": "Pokaż przyciski reklamowe",
     "filter_all": "Wszystkie",
-    "filter_repeater": "Przekaźnik",
+    "filter_repeater": "Repeater",
     "filter_room": "Serwer pokojowy",
     "filter_sensor": "Czujnik",
     "filter_client": "Klient",
@@ -175,5 +177,19 @@
     "error_send": "Wystąpił błąd podczas wysyłania polecenia",
     "editor_show_clear": "Pokaż przycisk „Wyczyść”",
     "editor_info": "Karta CLI umożliwia wysyłanie poleceń do koncentratorów MeshCore. Wymagana jest integracja MeshCore w wersji ≥ 2.9.0 oraz włączenie funkcji CLI w ustawieniach."
+  },
+  "trace": {
+    "title": "MeshCore Trace",
+    "select_contact": "Wybierz kontakt",
+    "timeout_label": "Limit czasu (w sekundach)",
+    "trace_button": "Wyślij ślad",
+    "sending": "📡 Wysyłanie śladu...",
+    "success": "✅ Śledzenie wysłano pomyślnie!",
+    "error": "❌ Błąd: „P0”",
+    "error_no_contact": "❌ Wybierz osobę kontaktową",
+    "no_contacts": "Nie znaleziono żadnych kontaktów. Upewnij się, że integracja z MeshCore działa poprawnie i że kontakty są wykrywane.",
+    "info": "Wysyła żądanie śledzenia do wybranego kontaktu z określonym limitem czasu.",
+    "editor_timeout_label": "Domyślny limit czasu (w sekundach)",
+    "editor_info": "Ta karta umożliwia wysłanie żądania śledzenia do dowolnego wykrytego kontaktu MeshCore. Domyślny limit czasu można ustawić w edytorze lub zmienić indywidualnie dla każdego użycia w karcie."
   }
 }
