@@ -190,6 +190,7 @@
     "no_contacts": "Nie znaleziono żadnych kontaktów. Upewnij się, że integracja z MeshCore działa poprawnie i że kontakty są wykrywane.",
     "info": "Wysyła żądanie śledzenia do wybranego kontaktu z określonym limitem czasu.",
     "editor_timeout_label": "Domyślny limit czasu (w sekundach)",
-    "editor_info": "Ta karta umożliwia wysłanie żądania śledzenia do dowolnego wykrytego kontaktu MeshCore. Domyślny limit czasu można ustawić w edytorze lub zmienić indywidualnie dla każdego użycia w karcie."
+    "editor_info": "Ta karta umożliwia wysłanie żądania śledzenia do dowolnego wykrytego kontaktu MeshCore. Domyślny limit czasu można ustawić w edytorze lub zmienić indywidualnie dla każdego użycia w karcie.",
+    "zero_hop_only": "⚠️ Funkcja śledzenia działa WYŁĄCZNIE w przypadku połączeń typu 0-hop (bezpośrednich)"
   }
 }

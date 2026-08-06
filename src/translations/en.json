@@ -192,6 +192,7 @@
   "no_contacts": "No contacts found. Make sure MeshCore integration is working and contacts are discovered.",
   "info": "Sends a trace request to the selected contact with the specified timeout.",
   "editor_timeout_label": "Default timeout (seconds)",
-  "editor_info": "This card allows you to send a trace request to any discovered MeshCore contact. You can set the default timeout in the editor or change it per use in the card."
+  "editor_info": "This card allows you to send a trace request to any discovered MeshCore contact. You can set the default timeout in the editor or change it per use in the card.",
+  "trace.zero_hop_only": "⚠️ Trace works ONLY for 0-hop (direct) connections"
 }
 }

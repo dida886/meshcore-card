@@ -190,6 +190,9 @@
     "no_contacts": "Es wurden keine Kontakte gefunden. Stellen Sie sicher, dass die MeshCore-Integration funktioniert und die Kontakte erkannt werden.",
     "info": "Sendet eine Trace-Anfrage mit dem angegebenen Timeout an den ausgewählten Kontakt.",
     "editor_timeout_label": "Standard-Zeitlimit (Sekunden)",
-    "editor_info": "Mit dieser Karte können Sie eine Ortungsanfrage an jeden erkannten MeshCore-Kontakt senden. Sie können das Standard-Timeout im Editor festlegen oder es bei jeder Verwendung in der Karte ändern."
+    "editor_info": "Mit dieser Karte können Sie eine Ortungsanfrage an jeden erkannten MeshCore-Kontakt senden. Sie können das Standard-Timeout im Editor festlegen oder es bei jeder Verwendung in der Karte ändern.",
+    "trace": {
+      "zero_hop_only": "⚠️ „Trace“ funktioniert NUR bei Verbindungen mit 0 Hops (direkte Verbindungen)"
+    }
   }
 }

@@ -98,7 +98,6 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       for (const entry of entries) {
         // ★ KLUCZOWE – aktualizuj _isVisible
         this._isVisible = entry.isIntersecting;
-        console.log('NodeCard observer: isVisible =', this._isVisible);
       }
     },
     { threshold: 0 }
@@ -344,18 +343,35 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
     const successes = successId ? getDisplayState(this._hass, successId) : null;
     const lastSeen = formatLastSeen(lastAdv, t);
 
-    // ── Status online ────────────────────────────────────────────────────────
-    const uptimeState = uptimeId ? this._hass?.states[uptimeId] : null;
-    let online: boolean;
-    if (uptimeState) {
-      if (["unavailable", "unknown"].includes(uptimeState.state)) {
-        online = false;
-      } else {
-        const ts = new Date(uptimeState.last_updated).getTime();
-        online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
+    let onlineEntityId: string | null = null;
+    if (this._hass && deviceId) {
+      for (const [entityId, info] of Object.entries(this._hass.entities)) {
+        if (info.device_id === deviceId && /_online($|_)/.test(entityId)) {
+          onlineEntityId = entityId;
+          break;
+        }
       }
+    }
+
+    let online: boolean;
+
+    if (onlineEntityId) {
+      const stateObj = this._hass?.states[onlineEntityId];
+      const state = stateObj ? stateObj.state : null;
+      online = state ? isOnlineState(state) : false;
     } else {
-      online = successes !== null && successes !== "N/A" ? Number(successes) > 0 : isOnlineState(status);
+      // 2. Stara logika – uptime, status, successes
+      const uptimeState = uptimeId ? this._hass?.states[uptimeId] : null;
+      if (uptimeState) {
+        if (["unavailable", "unknown"].includes(uptimeState.state)) {
+          online = false;
+        } else {
+          const ts = new Date(uptimeState.last_updated).getTime();
+          online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
+        }
+      } else {
+        online = successes !== null && successes !== "N/A" ? Number(successes) > 0 : isOnlineState(status);
+      }
     }
 
     const uptimeRaw = getEntityState(this._hass, uptimeId);
@@ -558,7 +574,6 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
 
     return html;
   }
-
   private _renderNeighbors(node: NodeInfo, t: LocalizeFunc): string {
     const neighbors = getNeighbors(this._hass, node.deviceId);
     const filteredNeighbors = filterNeighbors(neighbors, {
@@ -642,11 +657,6 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
       }, 100);
       return;
     }
-    console.log("Drawing traffic bars with options:", {
-      disabledAnimations: this._config?.disabled_animations ?? false,
-      isVisible: this._isVisible,
-      canvasesCount: canvases.length,
-    });
     renderTrafficBarsWithOptions(this.shadowRoot, {
       disabledAnimations: this._config?.disabled_animations ?? false,
       isVisible: this._isVisible,

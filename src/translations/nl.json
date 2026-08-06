@@ -191,6 +191,7 @@
     "no_contacts": "Er zijn geen contacten gevonden. Controleer of de MeshCore-integratie goed werkt en of de contacten worden gedetecteerd.",
     "info": "Verzendt een traceerverzoek naar de geselecteerde contactpersoon met de opgegeven time-out.",
     "editor_timeout_label": "Standaard time-out (seconden)",
-    "editor_info": "Met deze kaart kun je een traceerverzoek sturen naar elk gevonden MeshCore-contact. Je kunt de standaard time-out instellen in de editor of deze per gebruik aanpassen in de kaart."
+    "editor_info": "Met deze kaart kun je een traceerverzoek sturen naar elk gevonden MeshCore-contact. Je kunt de standaard time-out instellen in de editor of deze per gebruik aanpassen in de kaart.",
+    "zero_hop_only": "⚠️ Trace werkt ALLEEN voor 0-hop (directe) verbindingen"
   }
 }

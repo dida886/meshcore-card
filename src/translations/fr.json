@@ -190,6 +190,7 @@
     "no_contacts": "Aucun contact trouvé. Vérifiez que l'intégration MeshCore fonctionne correctement et que les contacts sont bien détectés.",
     "info": "Envoie une demande de traçage au contact sélectionné avec le délai d'expiration spécifié.",
     "editor_timeout_label": "Délai d'expiration par défaut (en secondes)",
-    "editor_info": "Cette carte vous permet d'envoyer une demande de localisation à n'importe quel contact MeshCore détecté. Vous pouvez définir le délai d'expiration par défaut dans l'éditeur ou le modifier à chaque utilisation depuis la carte."
+    "editor_info": "Cette carte vous permet d'envoyer une demande de localisation à n'importe quel contact MeshCore détecté. Vous pouvez définir le délai d'expiration par défaut dans l'éditeur ou le modifier à chaque utilisation depuis la carte.",
+    "zero_hop_only": "⚠️ La fonction « Trace » ne fonctionne QUE pour les connexions à 0 saut (directes)"
   }
 }

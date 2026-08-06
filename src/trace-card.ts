@@ -109,7 +109,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
 
   // ---------- Clear status after delay ----------
   private _clearStatusAfterDelay(delayMs: number = 12000): void {
-    // Anuluj poprzedni timeout jeśli istnieje
     if (this._statusTimeoutId) {
       clearTimeout(this._statusTimeoutId);
       this._statusTimeoutId = null;
@@ -127,7 +126,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
     if (!this._hass || !pubkeyPrefix) return;
     const t = this._getTranslations();
 
-    // Anuluj poprzednie czyszczenie statusu
     if (this._statusTimeoutId) {
       clearTimeout(this._statusTimeoutId);
       this._statusTimeoutId = null;
@@ -146,7 +144,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
     this._isTracing = true;
     if (this._traceButton) this._traceButton.disabled = true;
 
-    // Ustaw status "sending"
     if (this._statusDiv) {
       this._statusDiv.textContent = t("trace.sending") || "📡 Sending trace...";
       this._statusDiv.style.color = "var(--secondary-text-color)";
@@ -165,7 +162,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
         return_response: true,
       });
 
-      // Obsługa odpowiedzi
       if (this._statusDiv) {
         let msg = "";
         let isError = false;
@@ -189,7 +185,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
 
         this._statusDiv.innerHTML = msg;
         this._statusDiv.style.color = isError ? "var(--error-color)" : "var(--success-color)";
-        // Ustaw timeout na 12 sekund przed wyczyszczeniem
         this._clearStatusAfterDelay(12000);
       }
     } catch (error: any) {
@@ -224,7 +219,6 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
   }
 
   private _onTrace(): void {
-    // Anuluj poprzednie czyszczenie statusu
     if (this._statusTimeoutId) {
       clearTimeout(this._statusTimeoutId);
       this._statusTimeoutId = null;
@@ -271,6 +265,24 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
     const html = `
       <div class="trace-card">
         ${sectionHeader(t("trace.title") || "MeshCore Trace")}
+        <div style="
+          margin-bottom: 12px;
+          padding: 10px 14px;
+          border-radius: 10px;
+          background: var(--warning-color, #ff9800);
+          color: var(--text-primary-color, #000);
+          font-size: 13px;
+          font-weight: 500;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          opacity: 0.9;
+        ">
+          <ha-icon icon="mdi:alert-circle"></ha-icon>
+          ${escapeHtml(t("trace.zero_hop_only") || "⚠️ Trace działa TYLKO dla połączeń 0-hop (bezpośrednich)")}
+        </div>
 
         <div style="margin-bottom: 12px;">
           <label style="font-size: 13px; font-weight: 500; color: var(--secondary-text-color); display: block; margin-bottom: 4px;">
@@ -411,6 +423,24 @@ export class MeshcoreTraceCardEditor extends HTMLElement {
     container.style.cssText = "margin: 16px;";
 
     const t = makeLocalize(this._hass?.language ?? "en");
+
+    // ⚠️ Adnotacja w edytorze
+    const warningNote = document.createElement("div");
+    warningNote.style.cssText = `
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--warning-color, #ff9800);
+      color: var(--text-primary-color, #000);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      text-align: center;
+    `;
+    warningNote.innerHTML = `
+      <ha-icon icon="mdi:alert-circle" style="vertical-align: middle; margin-right: 6px;"></ha-icon>
+      ${t("trace.zero_hop_only") || "⚠️ Trace działa TYLKO dla połączeń 0-hop (bezpośrednich)"}
+    `;
+    container.appendChild(warningNote);
 
     const timeoutLabel = document.createElement("label");
     timeoutLabel.style.cssText = "display: block; margin-bottom: 8px;";

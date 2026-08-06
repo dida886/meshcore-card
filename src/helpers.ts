@@ -431,6 +431,7 @@ export interface RepeaterData {
     noise?: string | null;
     uptime?: string | null;
     temp?: string | null;
+    online?: string | null;
   };
 }
 
@@ -566,28 +567,51 @@ export function discoverRepeaters(
     const { name, deviceId, ePrefix, eSuffix } = node;
     const p = (m: string) => findEntityByDevice(hass, deviceId, m, ePrefix, eSuffix);
 
-    const statusId = p("online") ?? p("status");
-    const successId = p("request_successes");
-    const uptimeId = p("uptime");
-    const status = statusId ? getEntityState(hass, statusId) : null;
-    const successes = successId ? getEntityState(hass, successId) : null;
+    let onlineEntityId: string | null = null;
+    let statusId: string | null = null;
+    let successId: string | null = null;
+    let uptimeId: string | null = null;
+
+    if (hass && deviceId) {
+      const deviceEntities = Object.entries(hass.entities)
+        .filter(([_, info]) => info.device_id === deviceId)
+        .map(([id]) => id);
+    }
+
+    if (hass && deviceId) {
+      for (const [entityId, info] of Object.entries(hass.entities)) {
+        if (info.device_id === deviceId && /_online($|_)/.test(entityId)) {
+          onlineEntityId = entityId;
+          break;
+        }
+      }
+    }
 
     let online = false;
 
-    // Główna logika – taka sama jak w node‑card
-    if (uptimeId) {
-      const uptimeState = hass.states[uptimeId];
-      if (uptimeState && !["unavailable", "unknown"].includes(uptimeState.state)) {
-        const ts = new Date(uptimeState.last_updated).getTime();
-        online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
-      } else {
-        online = false;  // unavailable lub unknown → offline
-      }
+    if (onlineEntityId) {
+      const stateObj = hass?.states[onlineEntityId];
+      const state = stateObj ? stateObj.state : null;
+      online = state ? isOnlineState(state) : false;
     } else {
-      // Brak encji uptime – sprawdź status i successes
-      online = status ? isOnlineState(status) : false;
-      if (!online && successes !== null && successes !== "N/A" && Number(successes) > 0) {
-        online = true;
+      statusId = p("online") ?? p("status");
+      successId = p("request_successes");
+      uptimeId = p("uptime");
+
+      if (uptimeId) {
+        const uptimeState = hass?.states[uptimeId];
+        if (uptimeState && !["unavailable", "unknown"].includes(uptimeState.state)) {
+          const ts = new Date(uptimeState.last_updated).getTime();
+          online = !isNaN(ts) && (Date.now() - ts) < 6 * 3600 * 1000;
+        }
+      } else {
+        online = statusId ? isOnlineState(getEntityState(hass, statusId)) : false;
+        if (!online && successId) {
+          const successes = getEntityState(hass, successId);
+          if (successes !== null && successes !== "N/A" && Number(successes) > 0) {
+            online = true;
+          }
+        }
       }
     }
 
@@ -639,6 +663,7 @@ export function discoverRepeaters(
         noise: noiseId,
         uptime: uptimeId,
         temp: tempId,
+        online: onlineEntityId,
       },
     });
   }
