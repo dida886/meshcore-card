@@ -70,12 +70,12 @@ export class MeshcoreTraceCard extends MeshcoreBaseCard {
 
       if (!advId) {
         const contactSensors = Object.entries(this._hass.states).filter(
-          ([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id)
+          ([id]) => /^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(id)
         );
         for (const [entityId, state] of contactSensors) {
           const attrs = state.attributes as any;
           if ((attrs.adv_name || "") === cleanName) {
-            const m = entityId.match(/meshcore_.*?_([a-f0-9]+)_contact$/);
+            const m = entityId.match(/meshcore_.*?_([a-f0-9]+)_contact(?:_\d+)?$/);
             if (m) advId = m[1];
             break;
           }

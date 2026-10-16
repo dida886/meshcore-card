@@ -134,7 +134,7 @@ export class MeshcoreNodeCard extends MeshcoreBaseCard {
   private _contactEntity(nodeName: string): string | null {
     if (!this._hass) return null;
     for (const [id, state] of Object.entries(this._hass.states)) {
-      if (!/^binary_sensor\.meshcore_.*_contact$/.test(id)) continue;
+      if (!/^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(id)) continue;
       if (String(state.attributes["adv_name"] ?? "") === nodeName) return id;
     }
     return null;

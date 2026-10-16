@@ -9,6 +9,8 @@ export interface HassEntityRegistryEntry {
   name: string | null;
   icon: string | null;
   disabled_by: string | null;
+  /** Present on full registry entries; often also on hass.entities in recent HA. */
+  config_entry_id?: string | null;
 }
 
 export interface HassDeviceRegistryEntry {
@@ -19,6 +21,7 @@ export interface HassDeviceRegistryEntry {
   manufacturer: string | null;
   model: string | null;
   via_device_id?: string | null;
+  config_entries?: string[];
 }
 
 /** The `hass` object passed to Lovelace custom cards by the HA frontend. */
@@ -85,6 +88,8 @@ export interface HubInfo {
   name: string;
   nodeCountEntity: string;
   swVersion: string;
+  /** Config entry owning this hub — used to target meshcore services and helpers. */
+  entryId?: string;
 }
 
 export interface NodeInfo {
@@ -162,6 +167,12 @@ export interface MeshcoreMessageCardConfig {
   type?: string;
   default_channel?: string | number;
   use_repeater_names?: boolean;
+  /** Which hub/companion this card acts as. Accepts a pubkey prefix or a hub name.
+   *  Omitted = first discovered hub, i.e. the previous behaviour. */
+  hub?: string;
+  /** Explicit helper overrides for setups where the registry lookup is unavailable. */
+  channel_entity?: string;
+  contact_entity?: string;
 }
 
 export interface MeshcoreQuickRepeaterConfig {

@@ -59,27 +59,22 @@ export function discoverHubs(hass: HomeAssistant): HubInfo[] {
       const entityInfo = hass.entities[id];
       if (entityInfo?.device_id) {
         const device = hass.devices[entityInfo.device_id];
-        let swVersion = device?.sw_version || '';
+        const swVersion = device?.sw_version || '';
+        const entryId = device?.config_entries?.[0];
         if (device && device.name_by_user) {
           hubName = device.name_by_user;
-          hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
-        }
-        else {  
+        } else {
           const state = hass.states[id];
           const friendlyName = state?.attributes?.friendly_name;
-          if (friendlyName &&typeof friendlyName === 'string') {
+          if (friendlyName && typeof friendlyName === 'string') {
             // Usuń przyrostek " Node Count" z przyjaznej nazwy
             hubName = friendlyName.replace(/\s*Node Count\s*$/i, '') || hubName;
-            hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
+          } else {
+            hubName = device?.name || hubName;
           }
-          else {
-            hubName = device.name || hubName;
-            hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion };
-          }
-        }          
-        
-      } 
-      
+        }
+        hubs[m[1]] = { pubkey: m[1], name: hubName, nodeCountEntity: id, swVersion, entryId };
+      }
     }
   }
 

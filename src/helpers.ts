@@ -203,7 +203,7 @@ export function getNeighbors(hass: HomeAssistant | undefined, deviceId: string):
     let contactEntityId = null;
 
     for (const [entityId, state] of Object.entries(hass.states)) {
-      if (!/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) continue;
+      if (!/^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(entityId)) continue;
       const advId = state.attributes["adv_id"];
       if (advId && String(advId) === neighborId) {
         neighborName = state.attributes["adv_name"] || neighborName;
@@ -317,7 +317,7 @@ export function buildNeighborsIndex(hass: HomeAssistant): Map<string, NeighborIn
   // Najpierw zbuduj mapę adv_id → { entityId, name } dla szybkiego wyszukiwania kontaktów
   const contactByAdvId = new Map<string, { entityId: string; name: string }>();
   for (const [entityId, state] of Object.entries(hass.states)) {
-    if (!/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) continue;
+    if (!/^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(entityId)) continue;
     const advId = (state.attributes as Record<string, unknown>)["adv_id"];
     if (advId) {
       const name = ((state.attributes as Record<string, unknown>)["adv_name"] as string) || String(advId).substring(0, 8);

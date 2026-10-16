@@ -403,7 +403,7 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
   protected _computeFingerprint(): string {
     if (!this._hass) return "";
     return Object.entries(this._hass.states)
-      .filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id))
+      .filter(([id]) => /^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(id))
       .map(([id, s]) => `${id}=${s.state}@${s.last_changed}`)
       .join("|");
   }
@@ -411,11 +411,11 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
   private _getContactOnline(prefix: string): boolean {
     if (!this._hass) return false;
     for (const [entityId, state] of Object.entries(this._hass.states)) {
-      if (/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) {
+      if (/^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(entityId)) {
         const a = state.attributes as Record<string, unknown>;
         let p = a["adv_id"] ? String(a["adv_id"]) : null;
         if (!p) {
-          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact$/);
+          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact(?:_\d+)?$/);
           if (match) p = match[1];
         }
         if (p === prefix) {
@@ -435,7 +435,7 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
     const searchQuery = this._searchQuery.trim().toLowerCase();
 
     return Object.entries(this._hass.states)
-      .filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id))
+      .filter(([id]) => /^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(id))
       .map(([entityId, state]): ContactEntry => {
         const a = state.attributes as Record<string, unknown>;
         const now = Date.now() / 1000;
@@ -458,7 +458,7 @@ export class MeshcoreContactCard extends MeshcoreBaseCard {
         if (advId) {
           pubkeyPrefix = advId;
         } else {
-          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact$/);
+          const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact(?:_\d+)?$/);
           if (match) pubkeyPrefix = match[1];
         }
 

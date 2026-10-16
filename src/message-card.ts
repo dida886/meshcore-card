@@ -29,8 +29,11 @@ export class MeshcoreMessageCard extends HTMLElement {
   private _expandedMessages: Set<string> = new Set();
   private _initialFileLoadDone = false;
 
-  private static _globalContactsCache: any[] | null = null;
-  private static _globalChannelsCache: any[] | null = null;
+  private static _globalContactsCache: Record<string, any[]> = {};
+  private static _globalChannelsCache: Record<string, any[]> = {};
+  /** Sparse cache: helper entity_id → config_entry_id (filled from hass.entities or per-entity WS get). */
+  private static _helperEntryById: Record<string, string> = {};
+  private static _helperFetchPending = new Set<string>();
   private static _repeaterNamesMapCache: Map<string, string> | null = null;
   private static _repeaterNamesPrefixCache: Map<string, string> | null = null;
 
@@ -196,14 +199,14 @@ export class MeshcoreMessageCard extends HTMLElement {
     this._repeaterNamesPrefixIndex.clear();
     if (!this._hass) return;
     for (const [entityId, state] of Object.entries(this._hass.states)) {
-      if (!/^binary_sensor\.meshcore_.*_contact$/.test(entityId)) continue;
+      if (!/^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(entityId)) continue;
       const attrs = state.attributes as Record<string, any>;
       const name = attrs.adv_name;
       if (!name || String(name).trim() === '') continue;
       const cleanName = String(name).trim();
       let advId: string | null = attrs.adv_id;
       if (!advId) {
-        const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact$/);
+        const match = entityId.match(/meshcore_.*?_([a-f0-9]{6,})_contact(?:_\d+)?$/);
         if (match) advId = match[1];
       }
       if (advId) {
@@ -265,8 +268,8 @@ export class MeshcoreMessageCard extends HTMLElement {
       const meshcoreEntities = Object.keys(hass.states).filter(id => id.includes('meshcore'));
       const oldMeshcoreEntities = Object.keys(oldHass.states).filter(id => id.includes('meshcore'));
       if (meshcoreEntities.some(id => oldHass.states[id]?.state !== hass.states[id]?.state)) {
-        MeshcoreMessageCard._globalContactsCache = null;
-        MeshcoreMessageCard._globalChannelsCache = null;
+        MeshcoreMessageCard._globalContactsCache = {};
+        MeshcoreMessageCard._globalChannelsCache = {};
         MeshcoreMessageCard._repeaterNamesMapCache = null;
         MeshcoreMessageCard._repeaterNamesPrefixCache = null;
       }
@@ -312,6 +315,70 @@ export class MeshcoreMessageCard extends HTMLElement {
     return null;
   }
 
+  /** Pubkey of the hub this card acts as (config `hub:` takes a pubkey or a name). */
+  private _getHub(): ReturnType<typeof discoverHubs>[number] | null {
+    if (!this._hass) return null;
+    const hubs = discoverHubs(this._hass);
+    if (!hubs.length) return null;
+    const want = String(this._config?.hub || "").trim().toLowerCase();
+    if (!want) return hubs[0];
+    return hubs.find(h => h.pubkey.toLowerCase() === want || String(h.name).toLowerCase() === want) || null;
+  }
+
+  private _getHubPubkey(): string | null {
+    return this._getHub()?.pubkey ?? null;
+  }
+
+  private _getEntryId(): string | undefined {
+    return this._getHub()?.entryId;
+  }
+
+  /** Resolve config_entry_id for a helper. Prefers hass.entities; otherwise one WS get per id. */
+  private _entryForHelper(entityId: string): string | undefined {
+    const known = MeshcoreMessageCard._helperEntryById[entityId];
+    if (known) return known;
+    const fromHass = this._hass?.entities?.[entityId]?.config_entry_id;
+    if (fromHass) {
+      MeshcoreMessageCard._helperEntryById[entityId] = fromHass;
+      return fromHass;
+    }
+    const hass = this._hass as any;
+    if (!hass?.callWS || MeshcoreMessageCard._helperFetchPending.has(entityId)) return undefined;
+    MeshcoreMessageCard._helperFetchPending.add(entityId);
+    hass.callWS({ type: "config/entity_registry/get", entity_id: entityId })
+      .then((row: { config_entry_id?: string } | null) => {
+        if (row?.config_entry_id) {
+          MeshcoreMessageCard._helperEntryById[entityId] = row.config_entry_id;
+          MeshcoreMessageCard._globalChannelsCache = {};
+          MeshcoreMessageCard._globalContactsCache = {};
+          try { (this as any)._render?.(); } catch { /* not mounted */ }
+        }
+      })
+      .catch(() => { /* leave unresolved */ })
+      .finally(() => { MeshcoreMessageCard._helperFetchPending.delete(entityId); });
+    return undefined;
+  }
+
+  /** select.meshcore_<kind>[_N] belonging to the selected hub. */
+  private _helperEntity(kind: "channel" | "contact"): string | null {
+    if (!this._hass) return null;
+    const override = kind === "channel" ? this._config?.channel_entity : this._config?.contact_entity;
+    if (override) return override;
+    const base = `select.meshcore_${kind}`;
+    const rx = new RegExp(`^${base}(?:_\\d+)?$`);
+    const candidates = Object.keys(this._hass.states).filter(id => rx.test(id)).sort();
+    if (!candidates.length) return null;
+    if (candidates.length === 1) return candidates[0];
+
+    const entryId = this._getEntryId();
+    if (!entryId) return null; // multi-hub but hub has no entryId yet — don't guess
+    for (const id of candidates) {
+      if (this._entryForHelper(id) === entryId) return id;
+    }
+    // Registry lookups may still be in flight; don't fall back to the wrong helper.
+    return null;
+  }
+
   /* ---------- Wykrywanie nazwy własnego companiona ---------- */
   private _getMyHubNames(): Set<string> {
     const names = new Set<string>();
@@ -347,8 +414,8 @@ export class MeshcoreMessageCard extends HTMLElement {
       if (hub?.name) extractFromDeviceName(String(hub.name));
     }
 
-    const channelSelect = Object.values(this._hass.states)
-      .find(s => s.entity_id === "select.meshcore_channel");
+    const chanId = this._helperEntity("channel");
+    const channelSelect = chanId ? this._hass.states[chanId] : undefined;
     if (channelSelect?.attributes?.friendly_name) {
       const fn = String(channelSelect.attributes.friendly_name);
       const match = fn.match(/MeshCore\s+([A-Za-z0-9][^\s(]*)/i);
@@ -357,7 +424,7 @@ export class MeshcoreMessageCard extends HTMLElement {
 
     for (const [entityId, state] of Object.entries(this._hass.states)) {
       if (!entityId.includes(".meshcore_")) continue;
-      if (/_contact$/.test(entityId)) continue;
+      if (/_contact(?:_\d+)?$/.test(entityId)) continue;
       const attrs = state.attributes as any;
       if (attrs?.node_name) add(attrs.node_name);
       if (attrs?.adv_name) add(attrs.adv_name);
@@ -371,7 +438,7 @@ export class MeshcoreMessageCard extends HTMLElement {
         const companionDeviceIds = new Set<string>();
         for (const [eid, er] of Object.entries(entities)) {
           if (!eid.includes(".meshcore_")) continue;
-          if (/_contact$/.test(eid)) continue;
+          if (/_contact(?:_\d+)?$/.test(eid)) continue;
           const did = er?.device_id;
           if (!did) continue;
           if (/_ch_\d+_messages$/.test(eid) ||
@@ -395,6 +462,8 @@ export class MeshcoreMessageCard extends HTMLElement {
   }
 
   private _getMyHubName(): string {
+    const mine = this._getHub();
+    if (mine?.name) return mine.name;
     const first = this._getMyHubNames().values().next().value;
     return first || "Hub";
   }
@@ -412,8 +481,10 @@ export class MeshcoreMessageCard extends HTMLElement {
 
   private _getChannels(): any[] {
     if (!this._hass) return [];
-    if (MeshcoreMessageCard._globalChannelsCache) return MeshcoreMessageCard._globalChannelsCache;
-    const channelSelect = Object.values(this._hass.states).find(s => s.entity_id === "select.meshcore_channel");
+    const ckey = this._getHubPubkey() || "_";
+    if (MeshcoreMessageCard._globalChannelsCache[ckey]) return MeshcoreMessageCard._globalChannelsCache[ckey];
+    const chanId = this._helperEntity("channel");
+    const channelSelect = chanId ? this._hass.states[chanId] : undefined;
     if (!channelSelect) return [];
     const options = channelSelect.attributes.options || [];
     const channels = options.map((opt: string, idx: number) => {
@@ -426,18 +497,20 @@ export class MeshcoreMessageCard extends HTMLElement {
       }
       return { idx: channelIdx, name, entityId: channelSelect.entity_id, state: channelSelect };
     });
-    MeshcoreMessageCard._globalChannelsCache = channels;
+    MeshcoreMessageCard._globalChannelsCache[ckey] = channels;
     return channels;
   }
 
   private _getContacts(): any[] {
     if (!this._hass) return [];
-    if (MeshcoreMessageCard._globalContactsCache) return MeshcoreMessageCard._globalContactsCache;
-    const contactSelect = Object.values(this._hass.states).find(s => s.entity_id === "select.meshcore_contact");
+    const ckey = this._getHubPubkey() || "_";
+    if (MeshcoreMessageCard._globalContactsCache[ckey]) return MeshcoreMessageCard._globalContactsCache[ckey];
+    const contId = this._helperEntity("contact");
+    const contactSelect = contId ? this._hass.states[contId] : undefined;
     if (!contactSelect) return [];
     const options = contactSelect.attributes.options || [];
     const contacts: any[] = [];
-    const contactSensors = Object.entries(this._hass.states).filter(([id]) => /^binary_sensor\.meshcore_.*_contact$/.test(id));
+    const contactSensors = Object.entries(this._hass.states).filter(([id]) => /^binary_sensor\.meshcore_.*_contact(?:_\d+)?$/.test(id));
     for (const option of options) {
       let advId: string | null = null;
       let cleanName = option;
@@ -446,13 +519,13 @@ export class MeshcoreMessageCard extends HTMLElement {
       for (const [entityId, state] of contactSensors) {
         const attrs = state.attributes as any;
         if ((attrs.adv_name || '') === cleanName) {
-          if (!advId) { const m = entityId.match(/meshcore_.*?_([a-f0-9]+)_contact$/); if (m) advId = m[1]; }
+          if (!advId) { const m = entityId.match(/meshcore_.*?_([a-f0-9]+)_contact(?:_\d+)?$/); if (m) advId = m[1]; }
           break;
         }
       }
       contacts.push({ name: option, cleanName, id: advId || option, advId, entityId: contactSelect.entity_id, contactEntityId: null, lastSeen: null, state: contactSelect });
     }
-    MeshcoreMessageCard._globalContactsCache = contacts;
+    MeshcoreMessageCard._globalContactsCache[ckey] = contacts;
     return contacts;
   }
 
@@ -594,9 +667,12 @@ export class MeshcoreMessageCard extends HTMLElement {
     if (!message) { if (statusDiv) statusDiv.textContent = t("message-card.error_message"); return; }
     if (statusDiv) { statusDiv.textContent = t("message-card.sending"); statusDiv.style.color = "var(--secondary-text-color)"; }
     const hass = this._hass as any;
+    const entryId = this._getEntryId();
     const serviceCall = this._messageType === "channel"
-      ? hass.callService("meshcore", "send_channel_message", { channel_idx: parseInt(targetValue), message })
-      : hass.callService("meshcore", "send_message", { pubkey_prefix: targetValue, message });
+      ? hass.callService("meshcore", "send_channel_message",
+          { channel_idx: parseInt(targetValue), message, ...(entryId ? { entry_id: entryId } : {}) })
+      : hass.callService("meshcore", "send_message",
+          { pubkey_prefix: targetValue, message, ...(entryId ? { entry_id: entryId } : {}) });
     serviceCall
       .then(() => {
         if (statusDiv) { statusDiv.textContent = t("message-card.sent", { type: this._messageType === "channel" ? t("message-card.to_channel") : t("message-card.direct") }); statusDiv.style.color = "var(--success-color)"; }
